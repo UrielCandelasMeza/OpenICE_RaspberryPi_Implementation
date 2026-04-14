@@ -19,7 +19,7 @@ buildscript {
 
     repositories {
         maven {
-            url 'https://build.openice.info/artifactory/remote-repos' 
+            url='https://build.openice.info/artifactory/remote-repos'
         }
         maven {
             url="https://dl.bintray.com/calmdev/gradle-plugins"
@@ -34,11 +34,6 @@ plugins {
   id 'org.javamodularity.moduleplugin' version '1.8.12'
 }
 
-dependencies {
-	implementation group: 'org.openjdk.nashorn', name: 'nashorn-core', version: '15.4'
-}
-
-
 repositories {
   mavenLocal()
   mavenCentral()
@@ -49,6 +44,10 @@ apply plugin: 'application'
 //apply plugin: "me.champeau.jbake"
 //apply plugin: 'javafx-gradle-plugin'
 
+dependencies {
+	implementation group: 'org.openjdk.nashorn', name: 'nashorn-core', version: '15.7'
+}
+
 defaultTasks 'build'
 
 java {
@@ -56,7 +55,7 @@ java {
 }
 
 javafx {
-  version = "17.0.11"
+  version = "25"
   modules = [ 'javafx.base', 'javafx.controls' , 'javafx.fxml' , 'javafx.swing' , 'javafx.web' ]
 }
 
@@ -76,7 +75,7 @@ distTar {
 }
 */
 
-applicationName = 'OpenICE'
+//applicationName = 'OpenICE'
 
 //jfx {
 //    verbose=true
@@ -177,10 +176,12 @@ jbake {
 */
 
 
-sourceCompatibility = JAVA_VERSION_SOURCE
-targetCompatibility = JAVA_VERSION_CLASSES
+java {
+	sourceCompatibility = JAVA_VERSION_SOURCE
+	targetCompatibility = JAVA_VERSION_CLASSES
+}
 
-mainClassName = 'org.mdpnp.apps.testapp.Main'
+//mainClassName = 'org.mdpnp.apps.testapp.Main'
 
 Date buildTimeAndDate = new Date()
 ext {
@@ -192,7 +193,7 @@ ext {
     currentPath = System.getenv('PATH');
 }
 
-manifest { attributes "Main-Class" : mainClassName }
+//manifest { attributes "Main-Class" : mainClassName }
 
 dependencies {
     implementation project(':devices:common')
@@ -244,6 +245,9 @@ dependencies {
     implementation 'com.amazonaws:aws-java-sdk-s3'
     implementation group: 'software.amazon.awssdk', name: 's3-transfer-manager', version: '2.17.16-PREVIEW'
 
+    implementation group: 'jakarta.json', name: 'jakarta.json-api', version: '2.1.3'
+    implementation 'org.eclipse.parsson:parsson:1.1.7'
+
     testImplementation("junit:junit:4.13.2")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.9.1")
     testImplementation project(':devices:simulated')
@@ -275,6 +279,7 @@ test {
 }
 
 run {
+    mainClass='org.mdpnp.apps.testapp.Main'
     if(localOsName.contains("linux")) {
       if(localOsArch.contains("aarch")) {
         environment 'LD_LIBRARY_PATH', 'native/libs/aarch'
@@ -287,6 +292,11 @@ run {
     if(localOsName.contains("windows")) {
       environment 'PATH', currentPath + ';native/libs/windows'
       environment 'SEC_ARTIFACT_DIR', '../../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
+      environment 'DOCBOX_RTPS_HOST_ID', '2829720935'
+      environment 'DOCBOX_RTPS_APP_ID', '2543000423'
+      environment 'COORDINATOR_DOMAIN_ID', '3'
+      environment 'DICES_DIM_DURABLE_QOS_PROFILE_BASE_NAME', 'DICES::Manager'
+      environment 'TRANSFER_DOMAIN_ID', '4'
       environment 'RTI_LICENSE_FILE', 'build/resources/main/OpenICE_license.dat'
     }
     if(localOsName.contains("mac")) {

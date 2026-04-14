@@ -1,3 +1,7 @@
+plugins {
+    id 'org.cyclonedx.bom' version '3.0.1'
+}
+
 apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 defaultTasks 'build'
@@ -9,8 +13,8 @@ defaultTasks 'build'
 //}
 
 ext {
-    JAVA_VERSION_SOURCE = 17
-    JAVA_VERSION_CLASSES = 17
+    JAVA_VERSION_SOURCE = 25
+    JAVA_VERSION_CLASSES = 25
     WINDOWS = 1
     MAC = 2
     LINUX = 3
@@ -75,14 +79,14 @@ ext {
     VERSION_NUMBER = MDPNP_VERSION_NUMBER + ((null!=BUILD_NUMBER&&!"".equals(BUILD_NUMBER))?"-":"") + BUILD_NUMBER 
 }
 
-group 'org.mdpnp'
+group = 'org.mdpnp'
 
 subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'eclipse'
-    version VERSION_NUMBER
+    version = VERSION_NUMBER
 
-    group 'org.mdpnp'
+    group = 'org.mdpnp'
     buildscript {
         repositories {
 
@@ -124,15 +128,15 @@ subprojects {
         // They are included her for reference (and potentially fallback)
 
         // Repository for jogamp
-        maven {  url 'https://jogamp.org/deployment/maven/' }
+        maven {  url = 'https://jogamp.org/deployment/maven/' }
 
         // Repository for restlet
-        maven {  url 'https://maven.restlet.talend.com' }
+        maven {  url = 'https://maven.restlet.talend.com' }
 
         // specifically javax.transaction.jta 1.0.1B only exists here in jar form (pom only in maven central)
-        maven {  url 'https://download.java.net/maven/2/' }
+        maven {  url = 'https://download.java.net/maven/2/' }
 
-        maven {  url 'https://mvnrepository.com' }
+        maven {  url = 'https://mvnrepository.com' }
 
 
 

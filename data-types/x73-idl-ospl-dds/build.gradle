@@ -15,8 +15,10 @@ apply plugin: 'java'
 // By default we build (no task specified)
 defaultTasks 'build'
 
-sourceCompatibility = JAVA_VERSION_SOURCE
-targetCompatibility = JAVA_VERSION_CLASSES
+java {
+	sourceCompatibility = JAVA_VERSION_SOURCE
+	targetCompatibility = JAVA_VERSION_CLASSES
+}
 
 def GENERATED_JAVA_SOURCES = new File(project.projectDir, 'build/generated/src/main/java').getAbsolutePath()
 def GENERATED_CPP_SOURCES  = new File(project.projectDir, 'build/generated/src/main/cpp').getAbsolutePath()

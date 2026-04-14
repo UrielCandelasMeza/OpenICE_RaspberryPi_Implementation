@@ -14,6 +14,11 @@
 apply plugin: 'java'
 import org.apache.tools.ant.taskdefs.condition.Os
 
+interface InjectedExecOps {
+	@Inject
+	ExecOperations getExecOps()
+}
+
 //For RTI 6.x, use an RTI_INSTALL_DIR to get RTI artifacts, rather than a built in one.
 ext {
   rtiNddsJava = ".." + File.separator + ".." + File.separator + "artifacts" + File.separator + "nddsjava.jar"
@@ -26,8 +31,10 @@ ext {
 // By default we build (no task specified)
 defaultTasks 'build'
 
-sourceCompatibility = JAVA_VERSION_SOURCE
-targetCompatibility = JAVA_VERSION_CLASSES
+java {
+	sourceCompatibility = JAVA_VERSION_SOURCE
+	targetCompatibility = JAVA_VERSION_CLASSES
+}
 
 // configuration for code generation
 configurations { 
@@ -136,6 +143,7 @@ What we want to emulate is...
 
 //Generated the .py files for the IDL.
 task iceddsgenPython(dependsOn: [mkdirs, rtiddsgenExplodeResources]) {
+  def injected = project.objects.newInstance(InjectedExecOps)
   def idlProjectDir= project(':data-types:x73-idl').projectDir;
   def sourceFile=idlProjectDir.getPath()+"/src/main/idl/ice/ice.idl";
   File realSourceFile=new File(sourceFile)
@@ -150,9 +158,9 @@ task iceddsgenPython(dependsOn: [mkdirs, rtiddsgenExplodeResources]) {
 */
     doLast {
      if(localOsName.contains("windows")) {
-        javaexec {
+        injected.execOps.javaexec {
           classpath = configurations.iceddsgen
-          main = 'com.rti.ndds.nddsgen.Main'
+          mainClass = 'com.rti.ndds.nddsgen.Main'
           args( '-ppPath' )
           args( preCompFile )
           args( '-language' )
@@ -167,9 +175,9 @@ task iceddsgenPython(dependsOn: [mkdirs, rtiddsgenExplodeResources]) {
           jvmArgs("-DNDDS_RESOURCE_DIR=src/main/resources/resource/app/app_support/rtiddsgen" , "-DCONNEXT_VERSION=7.3.0", "-DCONNEXT_PLATFORM=x64Linux3gcc4.8.2")
         }
       } else {
-        javaexec {
+        injected.execOps.javaexec {
           classpath = configurations.iceddsgen
-          main = 'com.rti.ndds.nddsgen.Main'
+          mainClass = 'com.rti.ndds.nddsgen.Main'
           args( '-language' )
           args( 'Python' );
           args( '-d' )
@@ -196,7 +204,7 @@ task copyIceDotPy(dependsOn: iceddsgenPython, type: Copy) {
       include 'ice.py'
     }
   }
-  duplicatesStrategy 'include'
+  duplicatesStrategy = 'include'
 
 
   into ("/src/main/idl/ice/samples") {
@@ -204,27 +212,28 @@ task copyIceDotPy(dependsOn: iceddsgenPython, type: Copy) {
       include 'ice.py'
     }
   }
-  duplicatesStrategy 'include'
+  duplicatesStrategy = 'include'
 
   into ("/src/main/idl/ice/pump_controller") {
     from( idlProjectDir.getPath()+"/src/main/idl/ice" ) {
       include 'ice.py'
     }
   }
-  duplicatesStrategy 'include'
+  duplicatesStrategy = 'include'
 
 }
 
 task iceddsgenJava(dependsOn: [mkdirs, rtiddsgenExplodeResources, copyIceDotPy]) {
+  def injected = project.objects.newInstance(InjectedExecOps)
   FileTree idlFiles = project(':data-types:x73-idl').buildZip.source
   def ourDir=project(':data-types:x73-idl-rti-dds').projectDir;
   def preCompFile=ourDir.getPath() + File.separator + "precomp" + File.separator + "jcpp.cmd";
   idlFiles.each { f ->
     doLast {
      if(localOsName.contains("windows")) {
-        javaexec {
+        injected.execOps.javaexec {
           classpath = configurations.iceddsgen
-          main = 'com.rti.ndds.nddsgen.Main'
+          mainClass = 'com.rti.ndds.nddsgen.Main'
 	  args( '-ppPath' )
           args( preCompFile )
           args( '-language' )
@@ -239,9 +248,9 @@ task iceddsgenJava(dependsOn: [mkdirs, rtiddsgenExplodeResources, copyIceDotPy])
           jvmArgs("-DNDDS_RESOURCE_DIR=src/main/resources/resource/app/app_support/rtiddsgen" , "-DCONNEXT_VERSION=7.3.0", "-DCONNEXT_PLATFORM=x64Linux3gcc4.8.2")
         }
     } else {
-        javaexec {
+        injected.execOps.javaexec {
           classpath = configurations.iceddsgen
-          main = 'com.rti.ndds.nddsgen.Main'
+          mainClass = 'com.rti.ndds.nddsgen.Main'
           args( '-language' )
           args( 'Java' );
           args( '-d')

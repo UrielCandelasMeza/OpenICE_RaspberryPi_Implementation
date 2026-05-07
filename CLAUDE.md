@@ -92,6 +92,56 @@ The application runs in two modes:
 | `org.mdpnp.apps.testapp.pca` | PCA (infusion pump safety) application |
 | `org.mdpnp.apps.testapp.chart` | Waveform charting application |
 
+## Development Patterns
+
+### Creating a New ICE Application
+
+1. **App controller** (`MyApp.java`) — implement a `start(EventLoop eventLoop, Subscriber subscriber)` method. Do not create DDS connections directly; receive shared OpenICE resources via Spring injection:
+   - `DeviceListModel` — observable list of connected devices
+   - `NumericFxList` — observable list of real-time numeric data (HR, SpO2, etc.)
+   - `AlertFxList` — observable list of active alarms
+   - `EventLoop` — attach DDS `ConditionHandler` callbacks on the correct thread
+
+2. **App factory** (`MyAppFactory.java`) — implement `org.mdpnp.apps.testapp.IceApplicationProvider`. The `create(ApplicationContext parentContext)` method pulls shared Spring beans, loads the `.fxml` file, and injects dependencies into the controller.
+
+3. **Register** — add the factory's fully qualified class name to:
+   `interop-lab/demo-apps/src/main/resources/META-INF/services/org.mdpnp.apps.testapp.IceApplicationProvider`
+
+### Creating a New Simulated Device
+
+1. **Device class** — extend `AbstractSimulatedConnectedDevice` (or `AbstractSimulatedDevice`). In the constructor:
+   - Set `deviceIdentity.manufacturer` and `deviceIdentity.model`
+   - Call `createNumericInstance(metric_id, vendor_metric_id)` to register published parameters
+   - Use a timer/thread to periodically call `numericSample(...)` to publish values
+
+2. **Register in DeviceFactory** (`interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/DeviceFactory.java`) — add a static inner class extending `SpringLoadedDriver`:
+   - `getDeviceType()` → return a `DeviceType` with `ice.ConnectionType.Simulated`
+   - `newInstance()` → instantiate your device class
+
+3. **Register the provider** — add the inner class's fully qualified name to:
+   `interop-lab/demo-devices/src/main/resources/META-INF/services/org.mdpnp.devices.DeviceDriverProvider`
+
+### Reading and Writing Custom DDS Topics
+
+When adding a new struct to `ice.idl`, annotate primary key fields with `@key` and assign a topic string constant. RTI auto-generates `MyTopic`, `MyTopicDataReader`, and `MyTopicDataWriter` during the Gradle build.
+
+**To subscribe:**
+1. `ice.MyTopicTypeSupport.register_type(participant, ...)`
+2. `TopicUtil.findOrCreateTopic(participant, ice.MyTopicTopic.VALUE, ...)`
+3. `subscriber.create_datareader_with_profile(...)` using `QosProfiles.ice_library` + `QosProfiles.state` (or `QosProfiles.observed_data`)
+4. Create a `ReadCondition` and attach a `ConditionHandler` via `EventLoop`
+
+**To publish:**
+1. Register type and create topic as above
+2. `publisher.create_datawriter_with_profile(...)` with the same QoS profile
+3. Populate your generated struct and call `dataWriter.write(msg, InstanceHandle_t.HANDLE_NIL)`
+
+### DDS Environment Variables
+
+In addition to `RTI_LICENSE_FILE`, the DDS QoS profiles in `RtConfig.xml` may require:
+- `DOCBOX_RTPS_HOST_ID` — identifies the DDS host
+- `DOCBOX_RTPS_APP_ID` — identifies the DDS application instance
+
 ## Medical Device Driver Requirements
 
 These rules apply whenever writing or modifying a device driver (any class under `org.mdpnp.devices`).

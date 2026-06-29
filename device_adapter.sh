@@ -40,8 +40,7 @@ case "$ACTION" in
         echo "=== 2. Compilando el empaquetado headless (distZip) ==="
         # Compila el .zip. Si usamos sudo, ejecutamos gradle usando `su -` para cargar un entorno completo y evitar que falle JAVA_HOME
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            su - "$SUDO_USER" -c "cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava"
-        else
+            su - "$SUDO_USER" -c "source ~/.bash_profile || source ~/.bashrc; source ~/.sdkman/bin/sdkman-init.sh; cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava"        else
             ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
         fi
         

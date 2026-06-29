@@ -49,18 +49,18 @@ run {
         } else {
             environment 'LD_LIBRARY_PATH', '../interop-lab/demo-apps/native/libs/linux'
         }
-        environment 'SEC_ARTIFACT_DIR', '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
-        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/build/resources/main/OpenICE_license.dat'
+        environment 'SEC_ARTIFACT_DIR',  '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
+        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/src/main/resources/OpenICE_license.dat'
     }
     if (localOsName.contains('windows')) {
-        environment 'PATH', currentPath + ';../interop-lab/demo-apps/native/libs/windows'
+        environment 'PATH',             currentPath + ';../interop-lab/demo-apps/native/libs/windows'
         environment 'SEC_ARTIFACT_DIR', '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
-        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/build/resources/main/OpenICE_license.dat'
+        environment 'RTI_LICENSE_FILE', '../interop-lab/demo-apps/src/main/resources/OpenICE_license.dat'
     }
     if (localOsName.contains('mac')) {
         environment 'DYLD_LIBRARY_PATH', '../interop-lab/demo-apps/native/libs/macosx'
         environment 'SEC_ARTIFACT_DIR',  '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
-        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/build/resources/main/OpenICE_license.dat'
+        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/src/main/resources/OpenICE_license.dat'
     }
 }
 

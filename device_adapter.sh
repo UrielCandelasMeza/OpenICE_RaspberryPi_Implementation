@@ -6,17 +6,22 @@ ACTION=$1
 DEVICE=$2
 DOMAIN=${3:-0}
 
-# Rutas de instalación para la Raspberry Pi
-PI_USER="pi"
-PI_HOME="/home/$PI_USER"
+# Rutas de instalación dinámicas (soporta 'pi', 'openice', etc.)
+ACTUAL_USER=${SUDO_USER:-$USER}
+PI_HOME=$(eval echo ~$ACTUAL_USER)
 INSTALL_DIR="$PI_HOME/OpenICE"
 DEVICE_THIS="$PI_HOME/device.this"
 SERVICE_NAME="headless-adapter"
+CURRENT_DIR=$(pwd)
 
 case "$ACTION" in
     list)
         echo "Obteniendo la lista de devices disponibles..."
-        ./gradlew :headless-adapter:run --args="--help"
+        if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+            sudo -u "$SUDO_USER" env "PATH=$PATH" "JAVA_HOME=$JAVA_HOME" ./gradlew :headless-adapter:run --args="--help"
+        else
+            ./gradlew :headless-adapter:run --args="--help"
+        fi
         ;;
         
     install)
@@ -27,13 +32,18 @@ case "$ACTION" in
         fi
         
         echo "=== 1. Guardando configuración en $DEVICE_THIS ==="
-        # Si tienes que agregar peers de red, puedes modificar esta línea
+        # Crear directorio padre si no existe por si acaso
+        mkdir -p "$PI_HOME"
         echo "-domain $DOMAIN -device $DEVICE" > "$DEVICE_THIS"
         cat "$DEVICE_THIS"
         
         echo "=== 2. Compilando el empaquetado headless (distZip) ==="
-        # Compila el .zip excluyendo el módulo conflictivo de Java 25
-        ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
+        # Compila el .zip. Si usamos sudo, ejecutamos gradle como el usuario normal para no perder JAVA_HOME
+        if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+            sudo -u "$SUDO_USER" env "PATH=$PATH" "JAVA_HOME=$JAVA_HOME" ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
+        else
+            ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
+        fi
         
         ZIP_FILE=$(ls -rt headless-adapter/build/distributions/OpenICE-headless-*.zip 2>/dev/null | tail -n 1)
         if [ -z "$ZIP_FILE" ]; then
@@ -61,7 +71,11 @@ case "$ACTION" in
         
         # Copiar y dar permisos al script de servicio
         if [ -f "$CURRENT_DIR/headless-adapter.init" ]; then
-            sudo cp "$CURRENT_DIR/headless-adapter.init" "/etc/init.d/$SERVICE_NAME"
+            # Reemplazar dinámicamente el usuario 'pi' por el usuario actual en el script init
+            sed -e "s|export HOME=/home/pi|export HOME=$PI_HOME|g" \
+                -e "s|--chuid pi|--chuid $ACTUAL_USER|g" \
+                "$CURRENT_DIR/headless-adapter.init" | sudo tee "/etc/init.d/$SERVICE_NAME" > /dev/null
+            
             sudo chmod +x "/etc/init.d/$SERVICE_NAME"
             
             # Registrar el servicio para que inicie con el sistema

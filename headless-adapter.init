@@ -1,0 +1,49 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:        headless-adapter
+# Required-Start:  $network
+# Required-Stop:   $network
+# Default-Start:   2 3 4 5
+# Default-Stop:    0 1 6
+# Short Description: OpenICE headless adapter
+# Description:       OpenICE headless adapter for Raspberry Pi
+### END INIT INFO
+
+export HOME=/home/pi
+export NAME=headless-adapter
+
+# Lee la configuración del device (ej: "-domain 0 -device Pump_Simulator")
+if [ -f "$HOME/device.this" ]; then
+    export DEVICE_SETTINGS="`cat $HOME/device.this`"
+else
+    export DEVICE_SETTINGS=""
+fi
+
+export ADAPTER_OPTS="$DEVICE_SETTINGS"
+export ADAPTER_SCR=$HOME/OpenICE/OpenICE.current/bin/OpenICE-headless
+export PIDFILE=/var/run/$NAME.pid
+
+case "$1" in
+    start)
+  echo -n "Starting $NAME: $ADAPTER_SCR $ADAPTER_OPTS"
+  # Ejecuta con el usuario 'pi' en background
+  start-stop-daemon --background --make-pidfile --chuid pi --chdir $HOME --exec $ADAPTER_SCR  --start --pidfile $PIDFILE -- $ADAPTER_OPTS
+  echo "."
+  ;;
+    stop)
+  echo -n "Stopping $NAME: pid at $PIDFILE"
+  # Envía señal SIGINT (2) que HeadlessMain atrapa para hacer shutdown ordenado
+  start-stop-daemon --stop --chdir $HOME --chuid pi --signal 2 --oknodo --pidfile $PIDFILE
+  echo "."
+  ;;
+    restart)
+  $0 stop
+  $0 start
+  ;;
+    *)
+  echo "Usage: /etc/init.d/headless-adapter {start|stop|restart}"
+  exit 1
+  ;;
+esac
+
+exit 0

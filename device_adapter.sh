@@ -18,7 +18,7 @@ case "$ACTION" in
     list)
         echo "Obteniendo la lista de devices disponibles..."
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            sudo -u "$SUDO_USER" env "PATH=$PATH" "JAVA_HOME=$JAVA_HOME" ./gradlew :headless-adapter:run --args="--help"
+            su - "$SUDO_USER" -c "cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:run --args=\"--help\""
         else
             ./gradlew :headless-adapter:run --args="--help"
         fi
@@ -38,9 +38,9 @@ case "$ACTION" in
         cat "$DEVICE_THIS"
         
         echo "=== 2. Compilando el empaquetado headless (distZip) ==="
-        # Compila el .zip. Si usamos sudo, ejecutamos gradle como el usuario normal para no perder JAVA_HOME
+        # Compila el .zip. Si usamos sudo, ejecutamos gradle usando `su -` para cargar un entorno completo y evitar que falle JAVA_HOME
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            sudo -u "$SUDO_USER" env "PATH=$PATH" "JAVA_HOME=$JAVA_HOME" ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
+            su - "$SUDO_USER" -c "cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava"
         else
             ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
         fi

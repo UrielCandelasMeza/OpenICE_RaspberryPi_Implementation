@@ -64,5 +64,29 @@ run {
     }
 }
 
+// Ensure the distribution zip includes the native RTI libraries and license
+distributions {
+    main {
+        contents {
+            from('../interop-lab/demo-apps/native/libs') {
+                into 'native/libs'
+            }
+            from('../interop-lab/demo-apps/src/main/resources/OpenICE_license.dat') {
+                into 'config'
+            }
+        }
+    }
+}
+
+startScripts {
+    doLast {
+        // Automatically set LD_LIBRARY_PATH relative to APP_HOME in the start script
+        unixScript.text = unixScript.text.replace(
+            'DEFAULT_JVM_OPTS=""',
+            'export LD_LIBRARY_PATH=$APP_HOME/native/libs/linux:$APP_HOME/native/libs/aarch:$LD_LIBRARY_PATH\nexport RTI_LICENSE_FILE=$APP_HOME/config/OpenICE_license.dat\nDEFAULT_JVM_OPTS=""'
+        )
+    }
+}
+
 // ── distZip / distTar produced by the 'application' plugin ───────────────────
 // Use: ./gradlew :headless-adapter:distZip  → genera headless-adapter/build/distributions/

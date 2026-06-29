@@ -1,0 +1,48 @@
+# Headless-adapter providers – all classes live in THIS module (no JavaFX, no demo-apps dependency).
+# This file intentionally shadows the one in demo-devices which references
+# org.mdpnp.apps.testapp.DeviceFactory$* (unavailable without demo-apps on classpath).
+
+# ── Simulated ──────────────────────────────────────────────────────────────────
+org.mdpnp.headless.HeadlessDeviceFactory$PO_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$FourSecFullyFixedAvePO_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$FourSecFullyFixedNoSoftAvePO_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$EightSecFullyFixedAvePO_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$EightSecIceSettableFixedAvePO_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$EightSecOperSettableFixedAvePO_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$NIBP_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$IBP_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$ECG_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$CO2_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$Temp_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$Pump_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$ControllablePump_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$ControllableBPMonitor_SimulatorProvider
+org.mdpnp.headless.HeadlessDeviceFactory$MultiparameterProvider
+org.mdpnp.headless.HeadlessDeviceFactory$SymbiqProvider
+
+# ── Serial ─────────────────────────────────────────────────────────────────────
+org.mdpnp.headless.HeadlessDeviceFactory$NoninProvider
+org.mdpnp.headless.HeadlessDeviceFactory$NellcorN595Provider
+org.mdpnp.headless.HeadlessDeviceFactory$MasimoRadical7Provider
+org.mdpnp.headless.HeadlessDeviceFactory$IntellivueSerialProvider
+org.mdpnp.headless.HeadlessDeviceFactory$DraegerApolloProvider
+org.mdpnp.headless.HeadlessDeviceFactory$DraegerEvitaXLProvider
+org.mdpnp.headless.HeadlessDeviceFactory$DraegerV500Provider
+org.mdpnp.headless.HeadlessDeviceFactory$DraegerV500_38400Provider
+org.mdpnp.headless.HeadlessDeviceFactory$DraegerEvita4Provider
+org.mdpnp.headless.HeadlessDeviceFactory$Capnostream20Provider
+org.mdpnp.headless.HeadlessDeviceFactory$FlukeProsim68Provider
+org.mdpnp.headless.HeadlessDeviceFactory$Ivy450CProvider
+org.mdpnp.headless.HeadlessDeviceFactory$BioPatchProvider
+org.mdpnp.headless.HeadlessDeviceFactory$GESerialProvider
+org.mdpnp.headless.HeadlessDeviceFactory$MSeriesScaleProvider
+org.mdpnp.headless.HeadlessDeviceFactory$AlarisSerialProvider
+org.mdpnp.headless.HeadlessDeviceFactory$AS50SerialProvider
+org.mdpnp.headless.HeadlessDeviceFactory$TB800Provider
+org.mdpnp.headless.HeadlessDeviceFactory$PB840HeadlessProvider
+org.mdpnp.headless.HeadlessDeviceFactory$PB980HeadlessProvider
+
+# ── Network ────────────────────────────────────────────────────────────────────
+org.mdpnp.headless.HeadlessDeviceFactory$IntellivueEthernetProvider
+org.mdpnp.headless.HeadlessDeviceFactory$BernoulliProvider
+org.mdpnp.headless.HeadlessDeviceFactory$NKV550Provider

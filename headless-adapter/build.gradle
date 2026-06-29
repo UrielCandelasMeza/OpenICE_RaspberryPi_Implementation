@@ -1,0 +1,68 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+defaultTasks 'build'
+
+java {
+    sourceCompatibility = JAVA_VERSION_SOURCE
+    targetCompatibility = JAVA_VERSION_CLASSES
+}
+
+ext {
+    localOsName = System.properties['os.name'].toLowerCase()
+    localOsArch  = System.properties['os.arch'].toLowerCase()
+    currentPath  = System.getenv('PATH')
+}
+
+application {
+    mainClass = 'org.mdpnp.headless.HeadlessMain'
+    applicationName = 'OpenICE-headless'
+}
+
+dependencies {
+    // Core device drivers (ALL drivers, including simulated) – NO JavaFX
+    implementation project(':interop-lab:demo-devices')
+    implementation project(':data-types:x73-idl-rti-dds')
+
+    // RTI Connext DDS runtime
+    implementation files('../artifacts/nddsjava.jar')
+
+    // Logging
+    implementation group: 'org.slf4j',              name: 'slf4j-api',              version: SLF4J_VERSION
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl',    version: '2.19.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api',            version: '2.19.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core',           version: '2.19.0'
+
+    // CLI argument parsing
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.2'
+
+    // Spring context (used by RtConfig.xml / DriverContext.xml)
+    implementation group: 'org.springframework', name: 'spring-context', version: '6.0.2'
+    implementation group: 'com.google.guava',    name: 'guava',          version: '31.1-jre'
+}
+
+// ── run task ───────────────────────────────────────────────────────────────────
+run {
+    if (localOsName.contains('linux')) {
+        if (localOsArch.contains('aarch')) {
+            environment 'LD_LIBRARY_PATH', '../interop-lab/demo-apps/native/libs/aarch'
+        } else {
+            environment 'LD_LIBRARY_PATH', '../interop-lab/demo-apps/native/libs/linux'
+        }
+        environment 'SEC_ARTIFACT_DIR', '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
+        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/build/resources/main/OpenICE_license.dat'
+    }
+    if (localOsName.contains('windows')) {
+        environment 'PATH', currentPath + ';../interop-lab/demo-apps/native/libs/windows'
+        environment 'SEC_ARTIFACT_DIR', '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
+        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/build/resources/main/OpenICE_license.dat'
+    }
+    if (localOsName.contains('mac')) {
+        environment 'DYLD_LIBRARY_PATH', '../interop-lab/demo-apps/native/libs/macosx'
+        environment 'SEC_ARTIFACT_DIR',  '../data-types/x73-idl-rti-dds/src/main/resources/META-INF'
+        environment 'RTI_LICENSE_FILE',  '../interop-lab/demo-apps/build/resources/main/OpenICE_license.dat'
+    }
+}
+
+// ── distZip / distTar produced by the 'application' plugin ───────────────────
+// Use: ./gradlew :headless-adapter:distZip  → genera headless-adapter/build/distributions/

@@ -1,2 +1,123 @@
+# =============================================================================
+# OpenICE Docker Compose — imagen única, modos intercambiables
+# =============================================================================
+#
+# PREREQUISITO — una sola vez (o tras cambios de código):
+#
+#   chmod +x build.sh && ./build.sh
+#
+# Esto genera flat/ con Gradle y construye las dos imágenes Docker:
+#   • openice:1.0     → aplicación Java (todos los modos comparten esta imagen)
+#   • openice-wis:1.0 → servidor web RTI (binario nativo distinto)
+#
+# NOTA: ICE_Supervisor requiere GUI JavaFX — no puede correr en Docker.
+# Los únicos modos válidos en contenedor son ICE_Device_Interface con -device.
+#
+# PERFILES DISPONIBLES:
+#
+#   WIS — visualizador web en http://localhost:8080:
+#     docker compose --profile wis up
+#
+#   Bomba de infusión simulada:
+#     docker compose --profile pump up
+#
+#   Monitor multiparámetro simulado (SpO2, HR, ECG):
+#     docker compose --profile monitor up
+#
+#   Stack típico de prueba (WIS + bomba):
+#     docker compose --profile wis --profile pump up
+#
+#   Stack completo:
+#
+# EJECUCIÓN DIRECTA (sin compose):
+#   docker run --rm --network host --privileged openice:1.0 \
+#     java -cp "./*" -Djava.awt.headless=true --enable-native-access=ALL-UNNAMED \
+#     org.mdpnp.apps.testapp.Main \
+#     -app ICE_Device_Interface -domain 10 -device Controllable_Pump
+#
+# =============================================================================
+
+# Variable de entorno compartida (puede sobreescribirse con ICE_DOMAIN_ID=X)
+x-openice-env: &openice-env
+  RTI_LICENSE_FILE: /opt/mdpnp/flat/OpenICE_license.dat
+  LD_LIBRARY_PATH: /opt/mdpnp/flat
+  ICE_DOMAIN_ID: ${ICE_DOMAIN_ID:-10}
+
+# Configuración de build compartida (todos usan la misma imagen).
+# privileged: true es necesario porque las librerías nativas RTI DDS
+# (libnddsc.so, libnddsjava.so, librtiwebintegrationservice.so) llaman a
+# mprotect(PROT_EXEC) al cargarse. Esta syscall está bloqueada por el perfil
+# seccomp de Docker Y por AppArmor/SELinux en kernels endurecidos.
+# seccomp=unconfined no es suficiente — se requiere privileged completo.
+x-openice-base: &openice-base
+  image: openice:1.0
+  build:
+    context: .
+    dockerfile: Dockerfile
+  working_dir: /opt/mdpnp/flat
+  privileged: true
+  # network_mode host es necesario para DDS multicast (descubrimiento RTPS)
+  network_mode: host
+  restart: unless-stopped
+
 services:
-  openice:
+
+  # ---------------------------------------------------------------------------
+  # WIS — RTI Web Integration Service
+  # Visualizador web que expone los Topics DDS en http://localhost:8080.
+  # Usa una imagen separada porque el binario es nativo C++, no Java.
+  # ---------------------------------------------------------------------------
+  wis:
+    profiles: ["wis"]
+    image: openice-wis:1.0
+    build:
+      context: wis-docker
+      dockerfile: Dockerfile
+    container_name: openice-wis
+    environment:
+      RTI_LICENSE_FILE: /opt/web_integration_service/OpenICE_license.dat
+      LD_LIBRARY_PATH: /opt/rti
+    command: >
+      /opt/rti/rtiwebintegrationservice
+      -cfgName openicewis
+      -cfgFile /opt/web_integration_service/OPENICE_WEB_INTEGRATION_SERVICE.xml
+      -documentRoot /opt/web_integration_service/docroot
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # PUMP — Bomba de infusión simulada (Controllable_Pump)
+  # ---------------------------------------------------------------------------
+  pump:
+    <<: *openice-base
+    profiles: ["pump"]
+    container_name: openice-pump
+    environment:
+      <<: *openice-env
+    command: >
+      java -cp "./*"
+      -Djava.awt.headless=true
+      --enable-native-access=ALL-UNNAMED
+      org.mdpnp.apps.testapp.Main
+      -app ICE_Device_Interface
+      -domain ${ICE_DOMAIN_ID:-10}
+      -device Controllable_Pump
+
+  # ---------------------------------------------------------------------------
+  # MONITOR — Monitor multiparámetro simulado (SpO2, HR, ECG, etc.)
+  # ---------------------------------------------------------------------------
+  monitor:
+    <<: *openice-base
+    profiles: ["monitor"]
+    container_name: openice-monitor
+    environment:
+      <<: *openice-env
+    command: >
+      java -cp "./*"
+      -Djava.awt.headless=true
+      --enable-native-access=ALL-UNNAMED
+      org.mdpnp.apps.testapp.Main
+      -app ICE_Device_Interface
+      -domain ${ICE_DOMAIN_ID:-10}
+      -device Multiparameter

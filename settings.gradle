@@ -41,6 +41,9 @@ if(null != System.getenv().get("OSPL_HOME") && null != System.getenv().get("SPLI
 include 'interop-lab:demo-devices'
 include 'interop-lab:demo-apps'
 
+// Headless-only device adapter – no JavaFX dependency
+include 'headless-adapter'
+
 //include 'himss-2013:docsubmit'
 //include 'himss-2013:docreceive'
 //include 'himss-2013:infusion-pump-ui'

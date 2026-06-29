@@ -1,0 +1,142 @@
+@startuml seq_simulated_device
+
+title Flujo de Conexión: Device Simulado -> ICE Network (OpenICE)
+
+skinparam maxmessagesize 200
+
+actor "Operador / CLI" as User
+
+box "ICE Device Adapter (Simulated)"
+  participant "Configuration" as Config
+  participant "DeviceAdapterCommand" as DACmd
+  participant "HeadlessAdapter" as HAdapter
+  participant "SpringLoadedDriver\n(DeviceDriverProvider)" as SLD
+  participant "AbstractDeviceFactory" as ADF
+  participant "AbstractDevice\n(driver simulado)" as SIM
+end box
+
+box "Lógica de Simulación"
+  participant "SimulatedInfusionPump\n(o similar)" as SIMP
+end box
+
+box "DDS / ICE Bus"
+  participant "DomainParticipant" as DDS
+  participant "DeviceIdentity\n[Topic]" as TDI
+  participant "Numeric / InfusionStatus\n[Topics]" as TNum
+end box
+
+box "ICE Supervisor"
+  participant "DeviceListModelImpl" as DLMI
+end box
+
+note over DDS
+  DeviceConnectivity Topic NO se publica.
+  Los devices simulados extienden AbstractDevice
+  directamente, no AbstractConnectedDevice.
+  No hay conexion fisica que reportar.
+end note
+
+== 1. Arranque con tipo Simulated ==
+
+User -> Config : read(--app ICE_Device_Interface\n--domain N --device Pump_Simulator)
+note right of Config
+  ConnectionType.Simulated:
+  --address NO es requerido
+end note
+Config --> DACmd : Configuration(headless, Pump_SimulatorProvider, domainId)
+
+User -> DACmd : execute(config)
+DACmd -> Config : createContext("DeviceAdapterContext.xml")
+Config --> DACmd : ApplicationContext (Spring)
+
+DACmd -> HAdapter : new HeadlessAdapter(ddp, context)
+HAdapter -> SLD : create(parentContext)
+
+SLD -> ADF : AbstractDeviceFactory [via BeanPostProcessor]
+ADF -> SLD : getDeviceType() -> ConnectionType.Simulated
+note right of ADF
+  Simulated detectado:
+  NO se instala TCPSerialProvider.
+  El device usa ScheduledExecutorService
+  interno para generar datos.
+end note
+
+ADF -> SLD : newInstance(context)
+SLD --> ADF : AbstractDevice (driver simulado)
+ADF -> SIM : setExecutor(scheduledExecutorService)
+ADF -> SIM : init()
+
+SIM -> DDS : create DomainParticipant(domainId)
+SIM -> DDS : register + create_topic("DeviceIdentity")
+SIM -> DDS : create_datawriter(deviceIdentityWriter)
+SIM -> DDS : register + create_topic("Numeric")
+SIM -> DDS : create_datawriter(numericDataWriter)
+SIM -> DDS : register + create_topic("InfusionStatus")
+SIM -> DDS : create_datawriter(infusionStatusDataWriter)
+note right of SIM
+  Solo AbstractDevice constructor.
+  Sin DeviceConnectivityWriter
+  porque no extiende
+  AbstractConnectedDevice.
+end note
+
+SLD --> HAdapter : SpringDecorator(context)
+
+== 2. "Conexion" del Simulado (sin red fisica) ==
+
+DACmd -> HAdapter : init()
+note right of HAdapter
+  address == null -> no setAddress()
+end note
+DACmd -> HAdapter : run()
+HAdapter -> HAdapter : deviceHandle.connect()
+note right of HAdapter
+  SpringDecorator.connect():
+  device no es AbstractConnectedDevice
+  -> retorna true directamente.
+  No hay TCP ni StateMachine.
+end note
+
+SIM -> SIM : writeDeviceIdentity() [UDI, manufacturer="ICE", model]
+SIM -> DDS : deviceIdentityWriter.write(DeviceIdentity)
+DDS -> TDI : publish DeviceIdentity
+
+HAdapter -> HAdapter : stopOk.await() [bloqueante]
+
+== 3. Generacion periodica de datos simulados ==
+
+SIM -> SIMP : connect(executor)
+note right of SIMP
+  executor.scheduleAtFixedRate(
+    new MyTask(), 0, 1000ms)
+end note
+
+loop Cada 1000ms (ScheduledExecutorService)
+  SIMP -> SIMP : MyTask.run()\n[calcula infusionActive, fractionComplete]
+  SIMP -> SIM : receivePumpStatus(drugName, active, rate, ...)
+  SIM -> SIM : numericSample(holder, value, timestamp)
+  SIM -> DDS : numericDataWriter.write(Numeric)
+  DDS -> TNum : publish Numeric {udi, metric_id, value}
+  SIM -> DDS : infusionStatusWriter.write(InfusionStatus)
+  DDS -> TNum : publish InfusionStatus {udi, active, rate}
+end
+
+== 4. El Supervisor descubre el device simulado ==
+
+note right of DLMI
+  DeviceListModelImpl ya esta corriendo,
+  escucha DeviceIdentityTopic via EventLoop
+end note
+
+DDS -> DLMI : [discovery] DeviceIdentity arrived
+DLMI -> DLMI : idListener.instanceSample(di)
+DLMI -> DLMI : createOrUpdateDevice(udi, identity, hostname)
+note right of DLMI
+  El device simulado aparece en la lista
+  del Supervisor igual que un device real.
+  Sin DeviceConnectivity pero publica
+  Numeric e InfusionStatus normalmente.
+end note
+DLMI -> DLMI : contents.add(device) [ObservableList -> UI]
+
+@enduml

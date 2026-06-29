@@ -1,0 +1,188 @@
+@startuml seq_network_device_supervisor
+
+title Flujo de Conexión: Network Device <-> Supervisor (OpenICE)
+
+skinparam maxmessagesize 200
+
+actor "Operador / CLI" as User
+
+box "ICE Device Adapter (Network)"
+  participant "Configuration" as Config
+  participant "DeviceAdapterCommand" as DACmd
+  participant "HeadlessAdapter" as HAdapter
+  participant "SpringLoadedDriver\n(DeviceDriverProvider)" as DDP
+  participant "AbstractDeviceFactory" as ADF
+  participant "AbstractConnectedDevice" as ACD
+  participant "SpringDecorator" as SD
+end box
+
+box "DDS / ICE Bus"
+  participant "DomainParticipant" as DDS
+  participant "DeviceIdentity\n[Topic]" as TDI
+  participant "DeviceConnectivity\n[Topic]" as TDC
+  participant "Numeric / SampleArray\n[Topics]" as TNum
+  participant "MDSConnectivity\n[Topic]" as TMDS
+end box
+
+box "ICE Supervisor"
+  participant "IceAppsContainer" as IAC
+  participant "MDSHandler" as MDSH
+  participant "DeviceListModelImpl" as DLMI
+  participant "PartitionChooserModel" as PCM
+  participant "DeviceDataMonitor" as DDM
+  participant "DeviceView" as DView
+end box
+
+== 1. Arranque del Device Adapter ==
+
+User -> Config : read(--app ICE_Device_Interface\n--domain N --device <alias> --address <host:port>)
+note right of Config
+  ConnectionType.Network requiere
+  --address obligatoriamente
+end note
+Config --> DACmd : Configuration(headless, deviceFactory, address, domainId)
+
+User -> DACmd : execute(config)
+DACmd -> Config : createContext("DeviceAdapterContext.xml")
+Config --> DACmd : ApplicationContext (Spring)
+
+DACmd -> HAdapter : new HeadlessAdapter(ddp, context)
+HAdapter -> DDP : create(parentContext)
+note right of DDP
+  SpringLoadedDriver carga DriverContext.xml
+  como contexto hijo de Spring
+end note
+
+DDP -> ADF : AbstractDeviceFactory [via BeanPostProcessor]
+ADF -> DDP : getDeviceType() -> ConnectionType.Network
+note right of ADF
+  Network detectado:
+  SerialProviderFactory.setDefaultProvider(
+    new TCPSerialProvider())
+  Redirige I/O a TCP socket
+end note
+
+ADF -> DDP : newInstance(context)
+DDP --> ADF : AbstractConnectedDevice (instancia concreta)
+ADF -> ACD : setExecutor(executor)
+ADF -> ACD : init()
+
+ACD -> DDS : create DomainParticipant(domainId)
+ACD -> DDS : register + create_topic("DeviceIdentity")
+ACD -> DDS : create_datawriter(deviceIdentityWriter)
+ACD -> DDS : register + create_topic("Numeric")
+ACD -> DDS : create_datawriter(numericDataWriter)
+ACD -> DDS : register + create_topic("SampleArray")
+ACD -> DDS : create_datawriter(sampleArrayDataWriter)
+ACD -> DDS : register + create_topic("DeviceConnectivity")
+ACD -> DDS : create_datawriter(deviceConnectivityWriter)
+
+DDP --> HAdapter : SpringDecorator(context)
+
+== 2. Conexión física via TCP ==
+
+DACmd -> HAdapter : init() / setAddress("host:port")
+DACmd -> HAdapter : run() [bloqueante]
+HAdapter -> SD : connect()
+SD -> ACD : connect("host:port")
+
+ACD -> ACD : StateMachine: Initial -> Connecting
+ACD -> DDS : write DeviceConnectivity {state=Connecting}
+DDS -> TDC : publish
+
+ACD -> ACD : TCPSerialProvider.open("host:port")
+ACD -> ACD : StateMachine: Connecting -> Negotiating
+ACD -> DDS : write DeviceConnectivity {state=Negotiating}
+DDS -> TDC : publish
+
+ACD -> ACD : StateMachine: Negotiating -> Connected
+ACD -> ACD : writeDeviceIdentity() [UDI, manufacturer, model]
+ACD -> DDS : write DeviceIdentity
+DDS -> TDI : publish
+
+ACD -> DDS : write DeviceConnectivity {state=Connected}
+DDS -> TDC : publish
+
+SD --> HAdapter : true (connected)
+HAdapter -> HAdapter : stopOk.await() [espera señal de stop]
+
+== 3. Publicación continua de datos ==
+
+loop Cada ciclo de lectura del dispositivo
+  ACD -> ACD : readFromDevice() [protocolo propietario]
+  ACD -> ACD : numericSample(holder, value, timestamp)
+  ACD -> DDS : numericDataWriter.write(Numeric)
+  DDS -> TNum : publish Numeric {udi, metric_id, value}
+
+  opt waveform disponible
+    ACD -> ACD : sampleArraySample(holder, values, timestamp)
+    ACD -> DDS : sampleArrayDataWriter.write(SampleArray)
+    DDS -> TNum : publish SampleArray
+  end
+end
+
+== 4. Arranque del Supervisor ==
+
+User -> IAC : init()
+IAC -> Config : createContext("IceAppContainerContext.xml")
+Config --> IAC : ApplicationContext (Spring)
+
+IAC -> MDSH : new MDSHandler(eventLoop, domainParticipant)
+MDSH -> DDS : create Publisher/Subscriber (partition="MDSHandler")
+MDSH -> MDSH : start() [Connectivity + Objective + Patient]
+MDSH -> DDS : create DataReader/Writer para MDSConnectivityTopic
+
+IAC -> DLMI : new DeviceListModelImpl(subscriber, eventLoop, timeManager)
+DLMI -> DLMI : start()
+DLMI -> DDS : startReader(DeviceIdentityTopic)
+DLMI -> DDS : startReader(DeviceConnectivityTopic)
+
+IAC -> PCM : new PartitionChooserModel(udi, subscriber, publisher, eventBus)
+PCM -> MDSH : setMdsHandler(mdsHandler)
+PCM -> PCM : initModel(patients)
+
+IAC -> IAC : ServiceLoader.load(IceApplicationProvider)\n[registra apps del menú]
+
+== 5. Descubrimiento del Device por el Supervisor ==
+
+DDS -> DLMI : [discovery] DeviceIdentity arrived
+note right of DLMI
+  idListener.instanceSample()
+  disparado por EventLoop de DDS
+end note
+DLMI -> DLMI : createOrUpdateDevice(udi, identity, hostname)
+DLMI -> DLMI : contents.add(device) [ObservableList -> UI]
+
+DDS -> DLMI : [event] DeviceConnectivity arrived
+DLMI -> DLMI : device.setDeviceConnectivity(dc)
+
+== 6. Usuario selecciona el device en la UI ==
+
+User -> IAC : [click en DeviceGridCell]
+IAC -> IAC : driverWrapper.start(context, device)
+IAC -> DDM : new DeviceDataMonitor(udi, deviceListModel,\nnumericList, sampleArrayList, infusionStatusList)
+DDM -> DDS : subscribe(NumericTopic, contentFilter=udi)
+DDM -> DDS : subscribe(SampleArrayTopic, contentFilter=udi)
+IAC -> DView : devicePanel.set(deviceMonitor)
+DView --> User : [pantalla del device con datos en vivo]
+
+DDS -> DDM : Numeric sample received
+DDM -> DView : actualiza UI
+
+== 7. Asociación Supervisor <-> Device (Partición / MDS) ==
+
+User -> PCM : changePartition(patientInfo)
+PCM -> PCM : activate(["MRN_xxxx"])
+PCM -> DDS : subscriber.set_qos(partition=["MRN_xxxx"])
+PCM -> DDS : publisher.set_qos(partition=["MRN_xxxx"])
+PCM -> MDSH : publish(MDSConnectivity {udi, partition})
+MDSH -> DDS : mdsoWriter.write(MDSConnectivity)
+DDS -> TMDS : publish
+
+DDS --> ACD : [DDS] MDSConnectivityObjective received
+note right of ACD
+  El device recibe la intención del
+  supervisor de asociarse a un paciente
+end note
+
+@enduml

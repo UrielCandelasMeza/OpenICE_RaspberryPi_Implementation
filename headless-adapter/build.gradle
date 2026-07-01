@@ -85,11 +85,14 @@ startScripts {
             'DEFAULT_JVM_OPTS=""',
             '''
 ARCH=$(uname -m)
-if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "armv7l" ]; then
-    export LD_LIBRARY_PATH=$APP_HOME/native/libs/aarch:$LD_LIBRARY_PATH
-else
-    export LD_LIBRARY_PATH=$APP_HOME/native/libs/linux:$LD_LIBRARY_PATH
-fi
+case "$ARCH" in
+    *aarch64*|*arm*)
+        export LD_LIBRARY_PATH=$APP_HOME/native/libs/aarch:$LD_LIBRARY_PATH
+        ;;
+    *)
+        export LD_LIBRARY_PATH=$APP_HOME/native/libs/linux:$LD_LIBRARY_PATH
+        ;;
+esac
 export RTI_LICENSE_FILE=$APP_HOME/config/OpenICE_license.dat
 DEFAULT_JVM_OPTS=""'''
         )

@@ -1,0 +1,60 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+title Flujo de Datos: Monitor Draeger -> Adaptador Headless -> Red DDS -> Supervisor UI
+
+actor "Monitor\nDraeger\n(Hardware)" as Hw
+
+box "Headless Adapter (Raspberry Pi)" #f5f5f5
+participant "RTMedibus / Medibus\n(InputStream)" as Parser
+participant "AbstractDraegerVent\n(Device Adapter)" as Vent
+participant "DDS DataWriter\n(Publisher)" as Writer
+end box
+
+box "Supervisor (PC / Interfaz Gráfica)" #e8f4f8
+participant "DDS DataReader\n(Subscriber)" as Reader
+participant "MDSHandler /\nDeviceListModel" as MDS
+participant "Componentes UI\n(JavaFX)" as UI
+end box
+
+== 1. Lectura Física y Decodificación (Protocolo Medibus) ==
+
+Hw -> Parser: Bytes crudos (ej. 0x24 + payload de Frecuencia Cardíaca)
+activate Parser
+Parser -> Parser: Lee encabezado, longitud\ny verifica Checksum
+Parser -> Parser: Traduce hex a Java Objects\n(buscando en command.map / draeger.map)
+Parser -> Vent: receiveMeasuredData(CP1, Data[])
+deactivate Parser
+
+== 2. Estandarización y Procesamiento OpenICE ==
+
+activate Vent
+Vent -> Vent: Busca el nombre estandarizado (metric_id)\n(ej. MDC_PULS_OXIM_PULS_RATE)
+Vent -> Vent: numericSample(InstanceHolder, value, timestamp)
+Vent -> Writer: write(Numeric, InstanceHandle_t)
+deactivate Vent
+
+== 3. Transporte por el Middleware DDS ==
+
+Writer -> Reader: Multicast/Unicast UDP (Protocolo RTPS)\n[Tópico DDS: "ice::Numeric"]
+
+== 4. Recepción y Renderizado en el Supervisor ==
+
+activate Reader
+Reader -> MDS: on_data_available()\n(Evento disparado por RTI DDS)
+deactivate Reader
+
+activate MDS
+MDS -> MDS: Verifica de qué equipo viene el dato\n(usa el Unique Device Identifier - UDI)
+MDS -> MDS: Extrae valor, unidades y timestamp
+MDS -> UI: Notifica a los Listeners de datos numéricos\n(Platform.runLater para evitar colisión de hilos)
+deactivate MDS
+
+activate UI
+UI -> UI: Actualiza textos, gráficos o tablas en pantalla\n(Panel del Paciente)
+deactivate UI
+
+@enduml

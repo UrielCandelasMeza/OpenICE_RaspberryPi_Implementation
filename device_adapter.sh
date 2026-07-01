@@ -14,11 +14,14 @@ DEVICE_THIS="$PI_HOME/device.this"
 SERVICE_NAME="headless-adapter"
 CURRENT_DIR=$(pwd)
 
+# Exportar variables de entorno de librerías nativas y licencia
+export LD_LIBRARY_PATH="$CURRENT_DIR/interop-lab/demo-apps/native/libs/linux:$CURRENT_DIR/interop-lab/demo-apps/native/libs/aarch:$LD_LIBRARY_PATH"
+export RTI_LICENSE_FILE="$CURRENT_DIR/interop-lab/demo-apps/src/main/resources/OpenICE_license.dat"
 case "$ACTION" in
     list)
         echo "Obteniendo la lista de devices disponibles..."
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            su - "$SUDO_USER" -c "cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:run --args=\"--help\""
+            su - "$SUDO_USER" -c "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\"; export RTI_LICENSE_FILE=\"$RTI_LICENSE_FILE\"; cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:run --args=\"--help\""
         else
             ./gradlew :headless-adapter:run --args="--help"
         fi
@@ -40,7 +43,8 @@ case "$ACTION" in
         echo "=== 2. Compilando el empaquetado headless (distZip) ==="
         # Compila el .zip. Si usamos sudo, ejecutamos gradle usando `su -` para cargar un entorno completo y evitar que falle JAVA_HOME
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            su - "$SUDO_USER" -c "source ~/.bash_profile || source ~/.bashrc; source ~/.sdkman/bin/sdkman-init.sh; cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava"        else
+            su - "$SUDO_USER" -c "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\"; export RTI_LICENSE_FILE=\"$RTI_LICENSE_FILE\"; source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null; source ~/.sdkman/bin/sdkman-init.sh 2>/dev/null; cd \"$CURRENT_DIR\" && ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava"
+        else
             ./gradlew :headless-adapter:distZip -x :data-types:x73-idl-rti-dds:compileJava
         fi
         

@@ -1,0 +1,125 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+title Flujo General y Relación de Clases de Dispositivos con Spring (OpenICE)
+
+actor "Usuario / Sistema" as User
+participant "HeadlessMain\n(Punto de Entrada)" as Main
+participant "Spring Context\n(DeviceAdapterContext.xml)" as Spring
+participant "HeadlessDeviceFactory\n(DeviceDriverProvider)" as Factory
+participant "AbstractDevice\n(e.g., Pump_Simulator, Draeger)" as Device
+participant "NetworkAdapter /\nSerialProvider" as Link
+participant "DDS Middleware\n(Publisher/Subscriber)" as DDS
+
+note over Main, Spring
+  **1. Inicialización de Spring**
+  Spring se encarga de inyectar dependencias críticas.
+  Carga los beans base como EventLoop, Subscriber, 
+  Publisher y la configuración de calidad de servicio (IceQos).
+end note
+
+User -> Main: Ejecuta el adaptador\n(ej. install Temp_Simulator)
+activate Main
+
+Main -> Spring: new ClassPathXmlApplicationContext()
+activate Spring
+Spring -> Spring: Instancia Beans de Infraestructura\n(EventLoop, Subscriber, Publisher)
+Spring --> Main: context (ApplicationContext)
+deactivate Spring
+
+note over Main, Factory
+  **2. Resolución del Dispositivo**
+  Se busca en el SPI (Service Provider Interface) 
+  la clase que sabe cómo instanciar el alias solicitado.
+end note
+
+Main -> Factory: resolveDriver("Temp_Simulator")
+activate Factory
+Factory --> Main: ddp (DeviceDriverProvider)
+deactivate Factory
+
+note over Factory, Device
+  **3. Instanciación vía Spring**
+  La fábrica (Factory) extrae los beans de red (DDS)
+  creados por Spring y se los inyecta al constructor
+  del dispositivo específico que hereda de AbstractDevice.
+end note
+
+Main -> Factory: ddp.create(context)
+activate Factory
+Factory -> Spring: getBean("subscriber"), getBean("publisher")
+activate Spring
+Spring --> Factory: beans DDS
+deactivate Spring
+Factory -> Device: instanciar con beans\n(new AbstractDevice(Subscriber, Publisher, ...))
+activate Device
+Device --> Factory: instancia (DeviceAdapter)
+deactivate Device
+Factory --> Main: adapter
+deactivate Factory
+
+note over Main, Link
+  **4. Conexión del Dispositivo**
+  Se inicia el proceso de conexión física o simulada.
+end note
+
+Main -> Device: adapter.connect()
+activate Device
+
+alt Dispositivo Simulado (Simulators)
+    Device -> Device: Inicia Hilos Generadores\n(Thread / Timer)
+else Dispositivo Físico (Network / Serial)
+    Device -> Link: Conectar socket/puerto serie\n(ej. connect(address))
+    activate Link
+    Link -> Link: Negociación de Handshake
+    Link --> Device: link established
+    deactivate Link
+end
+
+Device --> Main: boolean (connected)
+deactivate Device
+
+note over Device, DDS
+  **5. Lazo de Ejecución (EventLoop)**
+  El AbstractDevice (y sus hijos) actúan como puente 
+  traduciendo la data física o simulada hacia la red DDS.
+end note
+
+loop Mientras el dispositivo esté activo
+    alt Lectura del Dispositivo (Físico)
+        Link -> Device: bytes[] recibidos
+        Device -> Device: parsear protocolo (StateMachine)
+        Device -> DDS: write (Numeric, SampleArray, Alarm)
+    else Generación de Datos (Simulado)
+        Device -> Device: calcular siguiente valor
+        Device -> DDS: write (Numeric, SampleArray)
+    else Recepción DDS
+        DDS -> Device: on_data_available()
+        Device -> Device: actualizar estado interno
+    end
+end
+
+note over Main, Device
+  **6. Apagado Elegante (Graceful Shutdown)**
+  Cuando se recibe un SIGTERM/SIGINT, se liberan 
+  los recursos de red y se apaga Spring.
+end note
+
+User -> Main: Ctrl+C / SIGINT (o service stop)
+Main -> Device: adapter.disconnect()
+activate Device
+Device -> Link: cerrar conexión / puerto
+Device -> DDS: unregister (dar de baja el tópico)
+Device --> Main: void
+deactivate Device
+
+Main -> Spring: context.close()
+activate Spring
+Spring --> Main: liberación de memoria
+deactivate Spring
+
+deactivate Main
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+title Flujo de Conexión: Dispositivos Draeger (Medibus sobre Serial)
+
+start
+
+:Usuario / Supervisor invoca connect(puerto);
+:Abre el puerto físico RS-232\n(ej. /dev/ttyUSB0);
+
+if (¿Apertura Exitosa?) then (Sí)
+    :Cambio de Estado:\nInitial -> Connecting -> Negotiating;
+    
+    fork
+        :Hilo Principal (Parser):\nEscucha continuamente InputStream (Bytes);
+    fork again
+        :Hilo Watchdog:\nSe ejecuta cada X milisegundos;
+        :Ejecuta doInitCommands();
+        :Llama a RTMedibus.sendCommand(InitializeComm);
+    end fork
+    
+    :Monitor Draeger recibe comando\ny envía código de respuesta (ACK);
+    
+    :El parser Medibus decodifica el ACK;
+    :Llama a reportConnected();
+    :Cambio de Estado:\nNegotiating -> Connected;
+    
+    :Comienza flujo constante de datos;
+    :Parser convierte paquetes a DDS\n(NumericSample, SampleArraySample);
+else (No)
+    :Se reporta IOException;
+    :Cambio de Estado:\nConnecting -> Terminal (Desconectado);
+    stop
+endif
+
+stop
+@enduml

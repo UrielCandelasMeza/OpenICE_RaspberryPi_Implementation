@@ -1,0 +1,58 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+title Diagrama de Estados: Handshake de Dispositivos Draeger (Medibus)
+
+[*] --> SerialPortOpened : Conexión Física Exitosa
+
+state SerialPortOpened {
+    state "Estado: Negotiating (Watchdog Activo)" as Negotiating {
+        [*] --> InitializingComm : Watchdog dispara doInitCommands()
+        
+        InitializingComm : Envía Comando: InitializeComm
+        InitializingComm --> WaitingAckInit : Espera Respuesta
+        
+        WaitingAckInit --> InitializingComm : Timeout / Silencio en la línea\n(Reintento)
+        WaitingAckInit --> RequestingDeviceId : Recibe Respuesta (ACK)\nLlama a initializeCommAcknowledged()
+        
+        RequestingDeviceId : Envía Comando: ReqDeviceId
+        RequestingDeviceId --> WaitingDeviceId : Espera Identificación
+        
+        WaitingDeviceId --> RequestingDeviceId : Timeout (Reintento)
+        WaitingDeviceId --> HandshakeComplete : Recibe GUID y Nombre\n(receiveDeviceId)
+        
+        HandshakeComplete : Ejecuta reportConnected()
+    }
+}
+
+SerialPortOpened --> Connected : Transición Exitosa (reportConnected)
+
+state "Estado: Connected (Operación Normal)" as Connected {
+    state "Petición de Datos Lentos (Slow Data)" as SlowData {
+        [*] --> PollingSlowData
+        PollingSlowData : Hilo periódico (cada 200ms)
+        PollingSlowData : Envía ciclicamente:\n- ReqDateTime\n- ReqDeviceSetting\n- ReqAlarmsCP1\n- ReqMeasuredDataCP1
+    }
+    
+    state "Configuración en Tiempo Real (Realtime)" as Realtime {
+        [*] --> ReqRealtimeConfig
+        ReqRealtimeConfig : Envía ReqRealtimeConfig
+        ReqRealtimeConfig --> ConfigureRealtime : Recibe Configuración
+        
+        ConfigureRealtime : Envía RTTransmissionCommand\n(Pide curvas de presión/flujo)
+        ConfigureRealtime --> EnableRealtime : Recibe ACK
+        
+        EnableRealtime : Envía EnableRealtime
+        EnableRealtime --> StreamingRealtime : Recibe Datos (Buffer)
+        
+        StreamingRealtime : Transmite curvas a \nla red DDS (SampleArray)
+    }
+}
+
+Connected --> Negotiating : Watchdog detecta silencio mayor a 3 segundos\n(Cable desconectado o falla)
+Negotiating --> [*] : Se invoca disconnect()\no falla el puerto
+Connected --> [*] : Se invoca disconnect()
+
+@enduml

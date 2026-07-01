@@ -1,0 +1,52 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+title Flujo de Conexión: Dispositivos Philips (Intellivue sobre Red)
+
+start
+
+:Inicia NetworkLoop de Philips;
+:Prepara DatagramChannel (UDP);
+
+if (¿Modo de Descubrimiento?) then (Automático)
+    :Escucha Beacons UDP (ConnectIndication)\nbroadcasteados por monitores Philips en la red;
+    :Detecta IP y Puerto del Monitor físico;
+else (Manual)
+    :Usuario ingresa IP del Monitor;
+endif
+
+:Abre SocketChannel (TCP/UDP) hacia la IP remota;
+
+if (¿Apertura de Socket Exitosa?) then (Sí)
+    :Cambio de Estado:\nInitial -> Connecting -> Negotiating;
+    
+    :Construye y envía AssociationRequest\n(Mensaje OSI del Protocolo Intellivue);
+    
+    if (¿Respuesta del Monitor?) then (AssociationAccept)
+        :Conexión Aceptada (Handshake Exitoso);
+        :Cambio de Estado:\nNegotiating -> Connected;
+        
+        :Envía peticiones de Metadata\n(MDS - Medical Device System);
+        :Envía peticiones de Objetos (Numerics, Curvas);
+        
+        :Empieza flujo constante de datos;
+        :Parser traduce a DDS;
+    elseif (¿Respuesta del Monitor?) then (AssociationRefused)
+        :Conexión Rechazada (Monitor Ocupado/Error);
+        :Cambio de Estado:\nNegotiating -> Disconnecting;
+        stop
+    else (AssociationAborted)
+        :Conexión Abortada por Error Inesperado;
+        :Cambio de Estado:\nTerminal;
+        stop
+    endif
+else (No)
+    :Falla a nivel de red (ej. Host Unreachable);
+    :Cambio de Estado:\nConnecting -> Terminal;
+    stop
+endif
+
+stop
+@enduml

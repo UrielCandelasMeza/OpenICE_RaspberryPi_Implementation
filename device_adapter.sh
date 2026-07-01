@@ -14,8 +14,13 @@ DEVICE_THIS="$PI_HOME/device.this"
 SERVICE_NAME="headless-adapter"
 CURRENT_DIR=$(pwd)
 
-# Exportar variables de entorno de librerías nativas y licencia
-export LD_LIBRARY_PATH="$CURRENT_DIR/interop-lab/demo-apps/native/libs/linux:$CURRENT_DIR/interop-lab/demo-apps/native/libs/aarch:$LD_LIBRARY_PATH"
+# Exportar variables de entorno de librerías nativas dependiendo de la arquitectura
+ARCH=$(uname -m)
+if [[ "$ARCH" == *"aarch64"* ]] || [[ "$ARCH" == *"arm"* ]]; then
+    export LD_LIBRARY_PATH="$CURRENT_DIR/interop-lab/demo-apps/native/libs/aarch:$LD_LIBRARY_PATH"
+else
+    export LD_LIBRARY_PATH="$CURRENT_DIR/interop-lab/demo-apps/native/libs/linux:$LD_LIBRARY_PATH"
+fi
 export RTI_LICENSE_FILE="$CURRENT_DIR/interop-lab/demo-apps/src/main/resources/OpenICE_license.dat"
 case "$ACTION" in
     list)

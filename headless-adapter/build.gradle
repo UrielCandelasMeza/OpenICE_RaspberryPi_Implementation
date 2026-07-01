@@ -80,10 +80,18 @@ distributions {
 
 startScripts {
     doLast {
-        // Automatically set LD_LIBRARY_PATH relative to APP_HOME in the start script
+        // Automatically set LD_LIBRARY_PATH relative to APP_HOME depending on architecture
         unixScript.text = unixScript.text.replace(
             'DEFAULT_JVM_OPTS=""',
-            'export LD_LIBRARY_PATH=$APP_HOME/native/libs/linux:$APP_HOME/native/libs/aarch:$LD_LIBRARY_PATH\nexport RTI_LICENSE_FILE=$APP_HOME/config/OpenICE_license.dat\nDEFAULT_JVM_OPTS=""'
+            '''
+ARCH=$(uname -m)
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "armv7l" ]; then
+    export LD_LIBRARY_PATH=$APP_HOME/native/libs/aarch:$LD_LIBRARY_PATH
+else
+    export LD_LIBRARY_PATH=$APP_HOME/native/libs/linux:$LD_LIBRARY_PATH
+fi
+export RTI_LICENSE_FILE=$APP_HOME/config/OpenICE_license.dat
+DEFAULT_JVM_OPTS=""'''
         )
     }
 }

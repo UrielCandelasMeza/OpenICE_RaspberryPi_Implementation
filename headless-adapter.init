@@ -26,9 +26,9 @@ export PIDFILE=/var/run/$NAME.pid
 case "$1" in
     start)
   echo -n "Starting $NAME: $ADAPTER_SCR $ADAPTER_OPTS"
-  # Ejecuta con el usuario en background, redirigiendo salida a un log para poder ver errores
+  # Ejecuta con el usuario en background, cargando el entorno de Java (sdkman/bashrc) y redirigiendo salida a log
   start-stop-daemon --background --make-pidfile --chuid pi --chdir $HOME \
-      --start --pidfile $PIDFILE --startas /bin/bash -- -c "exec $ADAPTER_SCR $ADAPTER_OPTS > $HOME/headless-adapter.log 2>&1"
+      --start --pidfile $PIDFILE --startas /bin/bash -- -c "source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null; source ~/.sdkman/bin/sdkman-init.sh 2>/dev/null; exec $ADAPTER_SCR $ADAPTER_OPTS > $HOME/headless-adapter.log 2>&1"
   echo "."
   ;;
     stop)

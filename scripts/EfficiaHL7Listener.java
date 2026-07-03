@@ -4,31 +4,63 @@ import java.net.*;
 public class EfficiaHL7Listener {
 
   public static void main(String[] args) {
+      // --- CONFIGURACIÓN ---
+      boolean useSerial = false; // Cambiar a true para escuchar por RS232 (Linux)
+      
+      // Configuración de RED (HL7 vía TCP/IP)
       // El puerto debe coincidir con el configurado en la salida HL7 del Efficia
       int port = 2575; 
+      
+      // Configuración Serial (Linux)
+      // Configurar baudios primero, ej: stty -F /dev/ttyUSB0 9600 cs8 -cstopb -parenb raw
+      String serialPort = "/dev/ttyUSB0"; 
+
       String outputFile = "datos_efficia.txt";
+      // ---------------------
 
-      try (ServerSocket serverSocket = new ServerSocket(port)) {
-          System.out.println("Iniciando servidor. Escuchando Efficia en el puerto " + port + "...");
-
-          // Bucle infinito para aceptar conexiones entrantes
-          while (true) {
-              Socket clientSocket = serverSocket.accept();
-              System.out.println("Conexión entrante aceptada desde: " + clientSocket.getInetAddress());
-
-              // Manejar la conexión del monitor
-              handleClientConnection(clientSocket, outputFile);
+      if (useSerial) {
+          System.out.println("Iniciando modo Serial. Escuchando Efficia en " + serialPort + "...");
+          File file = new File(serialPort);
+          if (!file.exists()) {
+              System.err.println("¡El puerto " + serialPort + " no existe! ¿Conectaste el cable USB/Serie?");
+              return;
           }
-      } catch (IOException e) {
-          System.err.println("Error al iniciar el servidor: " + e.getMessage());
+          try (InputStream in = new FileInputStream(file);
+               OutputStream out = new FileOutputStream(file)) {
+              
+              System.out.println("¡Puerto Serie abierto! Esperando datos...");
+              // En serial no hay "conexiones entrantes" múltiples, es un solo flujo constante
+              handleDataStream(in, out, outputFile);
+              
+          } catch (IOException e) {
+              System.err.println("Error en conexión serial: " + e.getMessage());
+          }
+      } else {
+          try (ServerSocket serverSocket = new ServerSocket(port)) {
+              System.out.println("Iniciando servidor TCP. Escuchando Efficia en el puerto " + port + "...");
+
+              // Bucle infinito para aceptar conexiones entrantes
+              while (true) {
+                  Socket clientSocket = serverSocket.accept();
+                  System.out.println("Conexión entrante aceptada desde: " + clientSocket.getInetAddress());
+
+                  // Manejar la conexión del monitor
+                  try (InputStream in = clientSocket.getInputStream();
+                       OutputStream out = clientSocket.getOutputStream()) {
+                      handleDataStream(in, out, outputFile);
+                  } catch (IOException e) {
+                      System.err.println("La conexión TCP se interrumpió: " + e.getMessage());
+                  }
+              }
+          } catch (IOException e) {
+              System.err.println("Error al iniciar el servidor TCP: " + e.getMessage());
+          }
       }
   }
 
-  private static void handleClientConnection(Socket clientSocket, String outputFile) {
-    try (InputStream in = clientSocket.getInputStream();
-          OutputStream out = clientSocket.getOutputStream();
-          FileWriter fw = new FileWriter(outputFile, true);
-          PrintWriter pw = new PrintWriter(fw)) {
+  private static void handleDataStream(InputStream in, OutputStream out, String outputFile) {
+    try (FileWriter fw = new FileWriter(outputFile, true);
+         PrintWriter pw = new PrintWriter(fw)) {
 
       int data;
       StringBuilder hl7Message = new StringBuilder();
@@ -70,7 +102,7 @@ public class EfficiaHL7Listener {
           }
         }
     } catch (IOException e) {
-        System.err.println("La conexión con el monitor finalizó o se interrumpió: " + e.getMessage());
+        System.err.println("El flujo de datos finalizó o se interrumpió: " + e.getMessage());
     }
   }
 }

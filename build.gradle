@@ -164,4 +164,15 @@ subprojects {
         }
     }
 */
+    // Ejecutar setupLocalDb al hacer build en cualquier subproyecto
+    tasks.matching { it.name == 'build' }.all {
+        dependsOn ':setupLocalDb'
+    }
+}
+
+task setupLocalDb(type: Exec) {
+    group = 'database'
+    description = 'Configura la base de datos local de TimescaleDB ejecutando setup_local_timescale.sql'
+    commandLine 'sudo', '-u', 'postgres', 'psql', '-f', "${rootDir}/setup_local_timescale.sql"
+    ignoreExitValue = true
 }

@@ -45,6 +45,14 @@ public class HeadlessMain {
         String address        = line.hasOption("address") ? line.getOptionValue("address") : null;
         String discoveryPeers = line.hasOption("peers")   ? line.getOptionValue("peers")   : "";
 
+        // ── 1.5 Configure local PostgreSQL logging only for Multiparameter ──────
+        if ("Multiparameter".equalsIgnoreCase(deviceAlias)) {
+            System.setProperty("ice.jdbc.url", "jdbc:postgresql://localhost:5432/openice_local");
+            System.setProperty("ice.jdbc.username", "openice_local_user");
+            System.setProperty("ice.jdbc.password", "openice_local_secure_pass");
+            log.info("Database logging enabled for Multiparameter device using local TimescaleDB.");
+        }
+
         // ── 2. Resolve the device driver ──────────────────────────────────────
         DeviceDriverProvider ddp = resolveDriver(deviceAlias);
         log.info("Starting headless adapter for device: {}", ddp.getDeviceType());

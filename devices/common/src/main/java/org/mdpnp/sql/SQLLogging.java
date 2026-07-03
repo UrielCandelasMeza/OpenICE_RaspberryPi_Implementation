@@ -42,20 +42,30 @@ public class SQLLogging {
 	private static void init() {
 		jdbcProps=new Properties();
         try {
-        	String userHome=System.getProperty("user.home");
-        	File propsFile=new File(userHome,JDBC_PROPS_FILE_NAME);
-        	if(!propsFile.exists() || !propsFile.canRead()) {
-        		log.warn("No "+JDBC_PROPS_FILE_NAME+" in "+userHome );
-        		dbconn=new PlaceboConnection();
-        		placebo=true;
-        	} else {    	
-	        	jdbcProps.load(new FileReader(propsFile));
-	        	
-	        	String url=jdbcProps.getProperty("url");
-	        	String username=jdbcProps.getProperty("username");
-	        	String password=jdbcProps.getProperty("password");
-	        	dbconn = DriverManager.getConnection(url, username, password);
-        	}
+            String sysUrl = System.getProperty("ice.jdbc.url");
+            String sysUser = System.getProperty("ice.jdbc.username");
+            String sysPass = System.getProperty("ice.jdbc.password");
+
+            if (sysUrl != null && sysUser != null && sysPass != null) {
+                jdbcProps.setProperty("url", sysUrl);
+                jdbcProps.setProperty("username", sysUser);
+                jdbcProps.setProperty("password", sysPass);
+                dbconn = DriverManager.getConnection(sysUrl, sysUser, sysPass);
+            } else {
+                String userHome=System.getProperty("user.home");
+                File propsFile=new File(userHome,JDBC_PROPS_FILE_NAME);
+                if(!propsFile.exists() || !propsFile.canRead()) {
+                    log.warn("No "+JDBC_PROPS_FILE_NAME+" in "+userHome );
+                    dbconn=new PlaceboConnection();
+                    placebo=true;
+                } else {    	
+                    jdbcProps.load(new FileReader(propsFile));
+                    String url=jdbcProps.getProperty("url");
+                    String username=jdbcProps.getProperty("username");
+                    String password=jdbcProps.getProperty("password");
+                    dbconn = DriverManager.getConnection(url, username, password);
+                }
+            }
         	logStatement=dbconn.prepareStatement("INSERT INTO devicelogs(sourceclass,eventtext) VALUES (?,?)");
             init=true;
             

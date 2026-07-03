@@ -1,0 +1,66 @@
+@startuml
+title Diagrama de Secuencia de Conexión HL7 y FHIR
+
+actor Usuario
+participant "HL7Application" as App
+participant "HL7Emitter" as Emitter
+participant "ScheduledExecutor" as Executor
+participant "HapiContext (HL7)" as Hapi
+participant "FhirContext (FHIR)" as Fhir
+participant "Servidor HL7" as HL7Server
+participant "Servidor FHIR" as FhirServer
+
+Usuario -> App: Establecer Host, Puerto, Versión, Intervalo
+Usuario -> App: Clic en Iniciar
+
+App -> Emitter: start(host, port, type, interval)
+
+alt Tipo == V26
+    Emitter -> Hapi: newClient(host, port)
+    Hapi --> Emitter: Conexión
+else Tipo == FHIR_DSTU2
+    Emitter -> Fhir: newRestfulGenericClient(host)
+    Fhir --> Emitter: IGenericClient
+end
+
+Emitter -> Executor: scheduleAtFixedRate(this, 0, interval)
+Executor --> Emitter: ScheduledFuture
+Emitter --> App: started()
+App --> Usuario: Interfaz de usuario actualizada a "Detener"
+
+loop Cada intervalo
+    Executor -> Emitter: run()
+    Emitter -> Emitter: send()
+    
+    alt Tipo == V26
+        Emitter -> Emitter: sendHL7v26()
+        loop Por cada métrica válida (MDC_*)
+            Emitter -> Emitter: hl7Observation()
+        end
+        Emitter -> HL7Server: sendAndReceive(Message)
+        HL7Server --> Emitter: Respuesta
+        Emitter -> App: newLine(encodedMessage)
+    else Tipo == FHIR_DSTU2
+        Emitter -> Emitter: sendFHIR()
+        loop Por cada actualización reciente
+            Emitter -> FhirServer: getPatientResource(mrn)
+            FhirServer --> Emitter: ResourceId
+            Emitter -> FhirServer: getDeviceResource(udi)
+            FhirServer --> Emitter: ResourceId
+            Emitter -> Emitter: fhirObservation()
+        end
+        Emitter -> FhirServer: transaction().withResources(bundle).execute()
+        FhirServer --> Emitter: Respuesta
+        Emitter -> App: newLine(jsonStrings)
+    end
+    App --> Usuario: Mostrar nuevos mensajes en el TextArea
+end
+
+Usuario -> App: Clic en Detener
+App -> Emitter: stop()
+Emitter -> Executor: cancel(emit)
+Emitter -> Hapi: close() (si V26)
+Emitter --> App: stopped()
+App --> Usuario: Interfaz de usuario actualizada a "Iniciar"
+
+@enduml

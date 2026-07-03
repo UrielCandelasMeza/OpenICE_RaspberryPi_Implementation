@@ -1,0 +1,52 @@
+@startuml
+title Diagrama de Actividades de la Conexión HL7
+
+start
+:El usuario configura Host, Puerto, Versión e Intervalo;
+:El usuario hace clic en "Iniciar" (Start);
+:HL7Application lee las configuraciones;
+:HL7Application llama a HL7Emitter.start();
+
+if (Tipo == V26) then (sí)
+  :Inicializar HapiContext;
+  :Crear Conexión HL7 (hl7Context.newClient);
+else if (Tipo == FHIR_DSTU2) then (sí)
+  :Crear Cliente FHIR (fhirContext.newRestfulGenericClient);
+else (no)
+  stop
+endif
+
+:Programar tarea 'emit' a un intervalo fijo;
+
+fork
+  :Retornar el control a la interfaz de usuario;
+  :Actualizar interfaz de usuario (Deshabilitar Iniciar, habilitar Detener);
+fork again
+  while (¿La tarea Emit está activa?) is (sí)
+    :Esperar el intervalo;
+    :Ejecutar 'run()';
+    if (Tipo == V26) then (sí)
+      :Iterar sobre las métricas de ValidationOracle (MDC_*);
+      :Crear mensajes ORU_R01;
+      :Enviar mensajes a través de hl7Connection;
+      :Registrar respuesta (Log);
+    else if (Tipo == FHIR_DSTU2) then (sí)
+      :Recopilar actualizaciones recientes de Validación;
+      :Obtener/Crear recursos FHIR de Paciente y Dispositivo si faltan;
+      :Crear recursos de Observación;
+      :Enviar transacción a través de fhirClient;
+      :Registrar salida JSON (Log);
+    endif
+    :HL7Emitter envía DispatchLine a la interfaz de usuario;
+    :HL7Application recibe la nueva línea;
+    :Actualizar TextArea con el nuevo mensaje;
+  endwhile (no)
+end fork
+
+:El usuario hace clic en "Detener" (Stop);
+:HL7Application llama a HL7Emitter.stop();
+:Cancelar la tarea programada 'emit';
+:Cerrar conexiones;
+:Actualizar interfaz de usuario (Habilitar Iniciar);
+stop
+@enduml

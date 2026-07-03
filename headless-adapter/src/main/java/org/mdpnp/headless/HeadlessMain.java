@@ -19,9 +19,12 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Headless Device Adapter entry point.
  *
- * <p>Starts a single ICE device adapter without any JavaFX/GUI dependency.
+ * <p>
+ * Starts a single ICE device adapter without any JavaFX/GUI dependency.
  *
- * <p>Usage:
+ * <p>
+ * Usage:
+ * 
  * <pre>
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device Pump_Simulator"
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device DraegerV500 -address /dev/ttyUSB0"
@@ -38,18 +41,19 @@ public class HeadlessMain {
         // ── 1. Parse CLI arguments ─────────────────────────────────────────────
         Options options = buildOptions();
         CommandLine line = parseArgs(args, options);
-        if (line == null) return; // --help was printed
+        if (line == null)
+            return; // --help was printed
 
-        int    domainId       = Integer.parseInt(line.getOptionValue("domain"));
-        String deviceAlias    = line.getOptionValue("device");
-        String address        = line.hasOption("address") ? line.getOptionValue("address") : null;
-        String discoveryPeers = line.hasOption("peers")   ? line.getOptionValue("peers")   : "";
+        int domainId = Integer.parseInt(line.getOptionValue("domain"));
+        String deviceAlias = line.getOptionValue("device");
+        String address = line.hasOption("address") ? line.getOptionValue("address") : null;
+        String discoveryPeers = line.hasOption("peers") ? line.getOptionValue("peers") : "";
 
         // ── 1.5 Configure local PostgreSQL logging only for Multiparameter ──────
         if ("Multiparameter".equalsIgnoreCase(deviceAlias)) {
             System.setProperty("ice.jdbc.url", "jdbc:postgresql://localhost:5432/openice_local");
-            System.setProperty("ice.jdbc.username", "openice_local_user");
-            System.setProperty("ice.jdbc.password", "openice_local_secure_pass");
+            System.setProperty("ice.jdbc.username", "openice");
+            System.setProperty("ice.jdbc.password", "");
             log.info("Database logging enabled for Multiparameter device using local TimescaleDB.");
         }
 
@@ -59,14 +63,14 @@ public class HeadlessMain {
 
         // ── 3. Build Spring application context (RtConfig.xml + DriverContext.xml)
         Properties env = new Properties();
-        env.put("mdpnp.domain",        Integer.toString(domainId));
+        env.put("mdpnp.domain", Integer.toString(domainId));
         env.put("dds.discovery.peers", discoveryPeers);
-        env.put("mdpnp.fhir.url",      "");
-        env.put("mdpnp.emr.url",       "");
+        env.put("mdpnp.fhir.url", "");
+        env.put("mdpnp.emr.url", "");
         env.put("mdpnp.partition.file", "device.partition");
 
-        ClassPathXmlApplicationContext context =
-                new ClassPathXmlApplicationContext(new String[]{"DeviceAdapterContext.xml"}, false);
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+                new String[] { "DeviceAdapterContext.xml" }, false);
         PropertyPlaceholderConfigurer ppc = new PropertyPlaceholderConfigurer();
         ppc.setIgnoreUnresolvablePlaceholders(true);
         ppc.setProperties(env);
@@ -76,7 +80,8 @@ public class HeadlessMain {
 
         // ── 4. Start the device ───────────────────────────────────────────────
         DeviceDriverProvider.DeviceAdapter adapter = ddp.create(context);
-        if (address != null) adapter.setAddress(address);
+        if (address != null)
+            adapter.setAddress(address);
 
         // Shutdown hook: graceful stop on Ctrl+C / SIGTERM
         final CountDownLatch stopLatch = new CountDownLatch(1);
@@ -101,7 +106,7 @@ public class HeadlessMain {
         }
 
         log.info("Device adapter running – type: {}. Press Ctrl+C to stop.", ddp.getDeviceType());
-        stopLatch.await();  // block until Ctrl+C
+        stopLatch.await(); // block until Ctrl+C
 
         context.close();
         log.info("Headless adapter stopped cleanly.");
@@ -152,8 +157,10 @@ public class HeadlessMain {
      * any entry whose class is not available (e.g. {@code DeviceFactory$*}
      * entries that require demo-apps/JavaFX).
      *
-     * <p>To register a new provider, simply add its fully-qualified class name
-     * to {@code headless-adapter/src/main/resources/META-INF/services/org.mdpnp.devices.DeviceDriverProvider}.
+     * <p>
+     * To register a new provider, simply add its fully-qualified class name
+     * to
+     * {@code headless-adapter/src/main/resources/META-INF/services/org.mdpnp.devices.DeviceDriverProvider}.
      * No code change here is needed.
      */
     private static List<DeviceDriverProvider> loadProviders() throws Exception {
@@ -162,22 +169,21 @@ public class HeadlessMain {
 
         // getResources() returns ALL matching files across the entire classpath
         // (from demo-devices AND from this module).
-        Enumeration<URL> urls =
-                HeadlessMain.class.getClassLoader().getResources(spiResource);
+        Enumeration<URL> urls = HeadlessMain.class.getClassLoader().getResources(spiResource);
 
         while (urls.hasMoreElements()) {
             URL url = urls.nextElement();
             log.debug("Reading SPI file: {}", url);
-            try (BufferedReader br =
-                         new BufferedReader(new InputStreamReader(url.openStream()))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#")) continue;
+                    if (line.isEmpty() || line.startsWith("#"))
+                        continue;
                     try {
                         Class<?> cls = Class.forName(line);
                         providers.add(
-                            (DeviceDriverProvider) cls.getDeclaredConstructor().newInstance());
+                                (DeviceDriverProvider) cls.getDeclaredConstructor().newInstance());
                         log.debug("Loaded provider: {}", line);
                     } catch (ClassNotFoundException e) {
                         // Expected for DeviceFactory$* entries when demo-apps
@@ -197,7 +203,8 @@ public class HeadlessMain {
     private static DeviceDriverProvider resolveDriver(String alias) throws Exception {
         for (DeviceDriverProvider ddp : loadProviders()) {
             for (String a : ddp.getDeviceType().getAliases()) {
-                if (a.equals(alias)) return ddp;
+                if (a.equals(alias))
+                    return ddp;
             }
         }
         throw new IllegalArgumentException(

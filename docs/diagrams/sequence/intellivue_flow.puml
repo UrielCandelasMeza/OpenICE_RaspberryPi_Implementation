@@ -1,0 +1,64 @@
+@startuml
+title Flujo de Comunicación Intellivue (PIP) en OpenICE
+
+autonumber
+
+participant "Adaptador OpenICE\n(Intellivue.java)" as Adapter
+participant "Protocol Parse/Format\n(CompoundProtocol.java)" as Parser
+participant "Monitor Philips\n(Intellivue)" as Monitor
+
+== Flujo 1: Asociación (Handshake) ==
+note over Adapter, Monitor: Establecimiento de la conexión y negociación de parámetros\n(Puerto UDP 24105)
+
+Adapter -> Parser: format(AssociationConnect)
+Parser -> Monitor: Envía paquete UDP (AssociationConnect)
+note right of Monitor: El monitor valida la petición\ny soporta el perfil "PollProfileSupport"
+
+Monitor -> Parser: Paquete UDP (AssociationAccept)
+Parser -> Adapter: parse() -> Message (AssociationAccept)
+Adapter -> Adapter: handle(AssociationAccept)
+
+== Flujo 2: Solicitud de Datos (Polling) ==
+note over Adapter, Monitor: El adaptador solicita al monitor los datos (Single o Extended Poll)
+
+Adapter -> Adapter: requestSinglePoll()\no requestExtendedPoll()
+Adapter -> Parser: format(DataExportInvoke - ConfirmedAction)
+Parser -> Monitor: Envía paquete UDP (PollDataRequest)
+
+Monitor -> Parser: Paquete UDP (PollDataResult)
+Parser -> Adapter: parse() -> Message (DataExportResult)
+Adapter -> Adapter: handle(DataExportResult)\n-> handle(Single/ExtendedPollDataResult)
+note left of Adapter: El adaptador procesa\nla respuesta del Poll
+
+== Flujo 3: Reporte de Eventos (Event Reports) ==
+note over Adapter, Monitor: Flujo de datos en tiempo real (Ondas y Numerics)
+
+Monitor -> Parser: Paquete UDP (EventReport)
+Parser -> Adapter: parse() -> Message (DataExportInvoke - EventReport)
+Adapter -> Adapter: handle(EventReport, confirm=true)
+note left of Adapter: El adaptador extrae los OIDs\ny valores médicos
+
+Adapter -> Parser: format(DataExportResult - ConfirmedEventReport)
+Parser -> Monitor: Envía paquete UDP (Confirmación de recepción)
+
+== Flujo 4: Comandos Get / Set (Opcional) ==
+note over Adapter, Monitor: Obtener información específica o configurar el monitor
+
+Adapter -> Adapter: requestGet(OIDs)\no requestSet(Labels)
+Adapter -> Parser: format(DataExportInvoke - Get/Set)
+Parser -> Monitor: Envía paquete UDP (Get/Set Command)
+
+Monitor -> Parser: Paquete UDP (GetResult / SetResult)
+Parser -> Adapter: parse() -> Message (DataExportResult)
+Adapter -> Adapter: handle(DataExportResult)\n-> handle(GetResult / SetResult)
+
+== Flujo 5: Desconexión ==
+note over Adapter, Monitor: Fin de la sesión de comunicación
+
+Adapter -> Parser: format(AssociationDisconnect)
+Parser -> Monitor: Envía paquete UDP (AssociationDisconnect)
+Monitor -> Parser: Paquete UDP (AssociationFinish)
+Parser -> Adapter: parse() -> Message (AssociationFinish)
+Adapter -> Adapter: handle(AssociationFinish)
+
+@enduml

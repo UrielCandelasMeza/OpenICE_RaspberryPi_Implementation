@@ -53,7 +53,7 @@ public class HeadlessMain {
         if ("Multiparameter".equalsIgnoreCase(deviceAlias)) {
             System.setProperty("ice.jdbc.url", "jdbc:postgresql://localhost:5432/openice_local");
             System.setProperty("ice.jdbc.username", "openice");
-            System.setProperty("ice.jdbc.password", "");
+            System.setProperty("ice.jdbc.password", "openice");
             log.info("Database logging enabled for Multiparameter device using local TimescaleDB.");
         }
 

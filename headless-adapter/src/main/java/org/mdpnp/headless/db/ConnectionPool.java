@@ -11,7 +11,7 @@ import java.sql.SQLException;
 public class ConnectionPool implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(ConnectionPool.class);
-    private final HikariDataSource dataSource;
+    private HikariDataSource dataSource;
 
     public ConnectionPool(String host, int port, String database, String user, String password) {
         HikariConfig config = new HikariConfig();

@@ -23,7 +23,7 @@ public class TimescalePersister {
 
     private static final Logger log = LoggerFactory.getLogger(TimescalePersister.class);
 
-    private static final int LENGTH_UNLIMITED = com.rti.dds.subscription.LENGTH_UNLIMITED;
+    private static final int LENGTH_UNLIMITED = DataReader.LENGTH_UNLIMITED;
 
     private final DomainParticipant participant;
     private final Subscriber subscriber;
@@ -55,8 +55,8 @@ public class TimescalePersister {
     private final DeviceIdentityHandler deviceIdentityHandler = new DeviceIdentityHandler();
 
     public TimescalePersister(DomainParticipant participant, Subscriber subscriber,
-                              EventLoop eventLoop, ConnectionPool pool,
-                              DeviceRegistry registry) {
+            EventLoop eventLoop, ConnectionPool pool,
+            DeviceRegistry registry) {
         this.participant = participant;
         this.subscriber = subscriber;
         this.eventLoop = eventLoop;
@@ -65,7 +65,8 @@ public class TimescalePersister {
     }
 
     public void start() {
-        if (started) return;
+        if (started)
+            return;
         started = true;
 
         if (!pool.isAvailable()) {
@@ -83,17 +84,24 @@ public class TimescalePersister {
     }
 
     public void stop() {
-        if (!started) return;
+        if (!started)
+            return;
         started = false;
 
         for (ReadCondition rc : allConditions) {
             eventLoop.removeHandler(rc);
-            rc.delete_resources();
+            // El DataReader padre debe eliminar la ReadCondition
+            if (rc.get_datareader() != null) {
+                rc.get_datareader().delete_readcondition(rc);
+            }
         }
         allConditions.clear();
 
         for (DataReaderImpl reader : allReaders) {
-            reader.delete_resources();
+            // El Subscriber padre debe eliminar el DataReader
+            if (reader.get_subscriber() != null) {
+                reader.get_subscriber().delete_datareader(reader);
+            }
         }
         allReaders.clear();
 
@@ -123,11 +131,13 @@ public class TimescalePersister {
     private void createSampleArrayReader() {
         try {
             SampleArrayTypeSupport.register_type(participant, SampleArrayTypeSupport.get_type_name());
-            Topic topic = TopicUtil.findOrCreateTopic(participant, SampleArrayTopic.VALUE, SampleArrayTypeSupport.class);
+            Topic topic = TopicUtil.findOrCreateTopic(participant, SampleArrayTopic.VALUE,
+                    SampleArrayTypeSupport.class);
             sampleArrayReader = (SampleArrayDataReader) subscriber.create_datareader_with_profile(
                     topic, "ice_library", "waveform_data", null, StatusKind.STATUS_MASK_NONE);
             allReaders.add(sampleArrayReader);
-            sampleArrayReader.set_listener(logReaderStatus, StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
+            sampleArrayReader.set_listener(logReaderStatus,
+                    StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
             sampleArrayCondition = sampleArrayReader.create_readcondition(
                     SampleStateKind.NOT_READ_SAMPLE_STATE, ViewStateKind.ANY_VIEW_STATE,
                     InstanceStateKind.ANY_INSTANCE_STATE);
@@ -147,7 +157,8 @@ public class TimescalePersister {
             patientAlertReader = (AlertDataReader) subscriber.create_datareader_with_profile(
                     topic, "ice_library", "state", null, StatusKind.STATUS_MASK_NONE);
             allReaders.add(patientAlertReader);
-            patientAlertReader.set_listener(logReaderStatus, StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
+            patientAlertReader.set_listener(logReaderStatus,
+                    StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
             patientAlertCondition = patientAlertReader.create_readcondition(
                     SampleStateKind.NOT_READ_SAMPLE_STATE, ViewStateKind.ANY_VIEW_STATE,
                     InstanceStateKind.ANY_INSTANCE_STATE);
@@ -167,7 +178,8 @@ public class TimescalePersister {
             technicalAlertReader = (AlertDataReader) subscriber.create_datareader_with_profile(
                     topic, "ice_library", "state", null, StatusKind.STATUS_MASK_NONE);
             allReaders.add(technicalAlertReader);
-            technicalAlertReader.set_listener(logReaderStatus, StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
+            technicalAlertReader.set_listener(logReaderStatus,
+                    StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
             technicalAlertCondition = technicalAlertReader.create_readcondition(
                     SampleStateKind.NOT_READ_SAMPLE_STATE, ViewStateKind.ANY_VIEW_STATE,
                     InstanceStateKind.ANY_INSTANCE_STATE);
@@ -183,11 +195,13 @@ public class TimescalePersister {
     private void createDeviceIdentityReader() {
         try {
             DeviceIdentityTypeSupport.register_type(participant, DeviceIdentityTypeSupport.get_type_name());
-            Topic topic = TopicUtil.findOrCreateTopic(participant, DeviceIdentityTopic.VALUE, DeviceIdentityTypeSupport.class);
+            Topic topic = TopicUtil.findOrCreateTopic(participant, DeviceIdentityTopic.VALUE,
+                    DeviceIdentityTypeSupport.class);
             deviceIdentityReader = (DeviceIdentityDataReader) subscriber.create_datareader_with_profile(
                     topic, "ice_library", "device_identity", null, StatusKind.STATUS_MASK_NONE);
             allReaders.add(deviceIdentityReader);
-            deviceIdentityReader.set_listener(logReaderStatus, StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
+            deviceIdentityReader.set_listener(logReaderStatus,
+                    StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
             deviceIdentityCondition = deviceIdentityReader.create_readcondition(
                     SampleStateKind.NOT_READ_SAMPLE_STATE, ViewStateKind.ANY_VIEW_STATE,
                     InstanceStateKind.ANY_INSTANCE_STATE);
@@ -206,7 +220,8 @@ public class TimescalePersister {
 
         @Override
         public void conditionChanged(Condition condition) {
-            if (!started) return;
+            if (!started)
+                return;
             try {
                 numericReader.read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, numericCondition);
                 int size = dataSeq.size();
@@ -231,7 +246,8 @@ public class TimescalePersister {
 
         @Override
         public void conditionChanged(Condition condition) {
-            if (!started) return;
+            if (!started)
+                return;
             try {
                 sampleArrayReader.read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, sampleArrayCondition);
                 int size = dataSeq.size();
@@ -261,11 +277,14 @@ public class TimescalePersister {
 
         @Override
         public void conditionChanged(Condition condition) {
-            if (!started) return;
+            if (!started)
+                return;
             AlertDataReader reader = PatientAlertTopic.VALUE.equals(alertSource)
-                    ? patientAlertReader : technicalAlertReader;
+                    ? patientAlertReader
+                    : technicalAlertReader;
             ReadCondition cond = PatientAlertTopic.VALUE.equals(alertSource)
-                    ? patientAlertCondition : technicalAlertCondition;
+                    ? patientAlertCondition
+                    : technicalAlertCondition;
             try {
                 reader.read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, cond);
                 int size = dataSeq.size();
@@ -290,7 +309,8 @@ public class TimescalePersister {
 
         @Override
         public void conditionChanged(Condition condition) {
-            if (!started) return;
+            if (!started)
+                return;
             try {
                 deviceIdentityReader.read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, deviceIdentityCondition);
                 int size = dataSeq.size();
@@ -316,11 +336,13 @@ public class TimescalePersister {
     }
 
     private void writeNumeric(Numeric sample) {
-        if (!pool.isAvailable()) return;
-        String sql = "INSERT INTO vital_values (time_tick, device_id, metric_id, instance_id, patient_id, unit_id, vital_value) " +
-                     "VALUES (?, ?, ?, ?, 'OFFLINE_PATIENT', ?, ?)";
+        if (!pool.isAvailable())
+            return;
+        String sql = "INSERT INTO vital_values (time_tick, device_id, metric_id, instance_id, patient_id, unit_id, vital_value) "
+                +
+                "VALUES (?, ?, ?, ?, 'OFFLINE_PATIENT', ?, ?)";
         try (Connection c = pool.getConnection();
-             PreparedStatement st = c.prepareStatement(sql)) {
+                PreparedStatement st = c.prepareStatement(sql)) {
             st.setTimestamp(1, toTimestamp(sample.presentation_time));
             st.setString(2, sample.unique_device_identifier);
             st.setString(3, sample.metric_id);
@@ -335,11 +357,13 @@ public class TimescalePersister {
     }
 
     private void writeWaveform(SampleArray sample) {
-        if (!pool.isAvailable()) return;
-        String sql = "INSERT INTO waveform_data (time_tick, device_id, metric_id, instance_id, patient_id, frequency_hz, unit_id, values) " +
-                     "VALUES (?, ?, ?, ?, 'OFFLINE_PATIENT', ?, ?, ?)";
+        if (!pool.isAvailable())
+            return;
+        String sql = "INSERT INTO waveform_data (time_tick, device_id, metric_id, instance_id, patient_id, frequency_hz, unit_id, values) "
+                +
+                "VALUES (?, ?, ?, ?, 'OFFLINE_PATIENT', ?, ?, ?)";
         try (Connection c = pool.getConnection();
-             PreparedStatement st = c.prepareStatement(sql)) {
+                PreparedStatement st = c.prepareStatement(sql)) {
             int count = sample.values.userData.size();
             float[] floatValues = new float[count];
             for (int i = 0; i < count; i++) {
@@ -362,11 +386,13 @@ public class TimescalePersister {
     }
 
     private void writeAlert(Alert alert) {
-        if (!pool.isAvailable()) return;
-        String sql = "INSERT INTO device_alerts (time_tick, device_id, metric_id, alert_type, alert_message, priority) " +
-                     "VALUES (?, ?, ?, ?, ?, 'medium')";
+        if (!pool.isAvailable())
+            return;
+        String sql = "INSERT INTO device_alerts (time_tick, device_id, metric_id, alert_type, alert_message, priority) "
+                +
+                "VALUES (?, ?, ?, ?, ?, 'medium')";
         try (Connection c = pool.getConnection();
-             PreparedStatement st = c.prepareStatement(sql)) {
+                PreparedStatement st = c.prepareStatement(sql)) {
             Timestamp now = new Timestamp(System.currentTimeMillis());
             String metricId = extractMetricId(alert.identifier);
             st.setTimestamp(1, now);
@@ -382,7 +408,8 @@ public class TimescalePersister {
     }
 
     private static String extractMetricId(String identifier) {
-        if (identifier == null) return null;
+        if (identifier == null)
+            return null;
         int idx = identifier.lastIndexOf('_');
         if (idx > 0 && idx < identifier.length() - 1) {
             String candidate = identifier.substring(0, idx);
@@ -407,26 +434,39 @@ public class TimescalePersister {
     }
 
     private static final DataReaderListener logReaderStatus = new DataReaderListener() {
-        @Override public void on_requested_deadline_missed(DataReader reader, RequestedDeadlineMissedStatus status) {
+        @Override
+        public void on_requested_deadline_missed(DataReader reader, RequestedDeadlineMissedStatus status) {
             log.debug("Deadline missed on {}", reader.get_topicdescription().get_name());
         }
-        @Override public void on_requested_incompatible_qos(DataReader reader, RequestedIncompatibleQosStatus status) {
+
+        @Override
+        public void on_requested_incompatible_qos(DataReader reader, RequestedIncompatibleQosStatus status) {
             log.warn("Incompatible QoS on {}", reader.get_topicdescription().get_name());
         }
-        @Override public void on_sample_rejected(DataReader reader, SampleRejectedStatus status) {
+
+        @Override
+        public void on_sample_rejected(DataReader reader, SampleRejectedStatus status) {
             log.debug("Sample rejected on {}", reader.get_topicdescription().get_name());
         }
-        @Override public void on_liveliness_changed(DataReader reader, LivelinessChangedStatus status) {
+
+        @Override
+        public void on_liveliness_changed(DataReader reader, LivelinessChangedStatus status) {
         }
-        @Override public void on_sample_lost(DataReader reader, SampleLostStatus status) {
+
+        @Override
+        public void on_sample_lost(DataReader reader, SampleLostStatus status) {
             log.debug("Sample lost on {}", reader.get_topicdescription().get_name());
         }
-        @Override public void on_subscription_matched(DataReader reader, SubscriptionMatchedStatus status) {
+
+        @Override
+        public void on_subscription_matched(DataReader reader, SubscriptionMatchedStatus status) {
             log.debug("Subscription matched on {} (cur:{} chg:{})",
                     reader.get_topicdescription().get_name(),
                     status.current_count, status.current_count_change);
         }
-        @Override public void on_data_available(DataReader reader) {
+
+        @Override
+        public void on_data_available(DataReader reader) {
         }
     };
 }

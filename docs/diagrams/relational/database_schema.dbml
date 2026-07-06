@@ -1,0 +1,231 @@
+// =============================================================================
+// OpenICE Headless — TimescaleDB Schema (dbdiagram.io compatible)
+// =============================================================================
+
+// ── CATALOGOS Y METADATOS (Relacionales estándar) ──────────────────────────
+
+Table devices {
+  device_id varchar(64) [pk]
+  udi varchar(64) [unique]
+  manufacturer varchar(128) [not null]
+  model varchar(128) [not null]
+  serial_number varchar(128)
+  connection_type varchar(32) [not null]
+  build_info varchar(128)
+  operating_system varchar(128)
+  created_at timestamptz [default: `now()`]
+
+  note: 'Registro de dispositivos médicos conectados o simulados'
+}
+
+Table patients {
+  patient_id varchar(64) [pk]
+  first_name varchar(128) [not null]
+  last_name varchar(128) [not null]
+  gender char(1)
+  dob date [not null]
+  created_at timestamptz [default: `now()`]
+
+  note: 'Registro de pacientes (MRN)'
+}
+
+Table patient_device_sessions {
+  session_id serial [pk]
+  device_id varchar(64) [not null]
+  patient_id varchar(64) [not null]
+  start_time timestamptz [not null]
+  end_time timestamptz
+
+  note: 'Sesiones de asociación temporal entre un paciente y un dispositivo'
+}
+
+Table patientdevice {
+  mrn varchar(64) [not null]
+  udi varchar(64) [not null]
+  associated bigint [not null]
+  dissociated bigint
+
+  note: 'legacy — asociación paciente-dispositivo usada por OpenEMR (tiempos epoch)'
+}
+
+Table metric_types {
+  metric_id varchar(64) [pk]
+  display_name varchar(128) [not null]
+  default_unit varchar(32) [not null]
+  loinc_code varchar(32)
+  ucum_code varchar(32)
+
+  note: 'Catálogo de métricas clínicas y su mapeo de interoperabilidad'
+}
+
+// ── SERIES TEMPORALES (TimescaleDB Hypertables) ───────────────────────────
+
+Table vital_values {
+  time_tick timestamptz [not null]
+  device_id varchar(64) [not null]
+  metric_id varchar(64) [not null]
+  instance_id int [default: 0]
+  patient_id varchar(64) [default: 'OFFLINE_PATIENT']
+  unit_id varchar(32)
+  vital_value double [not null]
+
+  indexes {
+    (device_id, metric_id, time_tick) [name: 'idx_vital_device_metric']
+  }
+
+  note: 'timescaledb hypertable | compress(device_id, metric_id) | retention 3 days'
+}
+
+Table waveform_data {
+  time_tick timestamptz [not null]
+  device_id varchar(64) [not null]
+  metric_id varchar(64) [not null]
+  instance_id int [default: 0]
+  patient_id varchar(64) [default: 'OFFLINE_PATIENT']
+  frequency_hz int [not null]
+  unit_id varchar(32)
+  values "real[]" [not null] // Tipo envuelto en comillas para compatibilidad DBML
+
+  indexes {
+    (device_id, metric_id, time_tick) [name: 'idx_waveform_device_metric']
+  }
+
+  note: 'timescaledb hypertable | compress(device_id, metric_id) | retention 3 days'
+}
+
+Table infusion_pump_status {
+  time_tick timestamptz [not null]
+  device_id varchar(64) [not null]
+  patient_id varchar(64) [default: 'OFFLINE_PATIENT']
+  infusion_active boolean [not null]
+  drug_name varchar(128) [not null]
+  drug_mass_mcg int
+  solution_volume_ml int
+  volume_to_be_infused_ml int
+  infusion_duration_seconds int
+  infusion_fraction_complete real
+  interlock_stop boolean [default: false]
+
+  indexes {
+    (device_id, time_tick) [name: 'idx_infusion_device']
+  }
+
+  note: 'timescaledb hypertable | compress(device_id, drug_name) | retention 3 days'
+}
+
+Table device_alerts {
+  time_tick timestamptz [not null]
+  device_id varchar(64) [not null]
+  metric_id varchar(64)
+  alert_type varchar(64)
+  alert_message text [not null]
+  priority varchar(16)
+
+  note: 'timescaledb hypertable | retention 3 days'
+}
+
+Table device_connectivity_events {
+  time_tick timestamptz [not null]
+  device_id varchar(64) [not null]
+  state varchar(32) [not null]
+  info text
+  com_port varchar(32)
+
+  note: 'timescaledb hypertable | retention 3 days'
+}
+
+Table devicelogs {
+  log_time timestamptz [not null]
+  sourceclass varchar(255) [not null]
+  eventtext text [not null]
+
+  note: 'legacy — logs generales generados por SQLLogging.java'
+}
+
+// ── TABLAS LEGACY ──────────────────────────────────────────────────────────
+
+Table allnumerics {
+  t_sec bigint [not null]
+  t_nanosec int [not null]
+  udi varchar(64) [not null]
+  metric_id varchar(64) [not null]
+  val double [not null]
+
+  indexes {
+    (udi, metric_id, t_sec) [name: 'idx_legacy_numeric']
+  }
+
+  note: 'legacy hypertable — epoch seconds'
+}
+
+Table allsamples {
+  t_sec bigint [not null]
+  t_nanosec int [not null]
+  udi varchar(64) [not null]
+  metric_id varchar(64) [not null]
+  floats text [not null]
+
+  indexes {
+    (udi, metric_id, t_sec) [name: 'idx_legacy_sample']
+  }
+
+  note: 'legacy hypertable — waveform data serialized as JSON'
+}
+
+Table numerics_for_export {
+  seqnum bigserial [pk]
+  t_sec bigint [not null]
+  t_nanosec int [not null]
+  udi varchar(64) [not null]
+  metric_id varchar(64) [not null]
+  val double [not null]
+
+  indexes {
+    (udi, seqnum) [name: 'idx_legacy_num_exp']
+  }
+
+  note: 'legacy hypertable — export queue'
+}
+
+Table samples_for_export {
+  seqnum bigserial [pk]
+  t_sec bigint [not null]
+  t_nanosec int [not null]
+  udi varchar(64) [not null]
+  metric_id varchar(64) [not null]
+  floats text [not null]
+
+  indexes {
+    (udi, seqnum) [name: 'idx_legacy_sam_exp']
+  }
+
+  note: 'legacy hypertable — export queue'
+}
+
+// ── RELACIONES EXPLÍCITAS ──────────────────────────────────────────────────
+
+// Relaciones estándar
+Ref: patient_device_sessions.device_id > devices.device_id
+Ref: patient_device_sessions.patient_id > patients.patient_id
+Ref: patientdevice.mrn > patients.patient_id
+Ref: patientdevice.udi > devices.udi
+
+// Relaciones lógicas con Hypertables (no FK constraints físicas por desempeño)
+Ref: vital_values.device_id > devices.device_id
+Ref: waveform_data.device_id > devices.device_id
+Ref: infusion_pump_status.device_id > devices.device_id
+Ref: device_alerts.device_id > devices.device_id
+Ref: device_connectivity_events.device_id > devices.device_id
+
+Ref: allnumerics.udi > devices.udi
+Ref: allsamples.udi > devices.udi
+Ref: numerics_for_export.udi > devices.udi
+Ref: samples_for_export.udi > devices.udi
+
+Ref: vital_values.metric_id > metric_types.metric_id
+Ref: waveform_data.metric_id > metric_types.metric_id
+Ref: device_alerts.metric_id > metric_types.metric_id
+Ref: allnumerics.metric_id > metric_types.metric_id
+Ref: allsamples.metric_id > metric_types.metric_id
+Ref: numerics_for_export.metric_id > metric_types.metric_id
+Ref: samples_for_export.metric_id > metric_types.metric_id

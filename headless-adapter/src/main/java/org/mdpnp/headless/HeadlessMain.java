@@ -51,9 +51,18 @@ public class HeadlessMain {
 
         // ── 1.5 Configure local PostgreSQL logging only for Multiparameter ──────
         if ("Multiparameter".equalsIgnoreCase(deviceAlias)) {
-            System.setProperty("ice.jdbc.url", "jdbc:postgresql://localhost:5432/openice_local");
-            System.setProperty("ice.jdbc.username", "openice");
-            System.setProperty("ice.jdbc.password", "openice");
+
+            String host = System.getProperty("postgresql.host", "localhost");
+            String port = System.getProperty("postgresql.port", "5432");
+            String user = System.getProperty("postgresql.username", "openice");
+            String password = System.getProperty("postgresql.password", "openice");
+            String database = System.getProperty("postgresql.database", "openice_local");
+
+            String url = String.format("jdbc:postgresql://%s:%s/%s", host, port, database);
+
+            System.setProperty("ice.jdbc.url", url);
+            System.setProperty("ice.jdbc.username", user);
+            System.setProperty("ice.jdbc.password", password);
             log.info("Database logging enabled for Multiparameter device using local TimescaleDB.");
         }
 

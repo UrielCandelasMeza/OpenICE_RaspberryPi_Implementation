@@ -1,0 +1,143 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+title Flujo de Persistencia de Datos Continuos\nDevice → DDS → Headless → TimescaleDB
+
+box "Dispositivo Médico" #LightGray
+    participant "SimInfusionPump\n(Simulador)" as Device
+    participant "AbstractDevice\n(Generador DDS)" as AbsDev
+end box
+
+box "Middleware DDS (RTI Connext)" #LightGray
+    participant "DomainParticipant\n(Tópico DDS)" as DDS
+end box
+
+box "Headless Adapter\n(TimescalePersister)" #LightGray
+    participant "EventLoop\n(Dispatcher)" as EventLoop
+    participant "NumericHandler\n(ConditionHandler)" as NumHandler
+    participant "InfusionStatusHandler\n(ConditionHandler)" as InfHandler
+end box
+
+box "Capa de Base de Datos" #LightGray
+    participant "ConnectionPool\n(HikariCP)" as Pool
+    participant "TimescaleDB\n(PostgreSQL + Hypertable)" as DB
+end box
+
+note over Device, AbsDev
+  **1. Inicialización**
+  HeadlessMain crea TimescalePersister con
+  los beans DDS (DomainParticipant, Subscriber, EventLoop)
+  y llama a persister.start() ANTES de conectar el dispositivo
+  para no perder el primer DeviceIdentity.
+end note
+
+Device -> AbsDev: start() / connect()
+activate AbsDev
+AbsDev -> AbsDev: register_type(Numeric, SampleArray, etc.)
+AbsDev -> AbsDev: create DataWriter para cada tópico
+AbsDev -> DDS: write(DeviceIdentity)
+deactivate AbsDev
+
+note over DDS, EventLoop
+  **2. Suscripción**
+  TimescalePersister.start() crea DataReaders
+  con ReadCondition para cada tópico de interés.
+end note
+
+EventLoop -> DDS: create_datareader_with_profile(NumericTopic)
+EventLoop -> DDS: create_datareader_with_profile(InfusionStatusTopic)
+EventLoop -> DDS: create_readcondition(NOT_READ, ANY_VIEW, ANY_INSTANCE)
+EventLoop -> EventLoop: addHandler(readCondition, handler)
+
+note over EventLoop, DB
+  **3. Datos Numéricos Genéricos (vital_values)**
+  Flujo para métricas como HR, SpO2, CO2, temperatura, etc.
+  Todas se almacenan en la misma hypertable vital_values
+  diferenciadas por metric_id.
+end note
+
+loop Cada ciclo de simulación (ej. 1 Hz)
+    Device -> AbsDev: generar siguiente valor (HR, SpO2, CO2, ...)
+    AbsDev -> DDS: write(Numeric) con metric_id, value
+    DDS -> DDS: notificar DATA_AVAILABLE a DataReader
+
+    DDS -> EventLoop: on_data_available()
+    EventLoop -> NumHandler: conditionChanged(condition)
+    activate NumHandler
+
+    NumHandler -> DDS: read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, condition)
+
+    loop Por cada sample válido en dataSeq
+        NumHandler -> NumHandler: writeNumeric(sample)
+
+        NumHandler -> Pool: getConnection()
+        activate Pool
+        Pool --> NumHandler: Connection (JDBC)
+
+        NumHandler -> DB: INSERT INTO vital_values\n(time_tick, device_id, metric_id,\ninstance_id, unit_id, vital_value)
+        activate DB
+        DB --> NumHandler: OK / fila insertada
+        deactivate DB
+
+        deactivate Pool
+    end
+
+    NumHandler -> DDS: return_loan(dataSeq, infoSeq)
+    deactivate NumHandler
+end
+
+note over EventLoop, DB
+  **4. Datos Específicos de Bomba (infusion_pump_status)**
+  InfusionStatus NO encaja en el modelo Numeric porque
+  tiene campos estructurados: drug_name, VTBI, fracción, etc.
+end note
+
+loop Cada ciclo de simulación (ej. 1 Hz)
+    Device -> AbsDev: actualizar estado (infusionActive, drug_name, VTBI, ...)
+    AbsDev -> DDS: write(InfusionStatus) con todos los campos
+    DDS -> DDS: notificar DATA_AVAILABLE a DataReader
+
+    DDS -> EventLoop: on_data_available()
+    EventLoop -> InfHandler: conditionChanged(condition)
+    activate InfHandler
+
+    InfHandler -> DDS: read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, condition)
+
+    loop Por cada sample válido en dataSeq
+        InfHandler -> InfHandler: writeInfusionStatus(sample)
+
+        InfHandler -> Pool: getConnection()
+        activate Pool
+        Pool --> InfHandler: Connection (JDBC)
+
+        InfHandler -> DB: INSERT INTO infusion_pump_status\n(time_tick, device_id, infusion_active,\ndrug_name, drug_mass_mcg, solution_volume_ml,\nvolume_to_be_infused_ml, infusion_fraction_complete)
+        activate DB
+        DB --> InfHandler: OK / fila insertada
+        deactivate DB
+
+        deactivate Pool
+    end
+
+    InfHandler -> DDS: return_loan(dataSeq, infoSeq)
+    deactivate InfHandler
+end
+
+note over EventLoop, DB
+  **5. Waveforms (alta frecuencia)**
+  SampleArray con arreglos de muestras (ej. ECG Lead II, pleth)
+  se almacenan en waveform_data como REAL[].
+end note
+
+note over EventLoop, DB
+  **6. Apagado**
+  Al recibir SIGTERM, HeadlessMain llama a:
+  persister.stop() → remueve handlers y elimina DataReaders
+  dbPool.close() → cierra HikariCP y libera conexiones JDBC
+end note
+
+@enduml

@@ -39,12 +39,14 @@ public class TimescalePersister {
     private AlertDataReader patientAlertReader;
     private AlertDataReader technicalAlertReader;
     private DeviceIdentityDataReader deviceIdentityReader;
+    private InfusionStatusDataReader infusionStatusReader;
 
     private ReadCondition numericCondition;
     private ReadCondition sampleArrayCondition;
     private ReadCondition patientAlertCondition;
     private ReadCondition technicalAlertCondition;
     private ReadCondition deviceIdentityCondition;
+    private ReadCondition infusionStatusCondition;
 
     private final List<ReadCondition> allConditions = new ArrayList<>();
     private final List<DataReaderImpl> allReaders = new ArrayList<>();
@@ -54,6 +56,7 @@ public class TimescalePersister {
     private final AlertHandler patientAlertHandler = new AlertHandler("PatientAlert");
     private final AlertHandler technicalAlertHandler = new AlertHandler("TechnicalAlert");
     private final DeviceIdentityHandler deviceIdentityHandler = new DeviceIdentityHandler();
+    private final InfusionStatusHandler infusionStatusHandler = new InfusionStatusHandler();
 
     public TimescalePersister(DomainParticipant participant, Subscriber subscriber,
             EventLoop eventLoop, ConnectionPool pool,
@@ -80,8 +83,9 @@ public class TimescalePersister {
         createPatientAlertReader();
         createTechnicalAlertReader();
         createDeviceIdentityReader();
+        createInfusionStatusReader();
 
-        log.info("TimescalePersister started – subscribing to Numeric, SampleArray, Alert, DeviceIdentity topics.");
+        log.info("TimescalePersister started – subscribing to Numeric, SampleArray, Alert, DeviceIdentity, InfusionStatus topics.");
     }
 
     public void stop() {
@@ -215,6 +219,28 @@ public class TimescalePersister {
         }
     }
 
+    private void createInfusionStatusReader() {
+        try {
+            InfusionStatusTypeSupport.register_type(participant, InfusionStatusTypeSupport.get_type_name());
+            Topic topic = TopicUtil.findOrCreateTopic(participant, InfusionStatusTopic.VALUE,
+                    InfusionStatusTypeSupport.class);
+            infusionStatusReader = (InfusionStatusDataReader) subscriber.create_datareader_with_profile(
+                    topic, "ice_library", "state", null, StatusKind.STATUS_MASK_NONE);
+            allReaders.add(infusionStatusReader);
+            infusionStatusReader.set_listener(logReaderStatus,
+                    StatusKind.STATUS_MASK_ALL ^ StatusKind.DATA_AVAILABLE_STATUS);
+            infusionStatusCondition = infusionStatusReader.create_readcondition(
+                    SampleStateKind.NOT_READ_SAMPLE_STATE, ViewStateKind.ANY_VIEW_STATE,
+                    InstanceStateKind.ANY_INSTANCE_STATE);
+            allConditions.add(infusionStatusCondition);
+            eventLoop.addHandler(infusionStatusCondition, infusionStatusHandler);
+            infusionStatusReader.enable();
+            log.debug("InfusionStatus reader created.");
+        } catch (Exception e) {
+            log.warn("Failed to create InfusionStatus reader: {}", e.getMessage());
+        }
+    }
+
     private class NumericHandler implements EventLoop.ConditionHandler {
         private final NumericSeq dataSeq = new NumericSeq();
         private final SampleInfoSeq infoSeq = new SampleInfoSeq();
@@ -336,6 +362,32 @@ public class TimescalePersister {
         }
     }
 
+    private class InfusionStatusHandler implements EventLoop.ConditionHandler {
+        private final InfusionStatusSeq dataSeq = new InfusionStatusSeq();
+        private final SampleInfoSeq infoSeq = new SampleInfoSeq();
+
+        @Override
+        public void conditionChanged(Condition condition) {
+            if (!started)
+                return;
+            try {
+                infusionStatusReader.read_w_condition(dataSeq, infoSeq, LENGTH_UNLIMITED, infusionStatusCondition);
+                int size = dataSeq.size();
+                for (int i = 0; i < size; i++) {
+                    SampleInfo info = (SampleInfo) infoSeq.get(i);
+                    if (info.valid_data) {
+                        InfusionStatus sample = (InfusionStatus) dataSeq.get(i);
+                        writeInfusionStatus(sample);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Error reading InfusionStatus samples: {}", e.getMessage());
+            } finally {
+                infusionStatusReader.return_loan(dataSeq, infoSeq);
+            }
+        }
+    }
+
     private void writeNumeric(Numeric sample) {
         if (!pool.isAvailable())
             return;
@@ -405,6 +457,33 @@ public class TimescalePersister {
         } catch (SQLException e) {
             log.warn("Failed to write alert for device {}: {}",
                     alert.unique_device_identifier, e.getMessage());
+        }
+    }
+
+    private void writeInfusionStatus(InfusionStatus sample) {
+        if (!pool.isAvailable())
+            return;
+        String sql = "INSERT INTO infusion_pump_status (time_tick, device_id, patient_id, infusion_active, drug_name, "
+                +
+                "drug_mass_mcg, solution_volume_ml, volume_to_be_infused_ml, infusion_duration_seconds, " +
+                "infusion_fraction_complete) " +
+                "VALUES (?, ?, 'OFFLINE_PATIENT', ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection c = pool.getConnection();
+                PreparedStatement st = c.prepareStatement(sql)) {
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            st.setTimestamp(1, now);
+            st.setString(2, sample.unique_device_identifier);
+            st.setBoolean(3, sample.infusionActive);
+            st.setString(4, sample.drug_name);
+            st.setInt(5, sample.drug_mass_mcg);
+            st.setInt(6, sample.solution_volume_ml);
+            st.setInt(7, sample.volume_to_be_infused_ml);
+            st.setInt(8, sample.infusion_duration_seconds);
+            st.setFloat(9, sample.infusion_fraction_complete);
+            st.executeUpdate();
+        } catch (SQLException e) {
+            log.warn("Failed to write infusion status for device {}: {}",
+                    sample.unique_device_identifier, e.getMessage());
         }
     }
 

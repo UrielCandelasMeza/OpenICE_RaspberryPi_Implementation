@@ -17,9 +17,17 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 -- TABLAS DE DIMENSIONES (Estructuras Relacionales Estándar)
 -- =============================================================================
 
+-- Catálogo de tipos de dispositivos (atómicos y compuestos)
+CREATE TABLE device_types (
+    type_id VARCHAR(32) PRIMARY KEY,          -- 'ecg', 'spo2', 'capno', 'nibp', 'ibp', 'temp', 'infusion', 'ventilator', 'multiparameter'
+    label VARCHAR(64) NOT NULL,
+    is_composite BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 -- Tabla de registro de dispositivos (simulados y reales)
 CREATE TABLE devices (
     device_id VARCHAR(64) PRIMARY KEY,        -- Representa el Unique Device Identifier (UDI)
+    type_id VARCHAR(32) REFERENCES device_types(type_id),
     manufacturer VARCHAR(128) NOT NULL,       -- Fabricante (ej. 'ICE', 'Philips', 'Dräger')
     model VARCHAR(128) NOT NULL,              -- Modelo (ej. 'Multiparameter', 'EvitaXL')
     serial_number VARCHAR(128),               -- Número de serie
@@ -28,6 +36,15 @@ CREATE TABLE devices (
     operating_system VARCHAR(128),            -- Sistema operativo del adaptador
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Composición de dispositivos (ej. Multiparameter → ECG + SpO2 + CO2 + IBP + NIBP + Temp)
+CREATE TABLE device_composition (
+    composite_id VARCHAR(64) NOT NULL REFERENCES devices(device_id),
+    component_id VARCHAR(64) NOT NULL REFERENCES devices(device_id),
+    slot_name VARCHAR(32),                    -- Opcional: 'ecg', 'spo2', etc.
+    PRIMARY KEY (composite_id, component_id),
+    CONSTRAINT no_self_composition CHECK (composite_id <> component_id)
 );
 
 -- Tabla de pacientes (Medical Record Number - MRN)
@@ -214,19 +231,40 @@ INSERT INTO metric_types (metric_id, display_name, default_unit, loinc_code, ucu
 ('MDC_ECG_LEAD_II', 'Electrocardiograma - Derivación II', 'mV', '8602-5', 'mV'),
 ('MDC_ECG_LEAD_III', 'Electrocardiograma - Derivación III', 'mV', '8603-3', 'mV');
 
+-- Semilla de Tipos de Dispositivo
+INSERT INTO device_types (type_id, label, is_composite) VALUES
+('ecg',           'Electrocardiogram',        FALSE),
+('spo2',          'Pulse Oximeter',           FALSE),
+('capno',         'Capnometer',               FALSE),
+('nibp',          'Non-Invasive BP',          FALSE),
+('ibp',           'Invasive BP',              FALSE),
+('temp',          'Temperature',              FALSE),
+('infusion',      'Infusion Pump',            FALSE),
+('ventilator',    'Ventilator',               FALSE),
+('multiparameter','Multiparameter Monitor',   TRUE);
+
 -- Semilla de Dispositivos Simulados Predefinidos en OpenICE
-INSERT INTO devices (device_id, manufacturer, model, serial_number, connection_type, build_info, operating_system) VALUES
-('SIM_ECG_001', 'ICE', 'ElectroCardioGram', 'SIM-ECG-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_PULSEOX_001', 'ICE', 'PO (Pulse Oximeter)', 'SIM-PO-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_CAPNO_001', 'ICE', 'Capnometer', 'SIM-CO2-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_NIBP_001', 'ICE', 'Noninvasive Blood Pressure', 'SIM-NIBP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_IBP_001', 'ICE', 'Invasive Blood Pressure', 'SIM-IBP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_TEMP_001', 'ICE', 'Temperature Probe', 'SIM-TEMP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_PUMP_001', 'ICE', 'Controllable Pump', 'SIM-PUMP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
-('SIM_MULTI_001', 'ICE', 'Multiparameter Monitor', 'SIM-MULTI-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM');
+INSERT INTO devices (device_id, type_id, manufacturer, model, serial_number, connection_type, build_info, operating_system) VALUES
+('SIM_ECG_001', 'ecg', 'ICE', 'ElectroCardioGram', 'SIM-ECG-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_PULSEOX_001', 'spo2', 'ICE', 'PO (Pulse Oximeter)', 'SIM-PO-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_CAPNO_001', 'capno', 'ICE', 'Capnometer', 'SIM-CO2-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_NIBP_001', 'nibp', 'ICE', 'Noninvasive Blood Pressure', 'SIM-NIBP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_IBP_001', 'ibp', 'ICE', 'Invasive Blood Pressure', 'SIM-IBP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_TEMP_001', 'temp', 'ICE', 'Temperature Probe', 'SIM-TEMP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_PUMP_001', 'infusion', 'ICE', 'Controllable Pump', 'SIM-PUMP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_MULTI_001', 'multiparameter', 'ICE', 'Multiparameter Monitor', 'SIM-MULTI-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM');
+
+-- Composición del Multiparameter simulado
+INSERT INTO device_composition (composite_id, component_id, slot_name) VALUES
+('SIM_MULTI_001', 'SIM_ECG_001',    'ecg'),
+('SIM_MULTI_001', 'SIM_PULSEOX_001','spo2'),
+('SIM_MULTI_001', 'SIM_CAPNO_001',  'capno'),
+('SIM_MULTI_001', 'SIM_IBP_001',    'ibp'),
+('SIM_MULTI_001', 'SIM_NIBP_001',   'nibp'),
+('SIM_MULTI_001', 'SIM_TEMP_001',   'temp');
 
 -- Semilla de ejemplo de Dispositivos Físicos/Reales Soportados
-INSERT INTO devices (device_id, manufacturer, model, serial_number, connection_type, build_info, operating_system) VALUES
-('REAL_NELLCOR_595', 'Nellcor', 'N-595', 'NL-595-8821', 'Serial', 'Firmware-3.2', 'Linux-embedded'),
-('REAL_PHILIPS_INTELLIVUE', 'Philips', 'Intellivue (LAN)', 'PH-MX800-9912', 'Network', 'PIP-Rev-J', 'VxWorks'),
-('REAL_DRAEGER_V500', 'Dräger', 'V500 Ventilator', 'DR-V500-1123', 'Serial', 'Medibus-X-1.2', 'VxWorks');
+INSERT INTO devices (device_id, type_id, manufacturer, model, serial_number, connection_type, build_info, operating_system) VALUES
+('REAL_NELLCOR_595', 'spo2', 'Nellcor', 'N-595', 'NL-595-8821', 'Serial', 'Firmware-3.2', 'Linux-embedded'),
+('REAL_PHILIPS_INTELLIVUE', 'multiparameter', 'Philips', 'Intellivue (LAN)', 'PH-MX800-9912', 'Network', 'PIP-Rev-J', 'VxWorks'),
+('REAL_DRAEGER_V500', 'ventilator', 'Dräger', 'V500 Ventilator', 'DR-V500-1123', 'Serial', 'Medibus-X-1.2', 'VxWorks');

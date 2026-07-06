@@ -41,9 +41,17 @@ GRANT ALL PRIVILEGES ON SCHEMA public TO openice_local_user;
 -- 2. TABLAS DE METADATOS Y CATÁLOGOS RELACIONALES
 -- -----------------------------------------------------------------------------
 
+-- Catálogo de tipos de dispositivos (atómicos y compuestos)
+CREATE TABLE IF NOT EXISTS device_types (
+    type_id VARCHAR(32) PRIMARY KEY,
+    label VARCHAR(64) NOT NULL,
+    is_composite BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 -- Tabla de dispositivos (compatible con el campo device_id y el alias legacy 'udi')
 CREATE TABLE IF NOT EXISTS devices (
     device_id VARCHAR(64) PRIMARY KEY,
+    type_id VARCHAR(32) REFERENCES device_types(type_id),
     udi VARCHAR(64) GENERATED ALWAYS AS (device_id) STORED UNIQUE, -- Alias legacy compatible con joins pd.udi = d.udi
     manufacturer VARCHAR(128) NOT NULL,
     model VARCHAR(128) NOT NULL,
@@ -52,6 +60,15 @@ CREATE TABLE IF NOT EXISTS devices (
     build_info VARCHAR(128),
     operating_system VARCHAR(128),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Composición de dispositivos (ej. Multiparameter → ECG + SpO2 + CO2 + IBP + NIBP + Temp)
+CREATE TABLE IF NOT EXISTS device_composition (
+    composite_id VARCHAR(64) NOT NULL REFERENCES devices(device_id),
+    component_id VARCHAR(64) NOT NULL REFERENCES devices(device_id),
+    slot_name VARCHAR(32),
+    PRIMARY KEY (composite_id, component_id),
+    CONSTRAINT no_self_composition CHECK (composite_id <> component_id)
 );
 
 CREATE TABLE IF NOT EXISTS metric_types (
@@ -316,6 +333,19 @@ $$;
 -- 8. INSERCIÓN DE METADATOS INICIALES
 -- -----------------------------------------------------------------------------
 
+-- Semilla de Tipos de Dispositivo
+INSERT INTO device_types (type_id, label, is_composite) VALUES
+('ecg',           'Electrocardiogram',        FALSE),
+('spo2',          'Pulse Oximeter',           FALSE),
+('capno',         'Capnometer',               FALSE),
+('nibp',          'Non-Invasive BP',          FALSE),
+('ibp',           'Invasive BP',              FALSE),
+('temp',          'Temperature',              FALSE),
+('infusion',      'Infusion Pump',            FALSE),
+('ventilator',    'Ventilator',               FALSE),
+('multiparameter','Multiparameter Monitor',   TRUE)
+ON CONFLICT (type_id) DO NOTHING;
+
 INSERT INTO metric_types (metric_id, display_name, default_unit, loinc_code, ucum_code) VALUES
 ('MDC_ECG_HEART_RATE', 'Frecuencia Cardíaca (ECG)', 'bpm', '8867-4', '/min'),
 ('MDC_SPO2', 'Saturación de Oxígeno (SpO2)', '%', '2708-6', '%'),
@@ -334,3 +364,32 @@ INSERT INTO metric_types (metric_id, display_name, default_unit, loinc_code, ucu
 ('MDC_ECG_LEAD_II', 'Electrocardiograma - Derivación II', 'mV', '8602-5', 'mV'),
 ('MDC_ECG_LEAD_III', 'Electrocardiograma - Derivación III', 'mV', '8603-3', 'mV')
 ON CONFLICT (metric_id) DO NOTHING;
+
+-- Semilla de dispositivos simulados con type_id
+INSERT INTO devices (device_id, type_id, manufacturer, model, serial_number, connection_type, build_info, operating_system) VALUES
+('SIM_ECG_001', 'ecg', 'ICE', 'ElectroCardioGram', 'SIM-ECG-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_PULSEOX_001', 'spo2', 'ICE', 'PO (Pulse Oximeter)', 'SIM-PO-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_CAPNO_001', 'capno', 'ICE', 'Capnometer', 'SIM-CO2-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_NIBP_001', 'nibp', 'ICE', 'Noninvasive Blood Pressure', 'SIM-NIBP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_IBP_001', 'ibp', 'ICE', 'Invasive Blood Pressure', 'SIM-IBP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_TEMP_001', 'temp', 'ICE', 'Temperature Probe', 'SIM-TEMP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_PUMP_001', 'infusion', 'ICE', 'Controllable Pump', 'SIM-PUMP-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM'),
+('SIM_MULTI_001', 'multiparameter', 'ICE', 'Multiparameter Monitor', 'SIM-MULTI-12345', 'Simulated', 'OpenICE-Sim-1.0', 'JVM')
+ON CONFLICT (device_id) DO NOTHING;
+
+-- Composición del Multiparameter simulado
+INSERT INTO device_composition (composite_id, component_id, slot_name) VALUES
+('SIM_MULTI_001', 'SIM_ECG_001',    'ecg'),
+('SIM_MULTI_001', 'SIM_PULSEOX_001','spo2'),
+('SIM_MULTI_001', 'SIM_CAPNO_001',  'capno'),
+('SIM_MULTI_001', 'SIM_IBP_001',    'ibp'),
+('SIM_MULTI_001', 'SIM_NIBP_001',   'nibp'),
+('SIM_MULTI_001', 'SIM_TEMP_001',   'temp')
+ON CONFLICT (composite_id, component_id) DO NOTHING;
+
+-- Semilla de dispositivos físicos/reales con type_id
+INSERT INTO devices (device_id, type_id, manufacturer, model, serial_number, connection_type, build_info, operating_system) VALUES
+('REAL_NELLCOR_595', 'spo2', 'Nellcor', 'N-595', 'NL-595-8821', 'Serial', 'Firmware-3.2', 'Linux-embedded'),
+('REAL_PHILIPS_INTELLIVUE', 'multiparameter', 'Philips', 'Intellivue (LAN)', 'PH-MX800-9912', 'Network', 'PIP-Rev-J', 'VxWorks'),
+('REAL_DRAEGER_V500', 'ventilator', 'Dräger', 'V500 Ventilator', 'DR-V500-1123', 'Serial', 'Medibus-X-1.2', 'VxWorks')
+ON CONFLICT (device_id) DO NOTHING;

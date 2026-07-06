@@ -42,6 +42,9 @@ dependencies {
 
     // PostgreSQL JDBC Driver for TimescaleDB connection
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.2'
+
+    // HikariCP connection pool for TimescaleDB
+    implementation group: 'com.zaxxer', name: 'HikariCP', version: '5.1.0'
 }
 
 // ── run task ───────────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ package org.mdpnp.headless.db;
 import com.rti.dds.domain.DomainParticipant;
 import com.rti.dds.infrastructure.Condition;
 import com.rti.dds.infrastructure.StatusKind;
+import com.rti.dds.infrastructure.ResourceLimitsQosPolicy;
 import com.rti.dds.subscription.*;
 import com.rti.dds.topic.Topic;
 import ice.*;
@@ -23,7 +24,7 @@ public class TimescalePersister {
 
     private static final Logger log = LoggerFactory.getLogger(TimescalePersister.class);
 
-    private static final int LENGTH_UNLIMITED = DataReader.LENGTH_UNLIMITED;
+    private static final int LENGTH_UNLIMITED = ResourceLimitsQosPolicy.LENGTH_UNLIMITED;
 
     private final DomainParticipant participant;
     private final Subscriber subscriber;
@@ -367,7 +368,7 @@ public class TimescalePersister {
             int count = sample.values.userData.size();
             float[] floatValues = new float[count];
             for (int i = 0; i < count; i++) {
-                floatValues[i] = sample.values.userData.get(i);
+                floatValues[i] = (float) sample.values.userData.get(i);
             }
             Array sqlArray = c.createArrayOf("real", toFloatObjArray(floatValues));
 

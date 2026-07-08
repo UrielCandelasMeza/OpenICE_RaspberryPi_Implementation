@@ -37,7 +37,8 @@ function initPage() {
     findDevices();
     createCharts();
     populateVitalsTable();
-    startVitalSignsMonitoring();
+    // NOTE: startVitalSignsMonitoring() is called from findDevices()
+    // once the VITALS_DEVICE is found, to ensure the device UDI is available.
 }
 
 function initDeviceArrays() {
@@ -47,6 +48,11 @@ function initDeviceArrays() {
 
     VITALS_MANU.push("ICE");
     VITALS_MODELS.push("Multiparameter (Simulated)");
+
+    VITALS_MANU.push("Dräger");
+    VITALS_MANU.push("Draeger");
+    VITALS_MODELS.push("Atlan A-350XL (Simulated)");
+    VITALS_MODELS.push("Atlan A-350XL");
 
     PUMP_MANU.push("QCore");
     PUMP_MODELS.push("Sapphire");
@@ -79,6 +85,8 @@ function initControlMappings() {
     pumpKeysAsArray=Array.from(metricToPumpControlMap.keys());
 }
 
+let monitoringStarted = false;
+
 function findDevices() {
     deviceList.forEach( (device,udi) => {
         console.log("dev is "+device.manufacturer+" "+device.model);
@@ -87,179 +95,63 @@ function findDevices() {
             console.log("Found "+device.model+" with udi "+udi);
             let deviceName=device.manufacturer+" "+device.model;
             document.getElementById("monitor_device").value=deviceName;
-			udiToMakeAndModel.set(udi,device.model);
+            udiToMakeAndModel.set(udi,device.model);
         }
-		
+
         if( PUMP_MANU.includes(device.manufacturer) && PUMP_MODELS.includes(device.model) ) {
             PUMP_DEVICE=udi;
             let deviceName=device.manufacturer+" "+device.model;
             document.getElementById("pump_device").value=deviceName;
-			udiToMakeAndModel.set(udi,device.model);
+            udiToMakeAndModel.set(udi,device.model);
         }
     });
-    
+
     if(VITALS_DEVICE==null) {
-        console.log("Did not find v device");
-	updateDeviceList();
-        setTimeout(findDevices,5000);
+        console.log("Did not find vitals device yet, retrying in 5s...");
+        updateDeviceList();
+        setTimeout(findDevices, 5000);
+    } else {
+        // Keep polling for the pump even after vitals device is found
+        if(PUMP_DEVICE==null) {
+            updateDeviceList();
+            setTimeout(findDevices, 5000);
+        }
+        // Start monitoring loop only once, after VITALS_DEVICE is known
+        if(!monitoringStarted) {
+            monitoringStarted = true;
+            console.log("Starting vitals monitoring for udi: "+VITALS_DEVICE);
+            startVitalSignsMonitoring();
+        }
     }
 }
 
 function startVitalSignsMonitoring() {
-	//startDeviceIdentitySocket();
-	startNumericSocket();
-	//runSamplesLoop();
-	//runNumericsLoop();
-}
-
-function startNumericSocket() {
-	let socketName="NumericSocketConnection";
-	let nameObject=new Object();
-	nameObject.name=socketName;
-	let theJson=JSON.stringify([ { "name" : socketName } ]);
-	console.log("theJson to request numeric socket is "+theJson);
-	$.ajax({
-		type: "POST",
-		url: "/dds/v1/websocket_connections",
-		data: theJson,
-		contentType: "application/dds-web+json",
-		dataType: "json"
-
-	}).done( function(data) {
-		console.log("Created new socket with name "+socketName);
-		readFromWebSocketForNumerics(socketName);
-	}).fail( function(data) {
-		console.log("post to websocket_connections failed");					
-	});
-}
-
-function startDeviceIdentitySocket() {
-	let socketName="DeviceIdentitySocketConnection";
-	let nameObject=new Object();
-	nameObject.name=socketName;
-	let theJson=JSON.stringify([ { "name" : socketName } ]);
-	console.log("theJson to request deivce identity socket is "+theJson);
-	$.ajax({
-		type: "POST",
-		url: "/dds/v1/websocket_connections",
-		data: theJson,
-		contentType: "application/dds-web+json",
-		dataType: "json"
-
-	}).done( function(data) {
-		console.log("Created new socket with name "+socketName);
-		readFromWebSocketForDeviceIdentity(socketName);
-	}).fail( function(data) {
-		console.log("post to websocket_connections failed");					
-	});
-}
-
-
-function readFromWebSocketForNumerics(socketName) {
-	let webSocket=new WebSocket("ws://"+server+"/dds/websocket/"+socketName);	//No protocols for now
-	webSocket.onmessage = (event) => {
-		let response=event.data;
-		if(response.startsWith("HELLO OK:")) {
-			console.log("HELLO was OK - "+response);
-			return;
-		}
-		if(response.startsWith("HELLO FAIL:")) {
-			console.log("HELLO failed - "+response);
-			return;
-		}
-		let responseObj=JSON.parse(response);
-		let numericArray=responseObj.body.read_sample_seq;
-		//console.log("readFromWebSocketForNumeric has "+numericArray.length+" elements");
-		for(let i=0;i<numericArray.length;i++) {
-			let numeric=numericArray[i];
-			let sampleInfo=numeric.read_sample_info;
-			let numericData=numeric.data;
-			createOrUpdateNumericDisplay(numericData);
-		}
-	}
-	webSocket.onopen = (event) => {
-		webSocket.send("Content-Type:application/dds-web+json\r\nAccept:application/dds-web+json\r\nOMG-DDS-API-Key:streamingkey\r\nVersion:1\r\n\r")
-		console.log("Sent HELLO");
-
-		let bindMsg=
-		{
-			"kind": "bind",
-			"body": [{
-				"bind_kind": "bind_datareader",
-				"bind_id": "numeric",
-				"uri": "/dds/rest1/applications/OpenICE/domain_participants/ICEParticipant/subscribers/NumericSubscriber/data_readers/NumericReader"
-			}]
-		};
-		webSocket.send(JSON.stringify(bindMsg));
-		console.log("Sent bind...");
-	}
-
-}
-
-function readFromWebSocketForDeviceIdentity(socketName) {
-	let webSocket=new WebSocket("ws://"+server+"/dds/websocket/"+socketName);	//No protocols for now
-	webSocket.onmessage = (event) => {
-		let response=event.data;
-		if(response.startsWith("HELLO OK:")) {
-			console.log("HELLO was OK - "+response);
-			return;
-		}
-		if(response.startsWith("HELLO FAIL:")) {
-			console.log("HELLO failed - "+response);
-			return;
-		}
-		let responseObj=JSON.parse(response);
-		let deviceIdentityArray=responseObj.body.read_sample_seq;
-		//console.log("readFromWebSocketForNumeric has "+numericArray.length+" elements");
-		for(let i=0;i<deviceIdentityArray.length;i++) {
-			let identity=deviceIdentityArray[i];
-			let sampleInfo=identity.read_sample_info;
-			let identityData=identity.data;
-			updateDeviceInfo(identityData);
-		}
-	}
-	webSocket.onopen = (event) => {
-		webSocket.send("Content-Type:application/dds-web+json\r\nAccept:application/dds-web+json\r\nOMG-DDS-API-Key:streamingkey\r\nVersion:1\r\n\r")
-		console.log("Sent HELLO");
-
-		let bindMsg=
-		{
-			"kind": "bind",
-			"body": [{
-				"bind_kind": "bind_datareader",
-				"bind_id": "deviceidentity",
-				"uri": "/dds/rest1/applications/OpenICE/domain_participants/ICEParticipant/subscribers/DeviceIdentitySubscriber/data_readers/DeviceIdentityReader"
-			}]
-		};
-		webSocket.send(JSON.stringify(bindMsg));
-		console.log("Sent bind...");
-	}
-
-}
-
-function updateDeviceInfo(identityData) {
-  console.log("got identityData via websocket - "+identityData);
-}
-
-function createOrUpdateNumericDisplay(numericData) {
-  let res=getPumpData(numericData);
-  if(res) return;
-  res=getVitalsData(numericData);
-}
-
-function runSamplesLoop() {
-	latestSamples();
-	setTimeout(runSamplesLoop, 1000);
-	//TODO check if sample time is the same as the one already on the graph.
+	runNumericsLoop();
 }
 
 function runNumericsLoop() {
-	latestNumerics(getPumpData, getVitalsData);
-	setTimeout(runNumericsLoop, 1000);
+	latestNumerics( function() {
+		// DIAGNOSTIC: log all known metrics after latestNumerics populates knownNumerics
+		if(knownNumerics.size > 0) {
+			knownNumerics.forEach( (udiMap, metricId) => {
+				udiMap.forEach( (data, udi) => {
+					console.log("[DIAG] metric="+metricId+" udi="+udi.substring(0,10)+" value="+data.value);
+				});
+			});
+		} else {
+			console.log("[DIAG] knownNumerics is EMPTY after latestNumerics call");
+		}
+		getPumpData();
+		getVitalsData();
+	});
+	setTimeout(runNumericsLoop, 2000);
 }
 
-function getVitalsData(vital) {
+function getVitalsData() {
 	if(VITALS_DEVICE!=null) {
+        let latestVitals=getLatestNumeric(VITALS_DEVICE,...vitalsKeysAsArray);
+        console.log("[DIAG] getVitalsData: found "+latestVitals.length+" vitals for udi="+VITALS_DEVICE.substring(0,10));
+        latestVitals.forEach( (vital) => {
             let targetField=metricToControlMap.get(vital.metric_id);
             if(targetField!=null) {
                 let updateThis=document.getElementById(targetField);
@@ -278,38 +170,21 @@ function getVitalsData(vital) {
                 rrChart.data.datasets[0].data.push(vital.value);
                 rrChart.update('none');
             }
-	    //Use DIA as the trigger to calculate the mean
-	    if(vital.metric_id=='MDC_PRESS_BLD_ART_ABP_DIA') {
-	        lastDia=vital.value;
-		if(lastSys==0) return;	//We don't have a systolic yet
-		let mean=(lastSys+2*lastDia)/3;
+            //Use DIA as the trigger to calculate the mean
+            if(vital.metric_id=='MDC_PRESS_BLD_ART_ABP_DIA') {
+                lastDia=vital.value;
+                if(lastSys==0) return;	//We don't have a systolic yet
+                let mean=(lastSys+2*lastDia)/3;
                 let presentationTS=new Date(vital.presentation_time.sec*1000);
                 mapChart.data.labels.push(presentationTS);
                 mapChart.data.datasets[0].data.push(mean);
                 mapChart.update('none');
-		document.getElementById("map_cell").innerText=mean.toFixed(2);
-	    }
-	    if(vital.metric_id=='MDC_PRESS_BLD_ART_ABP_SYS') {
-	        lastSys=vital.value;
-	    }
-	    
-		/*
-	    if(vital.metric_id=='MDC_PRESS_BLD_NONINV_MEAN') {
-                let presentationTS=new Date(vital.presentation_time.sec*1000);
-                mapChart.data.labels.push(presentationTS);
-                mapChart.data.datasets[0].data.push(vital.value);
-                mapChart.update();
+                document.getElementById("map_cell").innerText=mean.toFixed(2);
             }
-	    */
-		/*
-	    let samples=getLatestSamples(VITALS_DEVICE,"MDC_PRESS_BLD_ART_ABP");
-   	    let outerArray=samples[0];
-	    let outerCount=outerArray.length-1;
-	    let bpSource=outerArray[outerCount];
-	    if(bpSource!=undefined) {
-	        getSysDia(bpSource);
-	    }
-	    */
+            if(vital.metric_id=='MDC_PRESS_BLD_ART_ABP_SYS') {
+                lastSys=vital.value;
+            }
+        });
     } else {
         console.log("getVitalsData doesn't have VITALS_DEVICE yet");
     }
@@ -319,16 +194,17 @@ function getVitalsData(vital) {
  * Return true if this handled the data, so we can avoid calling other updates,
  * false otherwise
  */
-function getPumpData(vital) {
+function getPumpData() {
     if(PUMP_DEVICE!=null) {
+        let latestPump=getLatestNumeric(PUMP_DEVICE,...pumpKeysAsArray);
+        latestPump.forEach( (vital) => {
             let targetField=metricToPumpControlMap.get(vital.metric_id);
             if(targetField!=null) {
                 let updateThis=document.getElementById(targetField);
                 updateThis.innerText=vital.value.toFixed(2);
-		return true;	//Indicate we handled it
             }
+        });
     }
-    return false;
 }
 
 function setFlowRate() {

@@ -1,0 +1,176 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+title Flujo de Graficación en Tiempo Real (Web)\nDispositivo → DDS → RTI Web Integration Service → Navegador
+
+box "Dispositivo Médico" #LightGray
+    participant "HW Médico\n(Fisiológico/Bomba/Ventilador)" as HW
+    participant "ICE Device Driver\n(Java - OpenICE)" as Driver
+end box
+
+box "Middleware DDS (RTI Connext)" #LightGray
+    participant "DomainParticipant\n(Domain 10)" as DDS
+end box
+
+box "RTI Web Integration Service\n(rtiwebintegrationservice)" #LightGray
+    participant "cfg: OPENICE_WEB_INTEGRATION_SERVICE\n(Suscriptor DDS + REST API)" as WIS
+end box
+
+box "Navegador Web" #LightGray
+    participant "openicewis.js\n(Polling AJAX + Caché)" as OIW
+    participant "App JS\n(vitals.js / nkv.js / websockets.js)" as AppJS
+    participant "Chart.js\n(Lienzos <canvas>)" as Chart
+end box
+
+note over HW, Driver
+  **Fase 1: Inicialización**
+  rtiwebintegrationservice se inicia con:
+  -documentRoot /opt/web_integration_service/docroot
+  -cfgFile OPENICE_WEB_INTEGRATION_SERVICE.xml
+  Suscribe automáticamente todos los tópicos
+  definidos en el XML de configuración.
+end note
+
+WIS -> WIS: Crear DomainParticipant (domain 10)
+WIS -> WIS: Crear Subscriber para\nNumeric, SampleArray,\nDeviceIdentity, Alert
+WIS -> WIS: Crear Publisher para\nFlowRate, InfusionProgram,\nNKV Settings, KeyValue
+
+note over HW, Driver
+  **Fase 2: Publicación de Datos**
+  El driver lee del hardware médico
+  y escribe muestras DDS periódicamente.
+end note
+
+== Ciclo de Numéricos (HR, SpO2, RR, BP, etc.) ==
+
+loop Cada 500 ms - 1 s (según dispositivo)
+    HW -> Driver: Lectura serial/emulación
+    Driver -> Driver: Construir sample Numeric\n(metric_id, value, udi, instant)
+    Driver -> DDS: write(Numeric)
+    DDS -> WIS: Notificar DATA_AVAILABLE
+    WIS -> WIS: Actualizar caché interna\n(último valor por topic/instance)
+end
+
+== Ciclo de Waveforms (ECG, Presión, Flujo, CO2) ==
+
+loop Cada ~20-100 ms (alta frecuencia)
+    HW -> Driver: Lectura de forma de onda
+    Driver -> Driver: Construir SampleArray\n(arreglo de floats + metric_id)
+    Driver -> DDS: write(SampleArray)
+    DDS -> WIS: Notificar DATA_AVAILABLE
+    WIS -> WIS: Actualizar SampleArray cache
+end
+
+== Ciclo de Identidad de Dispositivos ==
+
+note over HW, OIW
+  Al iniciar, cada dispositivo publica
+  un sample DeviceIdentity (manufacturer, model, serial).
+  El WIS lo mantiene disponible.
+end note
+
+Driver -> DDS: write(DeviceIdentity{udi, manufacturer, model})
+DDS -> WIS: Notificar DATA_AVAILABLE
+WIS -> WIS: Cachear DeviceIdentity
+
+== Fase 3: Polling desde el Navegador ==
+
+note over OIW, Chart
+  El navegador carga index.html que incluye:
+  - openicewis.js (librería base de polling)
+  - App JS específico (UI + Chart.js)
+  - bootstrap, luxon, chartjs-adapter-luxon
+end note
+
+note over OIW, Chart
+  **Polling de Dispositivos**
+  Cada ~5 segundos se consulta
+  /dds/rest1/.../DeviceIdentityReader
+  para detectar nuevos dispositivos.
+end note
+
+loop Cada 5000 ms
+    OIW -> WIS: GET /dds/rest1/applications/OpenICE/\ndomain_participants/ICEParticipant/\nsubscribers/DeviceIdentitySubscriber/\ndata_readers/DeviceIdentityReader?sampleFormat=json
+    WIS --> OIW: JSON Array [ {udi, manufacturer, model, ...} ]
+    OIW -> OIW: Actualizar deviceList (MapWithEvents)
+    OIW -> AppJS: Disparar evento 'addDevice' / 'removeDevice'
+    AppJS -> AppJS: Renderizar tabla/dispositivos\ne interfaz de selección
+end
+
+note over OIW, Chart
+  **Polling de Numéricos (constantes vitales)**
+  Cada ~1 segundo se obtienen los últimos
+  valores de todos los dispositivos.
+end note
+
+loop Cada 1000 ms (runNumericsLoop)
+    OIW -> WIS: GET /dds/rest1/applications/OpenICE/\ndomain_participants/ICEParticipant/\nsubscribers/NumericSubscriber/\ndata_readers/NumericReader?sampleFormat=json
+    WIS --> OIW: JSON Array [ {metric_id, value, udi, instant, ...} ]
+    OIW -> OIW: Actualizar knownNumerics cache\n(metric_id → udi → último valor)
+    OIW -> AppJS: Ejecutar callbacks registrados
+    AppJS -> AppJS: getVitalsData() / getPumpData()\nbuscar knownNumerics por UDI
+    AppJS -> Chart: chart.data.labels.push(now)\nchart.data.datasets[0].data.push(value)\nchart.update('none')
+    Chart -> Chart: Renderizar punto en gráfico\ntime-series (HR, MAP, RR, SpO2, etc.)
+end
+
+note over OIW, Chart
+  **Polling de Waveforms (formas de onda)**
+  Cada ~1 segundo se obtienen los arrays
+  de muestras para gráficos continuos.
+end note
+
+loop Cada 1000 ms (runSamplesLoop)
+    OIW -> WIS: GET /dds/rest1/applications/OpenICE/\ndomain_participants/ICEParticipant/\nsubscribers/SampleArraySubscriber/\ndata_readers/SampleArrayReader?sampleFormat=json
+    WIS --> OIW: JSON Array [ {metric_id, udi, samples: [f1, f2, ...], ...} ]
+    OIW -> OIW: Actualizar knownSamples cache
+    OIW -> AppJS: Ejecutar callbacks de muestras
+    AppJS -> AppJS: getVentSamples() / getCO2Samples()
+    AppJS -> Chart: Reemplazar data.datasets[0].data\ncon nuevas muestras\nchart.update('none')
+    Chart -> Chart: Renderizar waveform continua\n(Flujo, Presión, Volumen, CO2)
+end
+
+== Fase 4: Control (Usuario → Dispositivo) ==
+
+note over Chart, Driver
+  El usuario puede enviar comandos
+  a los dispositivos desde el navegador.
+end note
+
+Chart -> AppJS: Click en botón\n("Set Flow Rate" / "Change Mode")
+AppJS -> OIW: setSpeed(udi, rate) / setNewVentMode() / programPump()
+OIW -> WIS: POST /dds/rest1/applications/OpenICE/\ndomain_participants/ICEParticipant/\npublishers/FlowRatePublisher/\ndata_writers/FlowRateObjectiveWriter\nContent-Type: application/json\n{ "udi": "...", "flow_rate": 100 }
+WIS -> DDS: write(FlowRateObjective)
+DDS -> Driver: Notificar DATA_AVAILABLE
+Driver -> Driver: Procesar comando\n(escribir a puerto serie / actualizar estado)
+Driver -> HW: Enviar instrucción al hardware
+HW --> Driver: Confirmación / nuevo estado
+Driver -> DDS: write(InfusionStatus actualizado)
+DDS -> WIS: Notificar DATA_AVAILABLE
+note right
+  El próximo polling detectará
+  el cambio de estado.
+end note
+
+== Fase 5: Alertas ==
+
+loop Cada 2000 ms
+    OIW -> WIS: GET /dds/rest1/.../TechnicalAlertReader\n.../PatientAlertReader
+    WIS --> OIW: JSON Array de alertas activas
+    OIW -> OIW: Actualizar knownTechAlerts /\nknownPatientAlerts
+    OIW -> AppJS: Llamar callbacks de alertas
+    AppJS -> AppJS: Mostrar/ocultar indicadores\nvisuales de alarma en la UI
+end
+
+note over OIW, Chart
+  Los datos no se pierden entre polls porque
+  el WIS cachea el último sample de cada
+  instancia DDS internamente. El navegador
+  siempre obtiene el valor más reciente.
+end note
+
+@enduml

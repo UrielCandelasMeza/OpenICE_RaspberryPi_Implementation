@@ -61,6 +61,11 @@ function initDeviceArrays() {
     VITALS_MODELS.push("MX800");
     VITALS_MODELS.push("Intellivue Device");
 
+    VITALS_MANU.push("Dräger");
+    VITALS_MANU.push("Draeger");
+    VITALS_MODELS.push("Atlan A-350XL (Simulated)");
+    VITALS_MODELS.push("Atlan A-350XL");
+
     PUMP_MANU.push("QCore");
     PUMP_MODELS.push("Sapphire");
     

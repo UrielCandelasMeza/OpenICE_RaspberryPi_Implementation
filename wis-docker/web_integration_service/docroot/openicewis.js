@@ -402,12 +402,12 @@ function programPump(udi, head = 1, infusionRate = -1, vtbi = -1, bolusVolume = 
   var programObj={
 	  unique_device_identifier: udi,
 	  requestor: "WebIntegrationService",
-      head: head,
-      infusionRate: infusionRate,
-      VTBI: vtbi,
-      bolusVolume: bolusVolume,
-      bolusRate: bolusRate,
-      seconds: bolusDuration
+      head: isNaN(parseInt(head)) ? 1 : parseInt(head),
+      infusionRate: isNaN(parseFloat(infusionRate)) ? -1 : parseFloat(infusionRate),
+      VTBI: isNaN(parseFloat(vtbi)) ? -1 : parseFloat(vtbi),
+      bolusVolume: isNaN(parseFloat(bolusVolume)) ? -1 : parseFloat(bolusVolume),
+      bolusRate: isNaN(parseFloat(bolusRate)) ? -1 : parseFloat(bolusRate),
+      seconds: isNaN(parseInt(bolusDuration)) ? -1 : parseInt(bolusDuration)
   };
   var theJSON=JSON.stringify(programObj);
   $.ajax({

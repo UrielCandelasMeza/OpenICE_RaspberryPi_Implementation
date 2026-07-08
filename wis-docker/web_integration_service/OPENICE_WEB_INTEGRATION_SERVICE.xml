@@ -288,7 +288,11 @@
             This is the list of transports destinations where the participant will announce its presence
           -->
           <initial_peers>
+            <!-- Multicast discovery for lab environment -->
             <element>udpv4://239.255.0.1</element>
+            <!-- Unicast fallback: ensures discovery when running on the same host
+                 (Docker containers with network_mode: host all share the host network stack) -->
+            <element>udpv4://127.0.0.1</element>
           </initial_peers>
           <!-- Under load could this be helpful to maintain participant liveliness
            <metatraffic_transport_priority> 5 </metatraffic_transport_priority> -->
@@ -942,7 +946,9 @@
 			</publisher>
 			-->
 			<subscriber name="NumericSubscriber">
-				<data_reader name="NumericReader" topic_ref="Numeric"/>
+				<data_reader name="NumericReader" topic_ref="Numeric">
+					<datareader_qos base_name="ice_library::numeric_data"/>
+				</data_reader>
 				<subscriber_qos>
 					<partition>
 						<name>
@@ -952,7 +958,9 @@
 				</subscriber_qos>
 			</subscriber>
 			<subscriber name="SampleArraySubscriber">
-				<data_reader name="SampleArrayReader" topic_ref="SampleArray"/>
+				<data_reader name="SampleArrayReader" topic_ref="SampleArray">
+					<datareader_qos base_name="ice_library::waveform_data"/>
+				</data_reader>
 				<subscriber_qos>
 					<partition>
 						<name>

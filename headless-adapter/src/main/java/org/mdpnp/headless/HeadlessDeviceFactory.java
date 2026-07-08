@@ -18,6 +18,7 @@ import org.mdpnp.devices.nonin.pulseox.DemoNoninPulseOx;
 import org.mdpnp.devices.oridion.capnostream.DemoCapnostream20;
 import org.mdpnp.devices.philips.intellivue.DemoEthernetIntellivue;
 import org.mdpnp.devices.philips.intellivue.DemoSerialIntellivue;
+import org.mdpnp.devices.philips.efficia.SimEfficiaMonitor;
 import org.mdpnp.devices.simulation.co2.SimCapnometer;
 import org.mdpnp.devices.simulation.ecg.SimElectroCardioGram;
 import org.mdpnp.devices.simulation.ibp.SimInvasivePressure;
@@ -211,6 +212,17 @@ public class HeadlessDeviceFactory {
         }
         @Override public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
             return new SimMultiparameter(ctx.getBean("subscriber", Subscriber.class),
+                    ctx.getBean("publisher", Publisher.class),
+                    ctx.getBean("eventLoop", EventLoop.class));
+        }
+    }
+
+    public static class EfficiaMonitorProvider extends SpringLoadedDriver {
+        @Override public DeviceType getDeviceType() {
+            return new DeviceType(ice.ConnectionType.Simulated, "Philips", "Efficia CM Series", "EfficiaMonitor", 1);
+        }
+        @Override public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
+            return new SimEfficiaMonitor(ctx.getBean("subscriber", Subscriber.class),
                     ctx.getBean("publisher", Publisher.class),
                     ctx.getBean("eventLoop", EventLoop.class));
         }

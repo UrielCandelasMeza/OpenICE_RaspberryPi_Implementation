@@ -1,0 +1,16 @@
+@startuml
+title Flujo de Exportación de Datos LAN/WLAN
+
+participant Monitor
+participant Servidor
+
+== Los datos son válidos ==
+Monitor -> Servidor: Reporte de Observación No Solicitado (ORU) '
+note right: Analizar, Validar, Persistir, Aceptar '
+Servidor -> Monitor: Reconocimiento Positivo (ACK) '
+
+== Los datos son inválidos ==
+Monitor -> Servidor: Reporte de Observación No Solicitado (ORU) '
+note right: Analizar, Validar, Rechazar '
+Servidor -> Monitor: Reconocimiento Negativo (ACK) '
+@enduml

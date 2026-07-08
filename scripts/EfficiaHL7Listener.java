@@ -8,11 +8,15 @@ public class EfficiaHL7Listener {
         boolean useSerial = false; // Cambiar a true para escuchar por RS232 (Linux)
 
         // Configuración de RED (HL7 vía TCP/IP)
-        // El puerto debe coincidir con el configurado en la salida HL7 del Efficia
+        // En LAN/WLAN el Efficia es el CLIENTE — se conecta a nosotros.
+        // Este script es el SERVIDOR; el Efficia (o el simulador) se conecta aquí.
+        // El puerto debe coincidir con SimEfficiaMonitor.HL7_PORT (2575) y con
+        // el puerto configurado en el monitor real.
         int port = 2575;
 
         // Configuración Serial (Linux)
-        // Configurar baudios primero, ej: stty -F /dev/ttyUSB0 9600 cs8 -cstopb -parenb raw
+        // Configurar baudios primero, ej: stty -F /dev/ttyUSB0 9600 cs8 -cstopb -parenb
+        // raw
         String serialPort = "/dev/ttyUSB0";
 
         String outputFile = "datos_efficia.txt";
@@ -26,7 +30,7 @@ public class EfficiaHL7Listener {
                 return;
             }
             try (InputStream in = new FileInputStream(file);
-                 OutputStream out = new FileOutputStream(file)) {
+                    OutputStream out = new FileOutputStream(file)) {
 
                 System.out.println("¡Puerto Serie abierto! Esperando datos...");
                 // En serial no hay "conexiones entrantes" múltiples, es un solo flujo constante
@@ -36,20 +40,22 @@ public class EfficiaHL7Listener {
                 System.err.println("Error en conexión serial: " + e.getMessage());
             }
         } else {
+            // ── MODO SERVIDOR TCP ─────────────────────────────────────────────────────
+            // En LAN/WLAN el Efficia CM es el CLIENTE (según el manual).
+            // Abrimos un ServerSocket y esperamos a que el monitor (o el simulador)
+            // se conecte a nosotros.
+            System.out.println("Servidor HL7 escuchando en el puerto " + port + ". Esperando conexión del Efficia...");
             try (ServerSocket serverSocket = new ServerSocket(port)) {
-                System.out.println("Iniciando servidor TCP. Escuchando Efficia en el puerto " + port + "...");
-
-                // Bucle infinito para aceptar conexiones entrantes
+                // Bucle infinito: acepta una conexión, la procesa, vuelve a esperar
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Conexión entrante aceptada desde: " + clientSocket.getInetAddress());
+                    System.out.println("¡Efficia conectado desde: " + clientSocket.getInetAddress() + "!");
 
-                    // Manejar la conexión del monitor
                     try (InputStream in = clientSocket.getInputStream();
-                         OutputStream out = clientSocket.getOutputStream()) {
+                            OutputStream out = clientSocket.getOutputStream()) {
                         handleDataStream(in, out, outputFile);
                     } catch (IOException e) {
-                        System.err.println("La conexión TCP se interrumpió: " + e.getMessage());
+                        System.err.println("La conexión con el Efficia se interrumpió: " + e.getMessage());
                     }
                 }
             } catch (IOException e) {
@@ -60,7 +66,7 @@ public class EfficiaHL7Listener {
 
     private static void handleDataStream(InputStream in, OutputStream out, String outputFile) {
         try (FileWriter fw = new FileWriter(outputFile, true);
-             PrintWriter pw = new PrintWriter(fw)) {
+                PrintWriter pw = new PrintWriter(fw)) {
 
             int data;
             StringBuilder hl7Message = new StringBuilder();
@@ -97,9 +103,9 @@ public class EfficiaHL7Listener {
                         // En HL7, el MSH-10 está en el índice 9
                         String messageControlId = (mshFields.length > 9) ? mshFields[9] : "UNKNOWN";
 
-                        String ackMessage =
-                                "MSH|^~\\&|||||20260703115000||ACK^^ACK ALL|" + messageControlId + "|P|2.4\r" +
-                                        "MSA|AA|" + messageControlId + "\r";
+                        String ackMessage = "MSH|^~\\&|||||20260703115000||ACK^^ACK ALL|" + messageControlId
+                                + "|P|2.4\r" +
+                                "MSA|AA|" + messageControlId + "\r";
 
                         out.write(0x0B);
                         out.write(ackMessage.getBytes());

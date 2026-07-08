@@ -18,6 +18,7 @@ org.mdpnp.headless.HeadlessDeviceFactory$Pump_SimulatorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$ControllablePump_SimulatorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$ControllableBPMonitor_SimulatorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$MultiparameterProvider
+org.mdpnp.headless.HeadlessDeviceFactory$EfficiaMonitorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$SymbiqProvider
 
 # ── Serial ─────────────────────────────────────────────────────────────────────

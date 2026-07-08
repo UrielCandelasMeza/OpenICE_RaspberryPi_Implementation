@@ -33,6 +33,7 @@ import org.mdpnp.devices.philips.intellivue.DemoSerialIntellivue;
 import org.mdpnp.devices.simulation.co2.SimCapnometer;
 import org.mdpnp.devices.simulation.ecg.SimElectroCardioGram;
 import org.mdpnp.devices.simulation.ibp.SimInvasivePressure;
+import org.mdpnp.devices.philips.efficia.SimEfficiaMonitor;
 import org.mdpnp.devices.simulation.multi.SimMultiparameter;
 import org.mdpnp.devices.simulation.nibp.DemoSimulatedBloodPressure;
 import org.mdpnp.devices.simulation.pulseox.EightSecFixedAvgSimPulseOximeter;
@@ -497,11 +498,27 @@ public class DeviceFactory {
         }
     }
 
+    public static class EfficiaMonitorProvider extends SpringLoadedDriver {
+
+        @Override
+        public DeviceType getDeviceType() {
+            return new DeviceType(ice.ConnectionType.Simulated, "Philips", "Efficia CM Series", "EfficiaMonitor", 1);
+        }
+
+        @Override
+        public AbstractDevice newInstance(AbstractApplicationContext context) throws Exception {
+            EventLoop eventLoop   = context.getBean("eventLoop", EventLoop.class);
+            Subscriber subscriber = context.getBean("subscriber", Subscriber.class);
+            Publisher publisher   = context.getBean("publisher", Publisher.class);
+            return new SimEfficiaMonitor(subscriber, publisher, eventLoop);
+        }
+    }
+
     public static class DraegerApolloProvider extends SpringLoadedDriver {
 
         @Override
         public DeviceType getDeviceType(){
-            return new DeviceType(ice.ConnectionType.Serial, "Dr\u00E4ger", "Apollo", new String[] {"DraegerApollo", "Dr\u00E4gerApollo" }, 1);
+            return new DeviceType(ice.ConnectionType.Serial, "Dräger", "Apollo", new String[] {"DraegerApollo", "DrägerApollo" }, 1);
         }
 
         @Override

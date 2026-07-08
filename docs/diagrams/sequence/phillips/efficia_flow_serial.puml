@@ -1,0 +1,25 @@
+@startuml
+title Flujo de Exportación de Datos Serial
+
+participant Servidor
+participant Monitor
+
+== Los datos son válidos ==
+Servidor -> Monitor: Mensaje de Consulta (QRY) '
+note right: Consulta válida '
+Monitor -> Servidor: Reporte de Observación (ORF) '
+note right: Enviar datos del paciente '
+Servidor -> Monitor: Reconocimiento Positivo (ACK) '
+
+== Los datos son inválidos ==
+Servidor -> Monitor: Mensaje de Consulta (QRY) '
+note right: Consulta válida '
+Monitor -> Servidor: Reporte de Observación (ORF) '
+note right: Enviar datos del paciente '
+Servidor -> Monitor: Reconocimiento Negativo (ACK) '
+
+== Consulta inválida o sin datos ==
+Servidor -> Monitor: Mensaje de Consulta (QRY) '
+note right: Consulta inválida o sin datos '
+Monitor -> Servidor: Reconocimiento Negativo (ACK) '
+@enduml

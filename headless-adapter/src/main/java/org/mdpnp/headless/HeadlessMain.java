@@ -36,6 +36,8 @@ import java.util.concurrent.CountDownLatch;
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device DraegerV500 -address /dev/ttyUSB0"
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device IntellivueEthernet -address 192.168.1.100"
  * </pre>
+ * 
+ * @author Uriel Candelas
  */
 @SuppressWarnings("deprecation")
 public class HeadlessMain {
@@ -56,17 +58,17 @@ public class HeadlessMain {
         String discoveryPeers = line.hasOption("peers") ? line.getOptionValue("peers") : "";
 
         // ── 1.5 Database configuration (TimescaleDB/PostgreSQL) ───────────────
-        String dbHost     = line.hasOption("dbhost")     ? line.getOptionValue("dbhost")
-                                                         : System.getProperty("postgresql.host", "localhost");
-        String dbPortStr = line.hasOption("dbport")     ? line.getOptionValue("dbport")
-                                                         : System.getProperty("postgresql.port", "5432");
-        int dbPort        = Integer.parseInt(dbPortStr);
-        String dbName     = line.hasOption("dbname")     ? line.getOptionValue("dbname")
-                                                         : System.getProperty("postgresql.database", "openice_local");
-        String dbUser     = line.hasOption("dbuser")     ? line.getOptionValue("dbuser")
-                                                         : System.getProperty("postgresql.username", "openice");
+        String dbHost = line.hasOption("dbhost") ? line.getOptionValue("dbhost")
+                : System.getProperty("postgresql.host", "localhost");
+        String dbPortStr = line.hasOption("dbport") ? line.getOptionValue("dbport")
+                : System.getProperty("postgresql.port", "5432");
+        int dbPort = Integer.parseInt(dbPortStr);
+        String dbName = line.hasOption("dbname") ? line.getOptionValue("dbname")
+                : System.getProperty("postgresql.database", "openice_local");
+        String dbUser = line.hasOption("dbuser") ? line.getOptionValue("dbuser")
+                : System.getProperty("postgresql.username", "openice");
         String dbPassword = line.hasOption("dbpassword") ? line.getOptionValue("dbpassword")
-                                                         : System.getProperty("postgresql.password", "openice");
+                : System.getProperty("postgresql.password", "openice");
 
         // Also set legacy system properties for SQLLogging (AbstractDevice)
         System.setProperty("ice.jdbc.url",

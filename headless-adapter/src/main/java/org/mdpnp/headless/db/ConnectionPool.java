@@ -8,6 +8,13 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+/**
+ * Manages a pool of database connections to PostgreSQL/TimescaleDB using HikariCP.
+ * Provides thread-safe connection leasing, connection health verification, and graceful shutdown.
+ *
+ * @author Uriel Candelas
+ */
+
 public class ConnectionPool implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(ConnectionPool.class);

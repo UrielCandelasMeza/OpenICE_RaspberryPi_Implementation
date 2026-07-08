@@ -10,6 +10,13 @@ import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Keeps track of active medical devices connected to the OpenICE platform.
+ * Maintains an in-memory cache of device metadata (manufacturer, model, serial number, etc.)
+ * and synchronizes this state with the SQL database ("devices" table) using upsert operations.
+ *
+ * @author Uriel Candelas
+ */
 public class DeviceRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(DeviceRegistry.class);

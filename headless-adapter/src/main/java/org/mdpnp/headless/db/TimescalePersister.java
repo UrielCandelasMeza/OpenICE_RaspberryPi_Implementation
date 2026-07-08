@@ -20,6 +20,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Bridges the DDS network layer and the SQL database persistent storage.
+ * Subscribes to various DDS topics (Numeric values, SampleArray waveforms, Alert states, 
+ * DeviceIdentity, InfusionStatus), reacts to incoming samples asynchronously using an EventLoop,
+ * and writes them into TimescaleDB/PostgreSQL using connection leasing from the ConnectionPool.
+ *
+ * @author Uriel Candelas
+ */
 public class TimescalePersister {
 
     private static final Logger log = LoggerFactory.getLogger(TimescalePersister.class);

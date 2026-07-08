@@ -1,0 +1,21 @@
+@startuml
+title Flujo de Exportación de Datos LAN (Draeger HL7)
+
+participant "Atlan Simulator (TCP Client)" as Atlan
+participant "Python Receiver (TCP Server)" as Server
+
+== Establecimiento de Conexión ==
+Atlan -> Server: Conexión TCP (Puerto 2575)
+activate Server
+Server --> Atlan: Conexión aceptada
+deactivate Server
+
+== Transmisión de Tendencias (Cada 10s) ==
+group Transmisión Periódica
+    Atlan -> Server: Reporte de Observación ORU^R01 (MLLP)
+    activate Server
+    note right: Registra en datos_atlan.txt\ny muestra en consola
+    Server -> Atlan: Reconocimiento ACK^^ACK ALL (MLLP)
+    deactivate Server
+end
+@enduml

@@ -20,6 +20,7 @@ org.mdpnp.headless.HeadlessDeviceFactory$ControllableBPMonitor_SimulatorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$MultiparameterProvider
 org.mdpnp.headless.HeadlessDeviceFactory$EfficiaMonitorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$SymbiqProvider
+org.mdpnp.headless.HeadlessDeviceFactory$DraegerAtlanProvider
 
 # ── Serial ─────────────────────────────────────────────────────────────────────
 org.mdpnp.headless.HeadlessDeviceFactory$NoninProvider

@@ -46,6 +46,7 @@ import org.mdpnp.devices.simulation.pump.SimControllablePump;
 import org.mdpnp.devices.simulation.clcbp.SimControllableBPMonitor;
 import org.mdpnp.devices.simulation.pump.SimInfusionPump;
 import org.mdpnp.devices.simulation.temp.SimThermometer;
+import org.mdpnp.devices.simulation.atlan.SimDraegerAtlan;
 import org.mdpnp.devices.zephyr.biopatch.DemoBioPatch;
 import org.mdpnp.devices.baxter.AS50;
 import org.mdpnp.devices.alaris.Asena;
@@ -741,6 +742,22 @@ public class DeviceFactory {
                 Subscriber subscriber = context.getBean("subscriber", Subscriber.class);
                 Publisher publisher = context.getBean("publisher", Publisher.class);
                 return new AS50(subscriber, publisher, eventLoop);
+        }
+    }
+
+    public static class DraegerAtlanProvider extends SpringLoadedDriver {
+        @Override
+        public DeviceType getDeviceType() {
+            return new DeviceType(ice.ConnectionType.Simulated, "Dr\u00E4ger", "Atlan A-350XL",
+                    new String[] { "DraegerAtlan", "Dr\u00E4gerAtlan" }, 1);
+        }
+
+        @Override
+        public AbstractDevice newInstance(AbstractApplicationContext context) throws Exception {
+            EventLoop eventLoop = (EventLoop) context.getBean("eventLoop");
+            Subscriber subscriber = context.getBean("subscriber", Subscriber.class);
+            Publisher publisher = context.getBean("publisher", Publisher.class);
+            return new SimDraegerAtlan(subscriber, publisher, eventLoop);
         }
     }
 

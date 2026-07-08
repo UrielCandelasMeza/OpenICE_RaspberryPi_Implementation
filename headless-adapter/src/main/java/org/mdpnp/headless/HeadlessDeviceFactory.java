@@ -29,6 +29,7 @@ import org.mdpnp.devices.simulation.pump.SimControllablePump;
 import org.mdpnp.devices.simulation.clcbp.SimControllableBPMonitor;
 import org.mdpnp.devices.simulation.pump.SimInfusionPump;
 import org.mdpnp.devices.simulation.temp.SimThermometer;
+import org.mdpnp.devices.simulation.atlan.SimDraegerAtlan;
 import org.mdpnp.devices.zephyr.biopatch.DemoBioPatch;
 import org.mdpnp.devices.baxter.AS50;
 import org.mdpnp.devices.alaris.Asena;
@@ -609,6 +610,21 @@ public class HeadlessDeviceFactory {
         @Override
         public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
             return new NKV550(ctx.getBean("subscriber", Subscriber.class),
+                    ctx.getBean("publisher", Publisher.class),
+                    ctx.getBean("eventLoop", EventLoop.class));
+        }
+    }
+
+    public static class DraegerAtlanProvider extends SpringLoadedDriver {
+        @Override
+        public DeviceType getDeviceType() {
+            return new DeviceType(ice.ConnectionType.Simulated, "Dr\u00E4ger", "Atlan A-350XL",
+                    new String[] { "DraegerAtlan", "Dr\u00E4gerAtlan" }, 1);
+        }
+
+        @Override
+        public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
+            return new SimDraegerAtlan(ctx.getBean("subscriber", Subscriber.class),
                     ctx.getBean("publisher", Publisher.class),
                     ctx.getBean("eventLoop", EventLoop.class));
         }

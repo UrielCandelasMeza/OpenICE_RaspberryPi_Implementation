@@ -1,0 +1,28 @@
+@startuml
+title Flujo de Comunicación Serial (Draeger Medibus)
+
+participant "Python Receiver (Master / Client)" as Master
+participant "Atlan Device (Slave / Server)" as Slave
+
+== Inicialización de Comunicación ==
+Master -> Slave: Command: ICC (0x51) [ESC + 0x51 + Checksum + CR]
+Slave --> Master: Response: ICC [SOH + 0x51 + Checksum + CR]
+
+Master -> Slave: Command: ReqDeviceId (0x52) [ESC + 0x52 + Checksum + CR]
+Slave --> Master: Response: Device ID [SOH + 0x52 + Payload + Checksum + CR]
+
+== Bucle de Consultas Periódicas (Cada 2s) ==
+group Consulta de Datos
+    Master -> Slave: Command: ReqMeasuredDataCP1 (0x24)
+    Slave --> Master: Response: Measured Data (HR, SpO2, RR, PAW, etc.)
+    note left: Registra en datos_atlan.txt
+    
+    Master -> Slave: Command: ReqDeviceSetting (0x29)
+    Slave --> Master: Response: Settings Data
+    note left: Registra en datos_atlan.txt
+    
+    Master -> Slave: Command: ReqAlarmsCP1 (0x27)
+    Slave --> Master: Response: Active Alarms list
+    note left: Registra en datos_atlan.txt
+end
+@enduml

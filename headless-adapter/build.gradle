@@ -49,6 +49,9 @@ dependencies {
 
 // ── run task ───────────────────────────────────────────────────────────────────
 run {
+    // Propagate command-line system properties (e.g. -Dproperty=value) to the application JVM
+    systemProperties = System.getProperties()
+
     if (localOsName.contains('linux')) {
         if (localOsArch.contains('aarch')) {
             environment 'LD_LIBRARY_PATH', '../interop-lab/demo-apps/native/libs/aarch'

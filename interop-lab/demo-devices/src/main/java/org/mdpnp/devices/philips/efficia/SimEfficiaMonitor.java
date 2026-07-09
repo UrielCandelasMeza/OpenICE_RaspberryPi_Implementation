@@ -78,7 +78,7 @@ public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
      * outbound to a configured host:port. Change this to the IP address of the
      * machine running {@link scripts.EfficiaHL7Listener} (or your real HL7 server).
      */
-    public static final String HL7_HOST = "localhost";
+    public static final String HL7_HOST = System.getProperty("efficia.hl7.host", "localhost");
 
     /** UDP port for receiving control/simulation commands. */
     public static final int UDP_PORT = 24106;

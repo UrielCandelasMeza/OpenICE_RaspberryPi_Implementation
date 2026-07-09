@@ -59,8 +59,10 @@ run {
 
         if (localOsArch.contains('aarch') || localOsArch.contains('arm')) {
             environment 'LD_LIBRARY_PATH', aarchLibPath
+            systemProperty 'java.library.path', aarchLibPath
         } else {
             environment 'LD_LIBRARY_PATH', linuxLibPath
+            systemProperty 'java.library.path', linuxLibPath
         }
         environment 'SEC_ARTIFACT_DIR',  file('../data-types/x73-idl-rti-dds/src/main/resources/META-INF').absolutePath
         environment 'RTI_LICENSE_FILE',  file('../interop-lab/demo-apps/src/main/resources/OpenICE_license.dat').absolutePath

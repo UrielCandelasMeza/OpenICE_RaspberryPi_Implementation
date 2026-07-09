@@ -1,15 +1,15 @@
 package org.mdpnp.devices.simulation.atlan;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -39,8 +39,17 @@ public class SimDraegerAtlan extends AbstractSerialDevice implements GlobalSimul
     private static final Logger log = LoggerFactory.getLogger(SimDraegerAtlan.class);
 
     private static final String HL7_HOST = System.getProperty("atlan.hl7.host", "localhost");
-    private static final int HL7_PORT = Integer.getInteger("atlan.hl7.port", 2575);
-    private static final int SIM_TICK_SECONDS = 1;
+    private static final int    HL7_PORT  = Integer.getInteger("atlan.hl7.port", 2575);
+    private static final int    SIM_TICK_SECONDS = 1;
+
+    /**
+     * Serial device path for the Medibus slave interface.
+     * Set via JVM property: {@code -Datlan.serial.port=/dev/ttyS0}
+     * <p>Leave blank (default) to disable serial output entirely.
+     * <p>The port must be pre-configured with stty before starting:
+     * <pre>  stty -F /dev/ttyS0 19200 parenb -parodd cs8 -cstopb raw</pre>
+     */
+    private static final String SERIAL_PORT = System.getProperty("atlan.serial.port", "");
 
     // DDS numeric instance holders
     private final InstanceHolder<Numeric> heartRateHolder;
@@ -59,6 +68,11 @@ public class SimDraegerAtlan extends AbstractSerialDevice implements GlobalSimul
     // Networking
     private volatile Socket hl7Connection;
     private final AtomicInteger msgCounter = new AtomicInteger(1);
+
+    // Serial Medibus slave
+    private volatile Thread   serialThread;
+    private volatile InputStream  serialIn;
+    private volatile OutputStream serialOut;
 
     // Scheduled tasks
     private ScheduledFuture<?> simulationTask;
@@ -121,16 +135,20 @@ public class SimDraegerAtlan extends AbstractSerialDevice implements GlobalSimul
 
         running = true;
 
+        // Start serial Medibus slave (if port is configured)
+        startSerialMedibus();
+
         // Start HL7 MLLP outbound client
         startHl7Client();
 
         // Start internal simulation and DDS publishing
         simulationTask = executor.scheduleAtFixedRate(this::tickSimulation, 0, SIM_TICK_SECONDS, TimeUnit.SECONDS);
 
-        // Start HL7 periodic trend broadcast (every 10s for testing/simulation)
+        // Start HL7 periodic trend broadcast (every 10 s for testing/simulation)
         hl7BroadcastTask = executor.scheduleAtFixedRate(this::broadcastHl7Trend, 5, 10, TimeUnit.SECONDS);
 
-        log.info("Draeger Atlan A-350XL simulator connected: serial={} hl7_host={} hl7_port={}", address, HL7_HOST, HL7_PORT);
+        log.info("Draeger Atlan A-350XL simulator started — serial={} hl7_host={} hl7_port={}",
+                SERIAL_PORT.isBlank() ? "(disabled)" : SERIAL_PORT, HL7_HOST, HL7_PORT);
         return true;
     }
 
@@ -147,8 +165,57 @@ public class SimDraegerAtlan extends AbstractSerialDevice implements GlobalSimul
             hl7BroadcastTask = null;
         }
 
+        // Stop serial thread
+        Thread st = serialThread;
+        serialThread = null;
+        if (st != null) {
+            st.interrupt();
+        }
+        closeQuietly(serialIn);
+        closeQuietly(serialOut);
+        serialIn  = null;
+        serialOut = null;
+
         closeHl7Connection();
         super.disconnect();
+    }
+
+    // ── Serial Medibus slave ───────────────────────────────────────────────────
+    //
+    // Opens the serial device file directly (no RXTX needed) and runs the
+    // existing Medibus slave logic (process()) on it. The port must be
+    // configured with stty before the simulator starts:
+    //   stty -F /dev/ttyS0 19200 parenb -parodd cs8 -cstopb raw
+
+    private void startSerialMedibus() {
+        if (SERIAL_PORT == null || SERIAL_PORT.isBlank()) {
+            log.info("Medibus serial slave disabled — set -Datlan.serial.port=/dev/ttyS0 to enable");
+            return;
+        }
+        File dev = new File(SERIAL_PORT);
+        if (!dev.exists()) {
+            log.warn("Serial port '{}' not found — Medibus serial slave disabled. "
+                    + "Is the adapter connected and the path correct?", SERIAL_PORT);
+            return;
+        }
+        serialThread = new Thread(() -> {
+            try {
+                serialIn  = new FileInputStream(dev);
+                serialOut = new FileOutputStream(dev);
+                log.info("Medibus serial slave opened on {}", SERIAL_PORT);
+                // Reuse the existing slave loop
+                process(0, serialIn, serialOut);
+            } catch (IOException e) {
+                if (running) {
+                    log.error("Medibus serial error on '{}': {}", SERIAL_PORT, e.getMessage());
+                }
+            } finally {
+                closeQuietly(serialIn);
+                closeQuietly(serialOut);
+            }
+        }, "atlan-medibus-serial");
+        serialThread.setDaemon(true);
+        serialThread.start();
     }
 
     @Override
@@ -450,5 +517,11 @@ public class SimDraegerAtlan extends AbstractSerialDevice implements GlobalSimul
     @Override
     protected String iconResourceName() {
         return "anesthesia.png";
+    }
+
+    private static void closeQuietly(AutoCloseable c) {
+        if (c != null) {
+            try { c.close(); } catch (Exception ignored) {}
+        }
     }
 }

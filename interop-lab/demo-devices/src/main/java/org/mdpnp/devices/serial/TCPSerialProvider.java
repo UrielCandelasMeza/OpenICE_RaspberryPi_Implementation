@@ -60,7 +60,8 @@ public class TCPSerialProvider implements SerialProvider {
         }
 
         @Override
-        public void setSerialParams(int baud, DataBits dataBits, Parity parity, StopBits stopBits, FlowControl flowControl) {
+        public void setSerialParams(int baud, DataBits dataBits, Parity parity, StopBits stopBits,
+                FlowControl flowControl) {
             // all this needs a refactoring for another day
         }
 
@@ -98,10 +99,11 @@ public class TCPSerialProvider implements SerialProvider {
     }
 
     @Override
-    public void setDefaultSerialSettings(int baudrate, DataBits dataBits, Parity parity, StopBits stopBits, FlowControl flowControl) {
+    public void setDefaultSerialSettings(int baudrate, DataBits dataBits, Parity parity, StopBits stopBits,
+            FlowControl flowControl) {
 
     }
-    
+
     @Override
     public SerialProvider duplicate() {
         return new TCPSerialProvider();

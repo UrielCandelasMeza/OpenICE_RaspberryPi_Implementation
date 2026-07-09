@@ -83,6 +83,24 @@ public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
     /** UDP port for receiving control/simulation commands. */
     public static final int UDP_PORT = 24106;
 
+    /**
+     * Serial device for RS-232 output.
+     *
+     * <p>Set to the UART device on the Raspberry Pi:
+     * <ul>
+     *   <li>{@code /dev/ttyAMA0} — native GPIO UART (pins 14 TX / 15 RX),
+     *       requires {@code enable_uart=1} in {@code /boot/config.txt} and
+     *       the serial console disabled ({@code raspi-config → Interface → Serial}).</li>
+     *   <li>{@code /dev/ttyUSB0} — if using a USB-to-serial adapter instead.</li>
+     * </ul>
+     *
+     * <p>The port must be configured before starting the engine:
+     * <pre>  stty -F /dev/ttyAMA0 9600 cs8 -cstopb -parenb raw</pre>
+     *
+     * <p>Set to an empty string {@code ""} to disable serial output entirely.
+     */
+    public static final String SERIAL_PORT = "/dev/ttyS0";
+
     // ── DDS instance holders ──────────────────────────────────────────────────
 
     final InstanceHolder<ice.Numeric> heartRate;

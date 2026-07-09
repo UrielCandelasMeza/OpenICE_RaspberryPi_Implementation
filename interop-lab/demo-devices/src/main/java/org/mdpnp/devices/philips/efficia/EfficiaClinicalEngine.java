@@ -26,6 +26,7 @@
  ******************************************************************************/
 package org.mdpnp.devices.philips.efficia;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
@@ -103,6 +104,12 @@ class EfficiaClinicalEngine {
     private DatagramSocket udpSocket;
     private final AtomicInteger msgCounter = new AtomicInteger(1);
 
+    // ── Serial (RS-232) output ────────────────────────────────────────────────
+    // Writes the same MLLP-framed HL7 messages to the native UART on the Pi.
+    // The port must be pre-configured with stty before starting the engine:
+    //   stty -F /dev/ttyAMA0 9600 cs8 -cstopb -parenb raw
+    private volatile OutputStream serialOutputStream;
+
     // ── Scheduled tasks ───────────────────────────────────────────────────────
     private ScheduledFuture<?> ddsTask;
     private ScheduledFuture<?> hl7Task;
@@ -140,6 +147,9 @@ class EfficiaClinicalEngine {
         // Real Efficia = TCP client in LAN/WLAN mode
         startTcpClient();
 
+        // Start serial (RS-232) output on the Pi's native UART
+        startSerialOutput();
+
         // Start UDP control listener
         startUdpListener();
 
@@ -152,7 +162,7 @@ class EfficiaClinicalEngine {
         // Keep-alive: send MSH-only ORU at startup (after 1 s) and then every hour
         keepAliveTask = executor.scheduleAtFixedRate(this::sendKeepAlive, 1, 3600, TimeUnit.SECONDS);
 
-        log.info("EfficiaClinicalEngine started");
+        log.info("EfficiaClinicalEngine started — serial port {}", SimEfficiaMonitor.SERIAL_PORT);
     }
 
     void stop() {
@@ -164,6 +174,7 @@ class EfficiaClinicalEngine {
 
         closeQuietly(hl7Connection);
         closeQuietly(udpSocket);
+        closeQuietly(serialOutputStream);
 
         log.info("EfficiaClinicalEngine stopped");
     }
@@ -288,20 +299,36 @@ class EfficiaClinicalEngine {
     }
 
     private void broadcastMllp(String message) {
-        Socket conn = hl7Connection;
-        if (conn == null || conn.isClosed()) {
-            log.debug("No HL7 listener connected — skipping MLLP send");
-            return;
-        }
         byte[] frame = mllpWrap(message);
-        try {
-            OutputStream out = conn.getOutputStream();
-            out.write(frame);
-            out.flush();
-        } catch (IOException e) {
-            log.warn("HL7 listener disconnected: {}", e.getMessage());
-            closeQuietly(conn);
-            hl7Connection = null;
+
+        // ── TCP/MLLP channel ─────────────────────────────────────────────────
+        Socket conn = hl7Connection;
+        if (conn != null && !conn.isClosed()) {
+            try {
+                OutputStream out = conn.getOutputStream();
+                out.write(frame);
+                out.flush();
+            } catch (IOException e) {
+                log.warn("HL7 TCP listener disconnected: {}", e.getMessage());
+                closeQuietly(conn);
+                hl7Connection = null;
+            }
+        } else {
+            log.debug("No HL7 TCP listener connected — skipping TCP send");
+        }
+
+        // ── Serial / RS-232 channel ──────────────────────────────────────────
+        OutputStream serial = serialOutputStream;
+        if (serial != null) {
+            try {
+                serial.write(frame);
+                serial.flush();
+                log.debug("MLLP frame written to serial ({} bytes)", frame.length);
+            } catch (IOException e) {
+                log.warn("Serial write error — closing port: {}", e.getMessage());
+                closeQuietly(serial);
+                serialOutputStream = null;
+            }
         }
     }
 
@@ -350,6 +377,36 @@ class EfficiaClinicalEngine {
         }, "efficia-tcp-client");
         t.setDaemon(true);
         t.start();
+    }
+
+    // ── Serial Output (RS-232) ────────────────────────────────────────────────
+    //
+    // Opens the Pi's native UART device file as a raw OutputStream.
+    // The port MUST be pre-configured with stty before calling this:
+    //   stty -F /dev/ttyAMA0 9600 cs8 -cstopb -parenb raw
+    //
+    // If SERIAL_PORT is blank or the device does not exist, serial output is
+    // silently disabled so the TCP channel continues working normally.
+
+    private void startSerialOutput() {
+        String portPath = SimEfficiaMonitor.SERIAL_PORT;
+        if (portPath == null || portPath.isBlank()) {
+            log.info("Serial output disabled (SERIAL_PORT is empty)");
+            return;
+        }
+        java.io.File dev = new java.io.File(portPath);
+        if (!dev.exists()) {
+            log.warn("Serial port '{}' not found — serial output disabled. "
+                    + "Check that the adapter is connected and the path is correct.", portPath);
+            return;
+        }
+        try {
+            serialOutputStream = new FileOutputStream(dev);
+            log.info("Serial output opened on {}", portPath);
+        } catch (IOException e) {
+            log.warn("Could not open serial port '{}': {} — serial output disabled",
+                    portPath, e.getMessage());
+        }
     }
 
     // ── UDP Listener (Control) ────────────────────────────────────────────────

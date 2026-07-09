@@ -5,7 +5,7 @@ public class EfficiaHL7Listener {
 
     public static void main(String[] args) {
         // --- CONFIGURACIÓN ---
-        boolean useSerial = false; // Cambiar a true para escuchar por RS232 (Linux)
+        boolean useSerial = true; // Cambiar a true para escuchar por RS232 (Linux)
 
         // Configuración de RED (HL7 vía TCP/IP)
         // En LAN/WLAN el Efficia es el CLIENTE — se conecta a nosotros.

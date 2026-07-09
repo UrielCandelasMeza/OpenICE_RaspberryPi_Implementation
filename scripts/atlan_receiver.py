@@ -5,6 +5,13 @@ Connects to the simulated device via LAN (HL7/TCP) and Serial (Medibus).
 
 Usage:
     python3 scripts/atlan_receiver.py --serial /dev/ttyUSB1 --host 127.0.0.1 --port 2575
+
+Before use execute in pc: stty -F /dev/ttyUSB0 19200 -parenb cs8 -cstopb raw
+After use execute in pc: stty -F /dev/ttyUSB0 sane
+
+Before use execute in raspberry: stty -F /dev/ttyS0 19200 -parenb cs8 -cstopb raw
+After use execute in raspberry: stty -F /dev/ttyS0 sane
+
 """
 
 import argparse
@@ -156,7 +163,7 @@ def run_serial_client(port_name):
             port=port_name,
             baudrate=19200,
             bytesize=serial.EIGHTBITS,
-            parity=serial.PARITY_EVEN,
+            parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             timeout=0.1  # Short timeout for responsive multiplexing
         )

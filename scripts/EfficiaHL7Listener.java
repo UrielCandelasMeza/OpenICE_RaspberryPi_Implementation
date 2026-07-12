@@ -12,14 +12,14 @@ public class EfficiaHL7Listener {
         // Este script es el SERVIDOR; el Efficia (o el simulador) se conecta aquí.
         // El puerto debe coincidir con SimEfficiaMonitor.HL7_PORT (2575) y con
         // el puerto configurado en el monitor real.
-        int port = 2575;
+        int port = 4202;
 
         // Configuración Serial (Linux)
         // Configurar baudios primero, ej: stty -F /dev/ttyUSB0 9600 cs8 -cstopb -parenb
         // raw
         String serialPort = "/dev/ttyUSB0";
 
-        String outputFile = "datos_efficia.txt";
+        String outputFile = "datos_massimo.txt";
         // ---------------------
 
         if (useSerial) {
@@ -44,15 +44,26 @@ public class EfficiaHL7Listener {
             // En LAN/WLAN el Efficia CM es el CLIENTE (según el manual).
             // Abrimos un ServerSocket y esperamos a que el monitor (o el simulador)
             // se conecte a nosotros.
-            System.out.println("Servidor HL7 escuchando en el puerto " + port + ". Esperando conexión del Efficia...");
+            System.out.println("Servidor HL7 escuchando en el puerto " + port + ". Esperando conexión del Massimo...");
             try (ServerSocket serverSocket = new ServerSocket(port)) {
                 // Bucle infinito: acepta una conexión, la procesa, vuelve a esperar
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("¡Efficia conectado desde: " + clientSocket.getInetAddress() + "!");
+                    System.out.println("¡Massimo conectado desde: " + clientSocket.getInetAddress() + "!");
 
                     try (InputStream in = clientSocket.getInputStream();
                             OutputStream out = clientSocket.getOutputStream()) {
+
+                        String mesageHeader = "MSH|^~\\&|||||20140510124500||ACK^^ACK_ALL|EXAMPLE123|P|2.4";
+                        String ackPositive = "MSA|AA|MONITORABC000000002D";
+
+                        out.write(0x0B);
+                        out.write(mesageHeader.getBytes());
+                        out.write(0x0D);
+                        out.write(ackPositive.getBytes());
+                        out.write(0x1C);
+                        out.write(0x0D);
+
                         handleDataStream(in, out, outputFile);
                     } catch (IOException e) {
                         System.err.println("La conexión con el Efficia se interrumpió: " + e.getMessage());
@@ -65,14 +76,18 @@ public class EfficiaHL7Listener {
     }
 
     private static void handleDataStream(InputStream in, OutputStream out, String outputFile) {
-        try (FileWriter fw = new FileWriter(outputFile, true);
-                PrintWriter pw = new PrintWriter(fw)) {
+
+        try {
+
+            FileWriter fw = new FileWriter(outputFile, true);
+            PrintWriter pw = new PrintWriter(fw);
 
             int data;
             StringBuilder hl7Message = new StringBuilder();
             boolean isReceiving = false;
 
             // Leer flujo de bytes
+
             while ((data = in.read()) != -1) {
                 if (data == 0x0B) {
                     // 0x0B indica el inicio del mensaje (Start of Block)
@@ -117,7 +132,10 @@ public class EfficiaHL7Listener {
                     // Si estamos entre el inicio y el fin del bloque, añadir el carácter al mensaje
                     hl7Message.append((char) data);
                 }
+
             }
+
+            pw.close();
         } catch (IOException e) {
             System.err.println("El flujo de datos finalizó o se interrumpió: " + e.getMessage());
         }

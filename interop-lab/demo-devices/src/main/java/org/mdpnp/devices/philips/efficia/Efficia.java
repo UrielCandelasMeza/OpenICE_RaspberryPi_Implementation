@@ -9,7 +9,7 @@ import ca.uhn.hl7v2.model.v24.message.ORU_R01;
 import org.mdpnp.devices.connected.AbstractConnectedDevice;
 import org.mdpnp.devices.hl7.Hl7Service;
 import org.mdpnp.devices.simulation.AbstractSimulatedDevice;
-import org.mdpnp.rosetta.types.InstanceHolder;
+import org.mdpnp.devices.AbstractDevice.InstanceHolder;
 import org.mdpnp.rtiapi.data.EventLoop;
 import org.mdpnp.devices.DeviceClock;
 
@@ -119,7 +119,11 @@ public class Efficia extends AbstractConnectedDevice {
             @Override
             public Message processMessage(Message msg) throws HL7Exception {
                 handleHL7Message(msg);
-                return msg.generateACK();
+                try {
+                    return msg.generateACK();
+                } catch (java.io.IOException e) {
+                    throw new HL7Exception(e);
+                }
             }
         };
 

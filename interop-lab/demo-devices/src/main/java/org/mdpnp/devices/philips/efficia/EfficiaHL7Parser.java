@@ -48,8 +48,8 @@ public class EfficiaHL7Parser {
 
         try {
             // 1. Extraer PID
-            PID pid = message.getPATIENT_RESULT().getPID();
-            String patientId = pid.getPatientIdentifierList()[0].getIDNumber().getValue();
+            PID pid = message.getPATIENT_RESULT().getPATIENT().getPID();
+            String patientId = pid.getPatientIdentifierList()[0].getID().getValue();
             data.setPatientId(patientId);
 
             // 2. Extraer OBR
@@ -84,7 +84,7 @@ public class EfficiaHL7Parser {
      */
     private void parseMonitorData(ORU_R01_ORDER_OBSERVATION order, EfficiaData data) {
         try {
-            ORU_R01_OBSERVATION[] observations = order.getOBSERVATIONAll();
+            java.util.List<ORU_R01_OBSERVATION> observations = order.getOBSERVATIONAll();
             for (ORU_R01_OBSERVATION obs : observations) {
                 OBX obx = obs.getOBX();
 
@@ -103,7 +103,7 @@ public class EfficiaHL7Parser {
                 String mdilCode = identifier.split("\\^")[0];
 
                 // Obtener valor
-                String value = obx.getObservationValue().getData().toString();
+                String value = obx.getObservationValue(0).getData().toString();
                 if (value == null || value.isEmpty())
                     continue;
 
@@ -151,10 +151,10 @@ public class EfficiaHL7Parser {
      */
     private void parseAlarm(ORU_R01_ORDER_OBSERVATION order, EfficiaData data) {
         try {
-            ORU_R01_OBSERVATION[] observations = order.getOBSERVATIONAll();
+            java.util.List<ORU_R01_OBSERVATION> observations = order.getOBSERVATIONAll();
             for (ORU_R01_OBSERVATION obs : observations) {
                 OBX obx = obs.getOBX();
-                String value = obx.getObservationValue().getData().toString();
+                String value = obx.getObservationValue(0).getData().toString();
 
                 if (value != null && !value.isEmpty()) {
                     // Extraer tipo de alarma del texto

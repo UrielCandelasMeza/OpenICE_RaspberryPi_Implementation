@@ -9,9 +9,9 @@ import ca.uhn.hl7v2.app.SimpleServer;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.ACK;
 import ca.uhn.hl7v2.model.v24.message.ORU_R01;
-import ca.uhn.hl7v2.parser.DefaultHapiContext;
+import ca.uhn.hl7v2.DefaultHapiContext;
+import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.parser.EncodingNotSupportedException;
-import ca.uhn.hl7v2.parser.HapiContext;
 import ca.uhn.hl7v2.parser.Parser;
 
 import jakarta.annotation.PostConstruct;
@@ -22,15 +22,17 @@ import org.springframework.stereotype.Component;
 /**
  * Servicio general para manejo de HL7 v2.4 usando HAPI.
  *
- * <p>Provee infraestructura MLLP/HL7 reutilizable:
+ * <p>
+ * Provee infraestructura MLLP/HL7 reutilizable:
  * <ul>
- *   <li>Parseo de mensajes HL7 raw a objetos HAPI</li>
- *   <li>Creación de servidores MLLP (SimpleServer)</li>
- *   <li>Generación de ACK</li>
- *   <li>Casting a tipos específicos (ORU_R01)</li>
+ * <li>Parseo de mensajes HL7 raw a objetos HAPI</li>
+ * <li>Creación de servidores MLLP (SimpleServer)</li>
+ * <li>Generación de ACK</li>
+ * <li>Casting a tipos específicos (ORU_R01)</li>
  * </ul>
  *
- * <p>Este servicio es un Spring {@code @Component} singleton. Se inyecta
+ * <p>
+ * Este servicio es un Spring {@code @Component} singleton. Se inyecta
  * en los drivers que necesiten comunicarse vía HL7.
  */
 @Component
@@ -56,7 +58,9 @@ public class Hl7Service {
      * @return el servidor MLLP listo para iniciar
      */
     public SimpleServer createServer(int port, Application handler) throws HL7Exception {
-        return new SimpleServer(context, port, handler);
+        SimpleServer server = new SimpleServer(context, port, false);
+        server.registerApplication("*", "*", handler);
+        return server;
     }
 
     /**
@@ -97,13 +101,26 @@ public class Hl7Service {
      * @return Message ACK
      */
     public Message generateACK(Message msg) throws HL7Exception {
-        return msg.generateACK();
+        try {
+            ACK ack = (ACK) msg.generateACK();
+            // Set fields that might be missing when generated from parsed message
+            if (msg.getVersion() != null) {
+                ack.getMSH().getVersionID().getVersionID().setValue(msg.getVersion());
+            }
+            return ack;
+        } catch (java.io.IOException e) {
+            throw new HL7Exception(e);
+        }
     }
 
     @PreDestroy
     public void shutdown() {
         if (context != null) {
-            context.close();
+            try {
+                context.close();
+            } catch (java.io.IOException e) {
+                log.warn("Error closing HapiContext", e);
+            }
             log.info("Hl7Service shut down");
         }
     }

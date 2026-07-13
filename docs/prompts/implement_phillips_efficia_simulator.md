@@ -1,5 +1,8 @@
 # Prompt: Implement Philips Efficia CM Series Monitor Simulator
 
+> **Nota:** Este simulador ha sido renombrado. Ver `docs/promts/efficia_rename_simulated.md`
+> para los detalles del renombramiento de `SimEfficiaMonitor` → `SimulatedEfficia`.
+
 ## Objective
 
 Create a simulated device that emulates a **Philips Efficia CM Series** monitor using HL7 v2.4 over MLLP (TCP). The simulator must periodically generate clinical data, publish it to DDS for OpenICE integration, expose a TCP server for external hosts to connect and receive HL7 ORU messages, plus a UDP channel to receive control instructions.

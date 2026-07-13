@@ -18,7 +18,9 @@ import org.mdpnp.devices.nonin.pulseox.DemoNoninPulseOx;
 import org.mdpnp.devices.oridion.capnostream.DemoCapnostream20;
 import org.mdpnp.devices.philips.intellivue.DemoEthernetIntellivue;
 import org.mdpnp.devices.philips.intellivue.DemoSerialIntellivue;
-import org.mdpnp.devices.philips.efficia.SimEfficiaMonitor;
+import org.mdpnp.devices.philips.efficia.SimulatedEfficia;
+import org.mdpnp.devices.philips.efficia.Efficia;
+import org.mdpnp.devices.hl7.Hl7Service;
 import org.mdpnp.devices.simulation.co2.SimCapnometer;
 import org.mdpnp.devices.simulation.ecg.SimElectroCardioGram;
 import org.mdpnp.devices.simulation.ibp.SimInvasivePressure;
@@ -275,17 +277,32 @@ public class HeadlessDeviceFactory {
         }
     }
 
-    public static class EfficiaMonitorProvider extends SpringLoadedDriver {
+    public static class SimulatedEfficiaProvider extends SpringLoadedDriver {
         @Override
         public DeviceType getDeviceType() {
-            return new DeviceType(ice.ConnectionType.Simulated, "Philips", "Efficia CM Series", "EfficiaMonitor", 1);
+            return new DeviceType(ice.ConnectionType.Simulated, "Philips", "Efficia CM Series", "SimulatedEfficia", 1);
         }
 
         @Override
         public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
-            return new SimEfficiaMonitor(ctx.getBean("subscriber", Subscriber.class),
+            return new SimulatedEfficia(ctx.getBean("subscriber", Subscriber.class),
                     ctx.getBean("publisher", Publisher.class),
                     ctx.getBean("eventLoop", EventLoop.class));
+        }
+    }
+
+    public static class EfficiaProvider extends SpringLoadedDriver {
+        @Override
+        public DeviceType getDeviceType() {
+            return new DeviceType(ice.ConnectionType.Network, "Philips", "Efficia CM Series", "Efficia", 1);
+        }
+
+        @Override
+        public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
+            return new Efficia(ctx.getBean("subscriber", Subscriber.class),
+                    ctx.getBean("publisher", Publisher.class),
+                    ctx.getBean("eventLoop", EventLoop.class),
+                    ctx.getBean(Hl7Service.class));
         }
     }
 

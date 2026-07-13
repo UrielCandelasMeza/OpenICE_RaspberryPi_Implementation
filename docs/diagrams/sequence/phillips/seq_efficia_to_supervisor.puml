@@ -1,0 +1,108 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+title Flujo de Datos: Philips Efficia CM → OpenICE → Supervisor
+
+actor "Philips Efficia\nCM Series\n(Hardware LAN)" as Efficia
+
+box "OpenICE (Headless / PC)" #f5f5f5
+participant "Hl7Service\n(HAPI SimpleServer)" as Hl7
+participant "Efficia\n(AbstractConnectedDevice)" as Driver
+participant "EfficiaHL7Parser\n(Parsing ORU)" as Parser
+participant "DDS DataWriter\n(Publisher)" as Writer
+participant "TimescalePersister\n(Persistence)" as DB
+end box
+
+box "Supervisor (PC / GUI)" #e8f4f8
+participant "DDS DataReader\n(Subscriber)" as Reader
+participant "DeviceListModel /\nNumericModel" as Model
+participant "UI Components\n(JavaFX)" as UI
+end box
+
+== 1. Conexión del Efficia al servidor MLLP ==
+
+Efficia -> Hl7: TCP连接 (MLLP client → server)\nPuerto 4202
+activate Hl7
+Hl7 -> Driver: ConnectionState → Connecting
+Hl7 -> Hl7: Espera primer mensaje HL7
+deactivate Hl7
+
+== 2. Recepción y parseo de datos ORU ==
+
+Efficia -> Hl7: ORU^R01 (HL7 v2.4, MLLP framed)\nMSH + PID + PV1 + ORC + OBR + OBX
+activate Hl7
+Hl7 -> Driver: ConnectionState → Connected
+Hl7 -> Parser: castToORU(msg) + parse(oru)
+activate Parser
+
+Parser -> Parser: Navegar PATIENT_RESULT\n→ ORDER_OBSERVATION\n→ OBSERVATION[]
+Parser -> Parser: Mapear MDIL codes:\n0002-4182→HR, 0002-4bb8→SpO2,\n0002-5000→Resp, 0002-480a→Pulse
+Parser -> Parser: Determinar ObservationStatus:\nF=Final, X=Disconnected
+Parser -> Parser: Verificar OBR-4:\nMONITOR (datos) vs ALARM (alerta)
+
+Parser -> Driver: EfficiaData\n(heartRate, spo2, respRate, pulse, ...)
+deactivate Parser
+
+== 3. Publicación a DDS ==
+
+activate Driver
+Driver -> Driver: numericSample(heartRate, value, timestamp)\nnumericSample(spo2, value, timestamp)\nnumericSample(respRate, value, timestamp)\nnumericSample(pulse, value, timestamp)
+Driver -> Writer: write(Numeric, InstanceHandle_t)\n[Tópico DDS: "ice::Numeric"]
+deactivate Driver
+deactivate Hl7
+
+== 4. Persistencia ==
+
+Writer -> DB: Multicast/Unicast UDP (RTPS)\n[Topic: ice::Numeric]
+activate DB
+DB -> DB: INSERT INTO vital_values\n(unique_device_identifier, metric_id,\n value, unit, timestamp)
+deactivate DB
+
+== 5. ACK al Efficia ==
+
+Hl7 -> Efficia: ACK (MSA|AA|messageControlId)\nMLLP framed
+note right: El Efficia confirma recepción.\nReintenta 3 veces si no recibe ACK.
+
+== 6. Consulta en el Supervisor ==
+
+Reader -> Model: on_data_available()\n(Evento RTI DDS)
+activate Reader
+deactivate Reader
+
+activate Model
+Model -> Model: Verificar UDI del dispositivo\nExtraer metric_id, value, timestamp
+Model -> UI: Platform.runLater(() →\n  actualizarGráfico(data))
+deactivate Model
+
+activate UI
+UI -> UI: Actualizar panel numérico:\n  HR: 72 bpm\n  SpO2: 98 %\n  Resp: 14 rpm\n  Pulse: 71 bpm
+deactivate UI
+
+== 7. Manejo de Alarmas (OBR-4 = ALARM) ==
+
+Efficia -> Hl7: ORU^R01 con OBX tipo TX\nMDIL-ALERT: "Yellow Alarm"
+activate Hl7
+Hl7 -> Parser: parse(oru)
+Parser -> Driver: EfficiaData\n(alarmType=YELLOW_ALARM,\n alarmText="SpO₂ baja, SpO₂ = 80%")
+Driver -> Writer: writePatientAlert(key, text)\n[Tópico: ice::PatientAlert]
+deactivate Hl7
+
+Writer -> Reader: RTPS multicast
+activate Reader
+Reader -> Model: on_data_available()\n(Topic: ice::PatientAlert)
+Model -> UI: Mostrar alarma en UI\n(icono amarillo + texto)
+deactivate Reader
+
+== 8. Desconexión del paciente (OBX status = X) ==
+
+Efficia -> Hl7: ORU^R01 con OBX status X\n(valores vacíos)
+activate Hl7
+Hl7 -> Parser: parse(oru)
+Parser -> Driver: EfficiaData\n(status=DISCONNECTED)
+note over Driver: No publica valores.\nLos valores se mantienen en\núltimo estado conocido.
+deactivate Hl7
+
+@enduml

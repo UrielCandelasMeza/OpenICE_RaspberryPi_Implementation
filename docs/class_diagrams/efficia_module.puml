@@ -1,0 +1,192 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title Diagrama de Clases — Módulo Philips Efficia CM Series
+
+package "org.mdpnp.devices.philips.efficia" {
+
+  class Efficia <<Network Device>> {
+    - hl7Service : Hl7Service
+    - hl7Server : SimpleServer
+    - parser : EfficiaHL7Parser
+    --
+    - heartRate : InstanceHolder<Numeric>
+    - spo2 : InstanceHolder<Numeric>
+    - respRate : InstanceHolder<Numeric>
+    - pulse : InstanceHolder<Numeric>
+    - perfusionIndex : InstanceHolder<Numeric>
+    --
+    + {abstract} connect(address : String) : boolean
+    + {abstract} disconnect() : void
+    + {abstract} getConnectionType() : ConnectionType
+    + init() : void
+    - handleHL7Message(msg : Message) : void
+  }
+
+  class SimulatedEfficia <<Simulated Device>> {
+    - clinicalEngine : SimulatedEfficiaClinicalEngine
+    --
+    + connect(address : String) : boolean
+    + disconnect() : void
+    + getConnectionType() : ConnectionType
+    + publishPatientAlert(key, value) : void
+    + publishNumericSample(holder, value, time) : void
+    + clockReading() : DeviceClock.Reading
+  }
+
+  class SimulatedEfficiaClinicalEngine <<Simulation Engine>> {
+    - device : SimulatedEfficia
+    - executor : ScheduledExecutorService
+    - patientState : PatientState
+    - running : boolean
+    --
+    + start() : void
+    + stop() : void
+    + getState() : PatientState
+    - publishDdsSamples() : void
+    - buildOruMessage() : String
+    - startTcpServer() : void
+    - startUdpListener() : void
+  }
+
+  class EfficiaHL7Parser <<Parser>> {
+    - CODE_MAP : Map<String, String>
+    --
+    + parse(oru : ORU_R01) : EfficiaData
+    + isAlarm(oru : ORU_R01) : boolean
+    + getAlarmText(oru : ORU_R01) : String
+  }
+
+  class EfficiaData <<POJO>> {
+    - heartRate : Float
+    - spo2 : Float
+    - respRate : Float
+    - perfusionIndex : Float
+    - pulse : Float
+    - stII : Float
+    - pvc : Integer
+    - alarmType : AlarmType
+    - alarmPriority : AlarmPriority
+    - status : ObservationStatus
+    - timestamp : String
+    - patientId : String
+    --
+    + getters/setters
+  }
+
+  enum EfficiaData$AlarmType {
+    NONE
+    YELLOW_ALARM
+    RED_ALARM
+    SOFT_INOP
+    ALARM_CLEAR
+  }
+
+  enum EfficiaData$AlarmPriority {
+    HIGH(1)
+    MEDIUM(2)
+    LOW(6)
+    --
+    - code : int
+  }
+
+  enum EfficiaData$ObservationStatus {
+    FINAL
+    DISCONNECTED
+    UNKNOWN
+    --
+    - hl7Code : String
+    + fromHl7Code(code : String) : ObservationStatus
+  }
+}
+
+package "org.mdpnp.devices.hl7" {
+  class Hl7Service <<@Component>> {
+    - context : HapiContext
+    --
+    + {init} init() : void
+    + createServer(port, handler) : SimpleServer
+    + parse(raw : String) : Message
+    + encode(msg : Message) : String
+    + castToORU(msg : Message) : ORU_R01
+    + generateACK(msg, code) : ACK
+    + shutdown() : void
+  }
+}
+
+package "org.mdpnp.devices.connected" {
+  class AbstractConnectedDevice <<abstract>> {
+    # stateMachine : StateMachine<ConnectionState>
+    # deviceConnectivity : DeviceConnectivity
+    --
+    + {abstract} connect(address : String) : boolean
+    + {abstract} disconnect() : void
+    # {abstract} getConnectionType() : ConnectionType
+    # numericSample(holder, value, time) : void
+    # writePatientAlert(key, value) : void
+    # writeTechnicalAlert(key, value) : void
+  }
+}
+
+package "org.mdpnp.apps.testapp" #ffffee {
+  class DeviceFactory {
+    + {static} getAvailableDevices() : DeviceDriverProvider[]
+    + {static} getDeviceDriverProvider(alias) : DeviceDriverProvider
+  }
+
+  class DeviceFactory$EfficiaProvider <<DeviceDriverProvider>> {
+    + getDeviceType() : DeviceType
+    + newInstance(ctx) : AbstractDevice
+  }
+
+  class DeviceFactory$SimulatedEfficiaProvider <<DeviceDriverProvider>> {
+    + getDeviceType() : DeviceType
+    + newInstance(ctx) : AbstractDevice
+  }
+}
+
+package "org.mdpnp.headless" #eeeeff {
+  class HeadlessDeviceFactory {
+    + {static} getAvailableDevices() : DeviceDriverProvider[]
+  }
+
+  class HeadlessDeviceFactory$EfficiaProvider <<DeviceDriverProvider>> {
+    + getDeviceType() : DeviceType
+    + newInstance(ctx) : AbstractDevice
+  }
+
+  class HeadlessDeviceFactory$SimulatedEfficiaProvider <<DeviceDriverProvider>> {
+    + getDeviceType() : DeviceType
+    + newInstance(ctx) : AbstractDevice
+  }
+}
+
+' === Relaciones ===
+Efficia --|> AbstractConnectedDevice : extends
+SimulatedEfficia --|> AbstractSimulatedConnectedDevice : extends
+
+Efficia --> Hl7Service : usa
+Efficia --> EfficiaHL7Parser : usa
+EfficiaHL7Parser ..> EfficiaData : genera
+EfficiaData --> EfficiaData$AlarmType : contiene
+EfficiaData --> EfficiaData$AlarmPriority : contiene
+EfficiaData --> EfficiaData$ObservationStatus : contiene
+
+SimulatedEfficia --> SimulatedEfficiaClinicalEngine : delega
+SimulatedEfficiaClinicalEngine ..> EfficiaData : genera (simula)
+
+DeviceFactory$EfficiaProvider ..> Efficia : instancia
+DeviceFactory$SimulatedEfficiaProvider ..> SimulatedEfficia : instancia
+HeadlessDeviceFactory$EfficiaProvider ..> Efficia : instancia
+HeadlessDeviceFactory$SimulatedEfficiaProvider ..> SimulatedEfficia : instancia
+
+DeviceFactory$EfficiaProvider --|> DeviceDriverProvider
+DeviceFactory$SimulatedEfficiaProvider --|> DeviceDriverProvider
+HeadlessDeviceFactory$EfficiaProvider --|> DeviceDriverProvider
+HeadlessDeviceFactory$SimulatedEfficiaProvider --|> DeviceDriverProvider
+
+@enduml

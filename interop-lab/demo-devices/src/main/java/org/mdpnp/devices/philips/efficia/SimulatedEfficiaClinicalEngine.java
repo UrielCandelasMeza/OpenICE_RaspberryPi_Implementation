@@ -47,16 +47,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Clinical simulation engine for the {@link SimEfficiaMonitor}.
+ * Clinical simulation engine for the {@link SimulatedEfficia}.
  *
  * <h3>Responsibilities</h3>
  * <ul>
  *   <li><b>DDS publishing</b> — publishes each metric to the {@code ice.Numeric} topic every
  *       second so that the TimescalePersister can store them automatically.</li>
  *   <li><b>HL7 v2.4 / MLLP TCP server</b> — accepts external clients on port
- *       {@link SimEfficiaMonitor#HL7_PORT} and pushes an ORU^R01 message every 60 s as well as
+ *       {@link SimulatedEfficia#HL7_PORT} and pushes an ORU^R01 message every 60 s as well as
  *       an MSH-only keep-alive at startup and every hour.</li>
- *   <li><b>UDP control listener</b> — listens on port {@link SimEfficiaMonitor#UDP_PORT} and
+ *   <li><b>UDP control listener</b> — listens on port {@link SimulatedEfficia#UDP_PORT} and
  *       interprets simple text commands to change the simulated patient state.</li>
  *   <li><b>Alarm handling</b> — writes patient alerts to DDS via
  *       {@code writePatientAlert()} when the state requests it.</li>
@@ -73,9 +73,9 @@ import org.slf4j.LoggerFactory;
  *   0002-4188   MDC_TEMP_BLD                        Cel
  * </pre>
  */
-class EfficiaClinicalEngine {
+class SimulatedEfficiaClinicalEngine {
 
-    private static final Logger log = LoggerFactory.getLogger(EfficiaClinicalEngine.class);
+    private static final Logger log = LoggerFactory.getLogger(SimulatedEfficiaClinicalEngine.class);
 
     // ── MLLP framing bytes ────────────────────────────────────────────────────
     private static final byte MLLP_SB = 0x0B;   // Start Block
@@ -89,7 +89,7 @@ class EfficiaClinicalEngine {
     private static final float TEMP_JITTER = 0.1f;
 
     // ── References ────────────────────────────────────────────────────────────
-    private final SimEfficiaMonitor device;
+    private final SimulatedEfficia device;
     private final ScheduledExecutorService executor;
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -129,7 +129,13 @@ class EfficiaClinicalEngine {
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    EfficiaClinicalEngine(SimEfficiaMonitor device, ScheduledExecutorService executor) {
+    /**
+     * Constructor for SimulatedEfficiaClinicalEngine.
+     *
+     * @param device   The simulated Efficia device driver context.
+     * @param executor Service to run periodic DDS and HL7 broadcasting tasks.
+     */
+    SimulatedEfficiaClinicalEngine(SimulatedEfficia device, ScheduledExecutorService executor) {
         this.device   = device;
         this.executor = executor;
     }
@@ -162,7 +168,7 @@ class EfficiaClinicalEngine {
         // Keep-alive: send MSH-only ORU at startup (after 1 s) and then every hour
         keepAliveTask = executor.scheduleAtFixedRate(this::sendKeepAlive, 1, 3600, TimeUnit.SECONDS);
 
-        log.info("EfficiaClinicalEngine started — serial port {}", SimEfficiaMonitor.SERIAL_PORT);
+        log.info("SimulatedEfficiaClinicalEngine started — serial port {}", SimulatedEfficia.SERIAL_PORT);
     }
 
     void stop() {
@@ -176,7 +182,7 @@ class EfficiaClinicalEngine {
         closeQuietly(udpSocket);
         closeQuietly(serialOutputStream);
 
-        log.info("EfficiaClinicalEngine stopped");
+        log.info("SimulatedEfficiaClinicalEngine stopped");
     }
 
     // ── DDS publishing ────────────────────────────────────────────────────────
@@ -266,13 +272,30 @@ class EfficiaClinicalEngine {
         return sb.toString();
     }
 
+    /**
+     * Helper to build a single OBX row for an HL7 message.
+     *
+     * @param seq       Sequence number.
+     * @param type      Data type (e.g. NM, TX).
+     * @param mdilCode  The MDIL identifier code.
+     * @param label     Descriptive text label.
+     * @param value     The value of the observation.
+     * @param unitCode  Units code.
+     * @param unitLabel Units label.
+     * @return A formatted OBX segment.
+     */
     private String obxRow(int seq, String type, String mdilCode, String label,
                            Number value, String unitCode, String unitLabel) {
         return "OBX|" + seq + "|" + type + "|" + mdilCode + "^" + label + "^MDIL||"
                 + value + "|" + unitCode + "^" + unitLabel + "^MDIL|||||F\r";
     }
 
-    /** Wraps a message string in MLLP framing bytes. */
+    /**
+     * Wraps a message string in MLLP framing bytes.
+     *
+     * @param message The HL7 message string to wrap.
+     * @return Byte array containing the MLLP framed message.
+     */
     private byte[] mllpWrap(String message) {
         byte[] msgBytes = message.getBytes(StandardCharsets.US_ASCII);
         byte[] frame    = new byte[msgBytes.length + 3];
@@ -298,6 +321,11 @@ class EfficiaClinicalEngine {
         log.debug("HL7 keep-alive sent to {} clients", clientCount());
     }
 
+    /**
+     * Broadcasts an MLLP message to connected clients and serial port.
+     *
+     * @param message The raw HL7 message string.
+     */
     private void broadcastMllp(String message) {
         byte[] frame = mllpWrap(message);
 
@@ -348,9 +376,9 @@ class EfficiaClinicalEngine {
             while (running) {
                 try {
                     log.info("HL7/MLLP: connecting to listener {}:{}",
-                            SimEfficiaMonitor.HL7_HOST, SimEfficiaMonitor.HL7_PORT);
-                    Socket conn = new Socket(SimEfficiaMonitor.HL7_HOST,
-                                            SimEfficiaMonitor.HL7_PORT);
+                            SimulatedEfficia.HL7_HOST, SimulatedEfficia.HL7_PORT);
+                    Socket conn = new Socket(SimulatedEfficia.HL7_HOST,
+                                            SimulatedEfficia.HL7_PORT);
                     hl7Connection = conn;
                     log.info("HL7/MLLP: connected to listener");
                     // Announce ourselves with a keep-alive right after connect
@@ -389,7 +417,7 @@ class EfficiaClinicalEngine {
     // silently disabled so the TCP channel continues working normally.
 
     private void startSerialOutput() {
-        String portPath = SimEfficiaMonitor.SERIAL_PORT;
+        String portPath = SimulatedEfficia.SERIAL_PORT;
         if (portPath == null || portPath.isBlank()) {
             log.info("Serial output disabled (SERIAL_PORT is empty)");
             return;
@@ -414,8 +442,8 @@ class EfficiaClinicalEngine {
     private void startUdpListener() {
         Thread t = new Thread(() -> {
             try {
-                udpSocket = new DatagramSocket(SimEfficiaMonitor.UDP_PORT);
-                log.info("UDP control listener on port {}", SimEfficiaMonitor.UDP_PORT);
+                udpSocket = new DatagramSocket(SimulatedEfficia.UDP_PORT);
+                log.info("UDP control listener on port {}", SimulatedEfficia.UDP_PORT);
                 byte[] buf = new byte[512];
                 while (running) {
                     try {
@@ -437,7 +465,7 @@ class EfficiaClinicalEngine {
                 }
             } catch (IOException e) {
                 if (running) log.error("Failed to start UDP listener on port {}",
-                        SimEfficiaMonitor.UDP_PORT, e);
+                        SimulatedEfficia.UDP_PORT, e);
             }
         }, "efficia-udp");
         t.setDaemon(true);
@@ -458,6 +486,9 @@ class EfficiaClinicalEngine {
      *   <li>{@code ALARM_CLEAR}</li>
      *   <li>{@code STATUS}</li>
      * </ul>
+     *
+     * @param cmd The received command string.
+     * @return A response message, or null if no response is needed.
      */
     private String processCommand(String cmd) {
         try {
@@ -522,10 +553,24 @@ class EfficiaClinicalEngine {
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
+    /**
+     * Generates a random jitter value for an integer parameter.
+     *
+     * @param base      The base value.
+     * @param amplitude The maximum offset/jitter amount.
+     * @return The jittered value.
+     */
     private static int jitterInt(int base, int amplitude) {
         return base + (int) (Math.random() * (amplitude * 2 + 1)) - amplitude;
     }
 
+    /**
+     * Generates a random jitter value for a float parameter.
+     *
+     * @param base      The base value.
+     * @param amplitude The maximum offset/jitter amount.
+     * @return The jittered value.
+     */
     private static float jitterFloat(float base, float amplitude) {
         return base + (float) (Math.random() * amplitude * 2) - amplitude;
     }
@@ -534,12 +579,22 @@ class EfficiaClinicalEngine {
         return new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     }
 
+    /**
+     * Safely cancels a scheduled task.
+     *
+     * @param f The scheduled future to cancel.
+     */
     private static void cancelQuietly(ScheduledFuture<?> f) {
         if (f != null) {
             f.cancel(false);
         }
     }
 
+    /**
+     * Safely closes an AutoCloseable resource.
+     *
+     * @param c The resource to close.
+     */
     private static void closeQuietly(AutoCloseable c) {
         if (c != null) {
             try {

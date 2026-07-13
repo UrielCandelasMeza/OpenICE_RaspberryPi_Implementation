@@ -50,7 +50,7 @@ import com.rti.dds.subscription.Subscriber;
  *
  * <p>To run in headless mode:
  * <pre>
- *   ./gradlew :headless-adapter:run --args="-domain 0 -device EfficiaMonitor"
+ *   ./gradlew :headless-adapter:run --args="-domain 0 -device SimulatedEfficia"
  * </pre>
  *
  * <p>Supported UDP commands (send to 127.0.0.1:{@link #UDP_PORT}):
@@ -65,9 +65,9 @@ import com.rti.dds.subscription.Subscriber;
  *   <li>{@code STATUS} — query current patient state (UDP reply)</li>
  * </ul>
  */
-public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
+public class SimulatedEfficia extends AbstractSimulatedConnectedDevice {
 
-    private static final Logger log = LoggerFactory.getLogger(SimEfficiaMonitor.class);
+    private static final Logger log = LoggerFactory.getLogger(SimulatedEfficia.class);
 
     /** Default HL7 v2.4 / MLLP TCP port used by real Efficia CM monitors. */
     public static final int    HL7_PORT = 2575;
@@ -112,11 +112,18 @@ public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
 
     // ── Internal engine ───────────────────────────────────────────────────────
 
-    private EfficiaClinicalEngine clinicalEngine;
+    private SimulatedEfficiaClinicalEngine clinicalEngine;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public SimEfficiaMonitor(final Subscriber subscriber,
+    /**
+     * Constructor for SimulatedEfficia.
+     *
+     * @param subscriber DDS subscriber.
+     * @param publisher  DDS publisher.
+     * @param eventLoop  DDS event loop.
+     */
+    public SimulatedEfficia(final Subscriber subscriber,
                              final Publisher publisher,
                              final EventLoop eventLoop) {
         super(subscriber, publisher, eventLoop);
@@ -136,13 +143,19 @@ public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
 
     // ── AbstractSimulatedConnectedDevice lifecycle ────────────────────────────
 
+    /**
+     * Connects and starts the simulation clinical engine.
+     *
+     * @param address Connection address.
+     * @return true if simulator started successfully, false otherwise.
+     */
     @Override
     public boolean connect(String address) {
         if (!super.connect(address)) {
             return false;
         }
 
-        clinicalEngine = new EfficiaClinicalEngine(this, executor);
+        clinicalEngine = new SimulatedEfficiaClinicalEngine(this, executor);
         clinicalEngine.start();
 
         log.info("Efficia CM Series simulator started — HL7/MLLP port {}, UDP control port {}",
@@ -161,12 +174,17 @@ public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
 
     // ── GlobalSimulationObjectiveListener ────────────────────────────────────
 
+    /**
+     * Receives simulated numeric updates from the DDS GlobalSimulationObjective topic.
+     *
+     * @param obj The simulation objective message specifying metric ID and target value.
+     */
     @Override
     public void simulatedNumeric(GlobalSimulationObjective obj) {
         if (obj == null || clinicalEngine == null) {
             return;
         }
-        EfficiaClinicalEngine.PatientState state = clinicalEngine.getState();
+        SimulatedEfficiaClinicalEngine.PatientState state = clinicalEngine.getState();
         try {
             int intVal  = (int) Math.round(obj.value);
             float fVal  = obj.value;
@@ -190,28 +208,37 @@ public class SimEfficiaMonitor extends AbstractSimulatedConnectedDevice {
     }
 
     /**
-     * Package-private bridge so that {@link EfficiaClinicalEngine} (a helper class in the
+     * Package-private bridge so that {@link SimulatedEfficiaClinicalEngine} (a helper class in the
      * same package, but not a subclass of {@code AbstractDevice}) can publish patient alerts.
      * {@code writePatientAlert} is {@code protected} in {@code AbstractDevice} and therefore
      * not directly callable by a non-subclass in a different package.
+     *
+     * @param key   The alert key identifier.
+     * @param value The alert value or descriptive message.
      */
     void publishPatientAlert(String key, String value) {
         writePatientAlert(key, value);
     }
 
     /**
-     * Package-private bridge so that {@link EfficiaClinicalEngine} can obtain a
+     * Package-private bridge so that {@link SimulatedEfficiaClinicalEngine} can obtain a
      * {@link org.mdpnp.devices.DeviceClock.Reading} without needing access to the
      * {@code protected} {@code getClockProvider()} method on {@code AbstractDevice}.
+     *
+     * @return The current DeviceClock Reading.
      */
     org.mdpnp.devices.DeviceClock.Reading clockReading() {
         return getClockProvider().instant();
     }
 
     /**
-     * Package-private bridge so that {@link EfficiaClinicalEngine} can publish a numeric
+     * Package-private bridge so that {@link SimulatedEfficiaClinicalEngine} can publish a numeric
      * sample without needing access to the {@code protected} {@code numericSample()} method
      * on {@code AbstractSimulatedConnectedDevice}.
+     *
+     * @param holder The DDS instance holder for the numeric metric.
+     * @param value  The clinical value to publish.
+     * @param time   The clock reading timestamp of the sample.
      */
     void publishNumericSample(InstanceHolder<ice.Numeric> holder, float value,
                               org.mdpnp.devices.DeviceClock.Reading time) {

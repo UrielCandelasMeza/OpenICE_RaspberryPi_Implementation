@@ -35,6 +35,8 @@ dependencies {
   implementation project(':data-types:x73-idl-rti-dds')
   implementation files('../../artifacts/nddsjava.jar')
 
+  implementation group: 'ca.uhn.hapi',        name: 'hapi-base',                  version: '2.2'
+  implementation group: 'ca.uhn.hapi',        name: 'hapi-structures-v24',        version: '2.2'
   implementation group: 'ca.uhn.hapi.fhir',    name: 'hapi-fhir-base',             version: '0.9'
   implementation group: 'ca.uhn.hapi.fhir',    name: 'hapi-fhir-structures-dstu2', version: '0.9'
   implementation group: 'net.java.dev.jna',    name: 'jna',                        version: '5.12.1'

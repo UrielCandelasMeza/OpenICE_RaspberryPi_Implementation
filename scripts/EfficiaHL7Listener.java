@@ -10,7 +10,7 @@ public class EfficiaHL7Listener {
         // Configuración de RED (HL7 vía TCP/IP)
         // En LAN/WLAN el Efficia es el CLIENTE — se conecta a nosotros.
         // Este script es el SERVIDOR; el Efficia (o el simulador) se conecta aquí.
-        // El puerto debe coincidir con SimEfficiaMonitor.HL7_PORT (2575) y con
+        // El puerto debe coincidir con SimulatedEfficia.HL7_PORT (2575) y con
         // el puerto configurado en el monitor real.
         int port = 4202;
 

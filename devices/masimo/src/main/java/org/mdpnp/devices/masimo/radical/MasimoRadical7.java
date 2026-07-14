@@ -26,8 +26,12 @@ import org.mdpnp.devices.io.ASCIIFieldDelegate;
  */
 public class MasimoRadical7 extends ASCIIFieldDelegate implements DeviceClock {
 
-    private Integer heartRate, spo2, perfusionIndex, spco, spmet, desat, pidelta, pvi;
-    private String guid, alarm;
+    private Integer heartRate, spo2, desat, pidelta, pvi;
+    private Float perfusionIndex, sphb, spoc;
+    private Integer eegPSI;
+    private Float eegEMG, eegSR, eegSEFL, eegSEFR, eegARTF;
+    private String guid, alarm, chan, sysAlarm, alarm1, acsAlarm, exc, exc1, exc2, acsExc;
+    private String eegALARM, eegEXC;
     private Date lastPoint=new Date(0);
 
     public MasimoRadical7() throws IOException, NoSuchFieldException, SecurityException {
@@ -35,6 +39,7 @@ public class MasimoRadical7 extends ASCIIFieldDelegate implements DeviceClock {
     }
 
     private static final Pattern number = Pattern.compile("^(\\d+)$");
+    private static final Pattern decimal = Pattern.compile("^(\\d+\\.?\\d*)$");
 
     @SuppressWarnings("unused")
     private static final String filter(String val) {
@@ -42,6 +47,19 @@ public class MasimoRadical7 extends ASCIIFieldDelegate implements DeviceClock {
             return null;
         }
         Matcher m1 = number.matcher(val);
+        if (m1.matches()) {
+            return m1.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final String filterDecimal(String val) {
+        if (null == val) {
+            return null;
+        }
+        Matcher m1 = decimal.matcher(val);
         if (m1.matches()) {
             return m1.group(1);
         } else {
@@ -65,7 +83,7 @@ public class MasimoRadical7 extends ASCIIFieldDelegate implements DeviceClock {
         return desat;
     }
 
-    public Integer getPerfusionIndex() {
+    public Float getPerfusionIndex() {
         return perfusionIndex;
     }
 
@@ -77,12 +95,76 @@ public class MasimoRadical7 extends ASCIIFieldDelegate implements DeviceClock {
         return pvi;
     }
 
-    public Integer getSpCO() {
-        return spco;
+    public Float getsphb() {
+        return sphb;
     }
 
-    public Integer getSpMet() {
-        return spmet;
+    public Float getspoc() {
+        return spoc;
+    }
+
+    public String getChan() {
+        return chan;
+    }
+
+    public String getSysAlarm() {
+        return sysAlarm;
+    }
+
+    public String getAlarm1() {
+        return alarm1;
+    }
+
+    public String getAcsAlarm() {
+        return acsAlarm;
+    }
+
+    public String getExc() {
+        return exc;
+    }
+
+    public String getExc1() {
+        return exc1;
+    }
+
+    public String getExc2() {
+        return exc2;
+    }
+
+    public String getAcsExc() {
+        return acsExc;
+    }
+
+    public Integer getEegPSI() {
+        return eegPSI;
+    }
+
+    public Float getEegEMG() {
+        return eegEMG;
+    }
+
+    public Float getEegSR() {
+        return eegSR;
+    }
+
+    public Float getEegSEFL() {
+        return eegSEFL;
+    }
+
+    public Float getEegSEFR() {
+        return eegSEFR;
+    }
+
+    public Float getEegARTF() {
+        return eegARTF;
+    }
+
+    public String getEegALARM() {
+        return eegALARM;
+    }
+
+    public String getEegEXC() {
+        return eegEXC;
     }
 
     @Override

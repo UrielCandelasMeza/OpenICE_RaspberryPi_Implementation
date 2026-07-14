@@ -1,0 +1,63 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+title Flujo de Datos — Masimo Radical-7 (RS-232 ASCII)
+
+actor "Masimo Radical-7\n(Dispositivo Medico)" as Device
+participant "SerialProvider\n(PureJavaComm)" as Serial
+participant "DemoRadical7\n(AbstractSerialDevice)" as Driver
+participant "ASCIIFieldDelegate\n(Lector de lineas)" as Delegate
+participant "MasimoRadical7\n(Parser de campos)" as Parser
+participant "DDS Middleware\n(Publisher / Numeric)" as DDS
+
+== Conexion ==
+
+Driver -> Serial: connect(puerto, 9600 8N1)
+Serial -> Device: abre puerto serie RS-232
+Serial --> Driver: InputStream + OutputStream
+Driver -> Driver: reportConnected()
+
+== Recepcion de datos ==
+
+loop Cada ~1 segundo, el dispositivo envia una linea ASCII
+
+    Device -> Serial: linea de texto\n(SN=... SPO2=...% BPM=... PI=... etc.)
+    Serial -> Driver: BufferedReader.readLine()
+
+    Driver -> Delegate: parseLine(linea)
+    activate Delegate
+
+    Delegate -> Delegate: regex matchea contra\nmasimo-radical-7.spec
+
+    Delegate -> Parser: asigna campos via reflection\n(spo2, heartRate, perfusionIndex, sphb,\nspoc, pvi, desat, campos EEG, etc.)
+    activate Parser
+
+    Delegate -> Parser: firePulseOximeter()
+    activate Driver
+
+    Parser -> Driver: firePulseOximeter() [callback]
+
+    Driver -> DDS: numericSample() — SpO2 (%)
+    Driver -> DDS: numericSample() — Pulse (bpm)
+    Driver -> DDS: numericSample() — Perfusion Index
+    Driver -> DDS: numericSample() — SpHb, SpOC, PVI, DESAT
+    Driver -> DDS: numericSample() — EEG PSI, EMG, SEF
+    Driver -> DDS: writeDeviceIdentity() — SN del dispositivo
+    Driver -> DDS: writeDeviceAlert() — alarma activa
+
+    deactivate Driver
+    deactivate Parser
+    deactivate Delegate
+
+end
+
+== Desconexion ==
+
+Device ->x Serial: puerto cerrado / timeout
+Serial -> Driver: socket closed
+Driver -> DDS: unregister topics
+
+@enduml

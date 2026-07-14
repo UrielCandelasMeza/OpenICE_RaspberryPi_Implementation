@@ -1,0 +1,201 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title Diagrama de Clases — Módulo Masimo Radical-7 (Pulse Oximeter)
+
+package "org.mdpnp.devices.masimo.radical" #eeffee {
+
+  class MasimoRadical7 <<Protocol Parser>> {
+    - heartRate : Integer
+    - spo2 : Integer
+    - perfusionIndex : Float
+    - sphb : Float
+    - spoc : Float
+    - desat : Integer
+    - pidelta : Integer
+    - pvi : Integer
+    - eegPSI : Integer
+    - eegEMG : Float
+    - eegSR : Float
+    - eegSEFL : Float
+    - eegSEFR : Float
+    - eegARTF : Float
+    - guid : String
+    - alarm : String
+    - chan : String
+    - sysAlarm : String
+    - alarm1 : String
+    - acsAlarm : String
+    - exc : String
+    - exc1 : String
+    - exc2 : String
+    - acsExc : String
+    - eegALARM : String
+    - eegEXC : String
+    - lastPoint : Date
+    - number : Pattern {static}
+    - decimal : Pattern {static}
+    --
+    + MasimoRadical7()
+    + firePulseOximeter() : void
+    + instant() : Reading
+    + getUniqueId() : String
+    + filter(val : String) : String {static}
+    + filterDecimal(val : String) : String {static}
+    + getters para cada campo ...
+  }
+
+  class DemoRadical7 <<Serial Device>> {
+    - pulseUpdate : InstanceHolder<Numeric>
+    - spo2Update : InstanceHolder<Numeric>
+    - piUpdate : InstanceHolder<Numeric>
+    - sphbUpdate : InstanceHolder<Numeric>
+    - spocUpdate : InstanceHolder<Numeric>
+    - pviUpdate : InstanceHolder<Numeric>
+    - desatUpdate : InstanceHolder<Numeric>
+    - eegPsiUpdate : InstanceHolder<Numeric>
+    - eegEmgUpdate : InstanceHolder<Numeric>
+    - eegSeflUpdate : InstanceHolder<Numeric>
+    - eegSefrUpdate : InstanceHolder<Numeric>
+    - fieldDelegate : MyMasimoRadical7
+    - MANUFACTURER_NAME : String {static}
+    - MODEL_NAME : String {static}
+    --
+    + DemoRadical7(subscriber, publisher, eventLoop)
+    # process(idx, inputStream, outputStream) : void
+    # getMaximumQuietTime(idx) : long
+    # doInitCommands(idx) : void
+    + getSerialProvider(idx) : SerialProvider
+    # iconResourceName() : String
+  }
+
+  class DemoRadical7$MyMasimoRadical7 <<inner>> {
+    - DemoRadical7 : outer
+    --
+    + MyMasimoRadical7()
+    + firePulseOximeter() : void
+  }
+}
+
+package "org.mdpnp.devices.io" {
+  class ASCIIFieldDelegate <<abstract>> {
+    - target : Object
+    - lineInfo : LineInfo[]
+    - inputStream : InputStream
+    --
+    + ASCIIFieldDelegate(properties : URL)
+    + setInputStream(is : InputStream) : void
+    + run() : void
+    + parseLine(line : String) : boolean
+  }
+}
+
+package "org.mdpnp.devices.serial" {
+  class AbstractSerialDevice <<abstract>> {
+    # deviceIdentity : DeviceIdentity
+    --
+    + {abstract} process(idx, inputStream, outputStream) : void
+    + {abstract} getMaximumQuietTime(idx) : long
+    + {abstract} doInitCommands(idx) : void
+    + getSerialProvider(idx) : SerialProvider
+    # numericSample(holder, value, metric, vendor, unit, time) : InstanceHolder<Numeric>
+    # reportConnected(msg : String) : void
+    # writeDeviceIdentity() : void
+    # writeDeviceAlert(alert : String) : void
+  }
+}
+
+package "org.mdpnp.devices.connected" {
+  class AbstractConnectedDevice <<abstract>> {
+    # stateMachine : StateMachine<ConnectionState>
+    --
+    + connect(address : String) : boolean
+    + disconnect() : void
+  }
+}
+
+package "org.mdpnp.devices" {
+  class DeviceClock <<interface>> {
+    + instant() : Reading
+  }
+}
+
+package "org.mdpnp.apps.testapp" #ffffee {
+  class DeviceFactory {
+    + {static} getAvailableDevices() : DeviceDriverProvider[]
+  }
+
+  class DeviceFactory$MasimoRadical7Provider <<DeviceDriverProvider>> {
+    + getDeviceType() : DeviceType
+    + newInstance(ctx) : AbstractDevice
+  }
+}
+
+package "org.mdpnp.headless" #eeeeff {
+  class HeadlessDeviceFactory {
+    + {static} getAvailableDevices() : DeviceDriverProvider[]
+  }
+
+  class HeadlessDeviceFactory$MasimoRadical7Provider <<DeviceDriverProvider>> {
+    + getDeviceType() : DeviceType
+    + newInstance(ctx) : AbstractDevice
+  }
+}
+
+package "org.mdpnp.devices.io" #ffffdd {
+  class LineInfo {
+    - pattern : Pattern
+    - fireMethod : Method
+    - fields : List<Field>
+    --
+    + parseLine(line, target) : boolean
+    + addField(type, name) : void
+    + setFireMethod(type, name) : boolean
+  }
+
+  class LineInfo$Field {
+    - field : java.lang.reflect.Field
+    - method : Method
+    - filter : Method
+    - dateFormat : DateFormat
+    --
+    + applyFilter(target, val) : String
+  }
+}
+
+package "resources" {
+  class SpecFile <<config>> {
+    + masimo-radical-7.spec
+    --
+    - regex con 27 capture groups
+    - firePulseOximeter (callback)
+    - 27 campos mapeados
+    - filtros: filter / filterDecimal
+  }
+}
+
+' === Relaciones ===
+DemoRadical7 --|> AbstractSerialDevice : extends
+DemoRadical7$MyMasimoRadical7 --|> MasimoRadical7 : extends
+AbstractSerialDevice --|> AbstractConnectedDevice : extends
+MasimoRadical7 ..|> DeviceClock : implements
+MasimoRadical7 --|> ASCIIFieldDelegate : extends
+
+DemoRadical7 *-down- DemoRadical7$MyMasimoRadical7 : contiene (inner class)
+DemoRadical7 --> MasimoRadical7 : delega parsing a
+
+ASCIIFieldDelegate --> LineInfo : contiene (*)
+ASCIIFieldDelegate ..> SpecFile : carga regex
+LineInfo --> LineInfo$Field : contiene (*)
+MasimoRadical7 ..> SpecFile : referencia
+
+DeviceFactory$MasimoRadical7Provider ..> DemoRadical7 : instancia
+HeadlessDeviceFactory$MasimoRadical7Provider ..> DemoRadical7 : instancia
+DeviceFactory$MasimoRadical7Provider --|> DeviceDriverProvider
+HeadlessDeviceFactory$MasimoRadical7Provider --|> DeviceDriverProvider
+
+@enduml

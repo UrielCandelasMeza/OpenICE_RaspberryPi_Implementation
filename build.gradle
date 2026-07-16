@@ -165,9 +165,12 @@ subprojects {
     }
 */
     // Ejecutar setupLocalDb al hacer build en cualquier subproyecto
+
+    /*
     tasks.matching { it.name == 'build' }.all {
         dependsOn ':setupLocalDb'
     }
+    */
 }
 
 task setupLocalDb(type: Exec) {

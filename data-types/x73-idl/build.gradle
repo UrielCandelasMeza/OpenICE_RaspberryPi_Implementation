@@ -19,11 +19,13 @@ apply plugin: 'maven-publish'
 
 defaultTasks 'build'
 
-task buildZip(type: Zip) { 
+task buildZip(type: Zip) {
   archiveBaseName = project.name
   from 'src/main/idl'
   include '**/*.idl'
 }
+
+buildZip.dependsOn ':data-types:x73-idl-rti-dds:copyIceDotPy'
 
 def dotPys=fileTree(dir: "src/main/idl").matching { include '**/ice.py' }
 task cleanIceDotPy(type: Delete) {

@@ -44,6 +44,10 @@ apply plugin: 'application'
 //apply plugin: "me.champeau.jbake"
 //apply plugin: 'javafx-gradle-plugin'
 
+application {
+    mainClass = 'org.mdpnp.apps.testapp.Main'
+}
+
 dependencies {
 	implementation group: 'org.openjdk.nashorn', name: 'nashorn-core', version: '15.7'
 }
@@ -250,6 +254,7 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.9.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation project(':devices:simulated')
 }
 
@@ -380,6 +385,45 @@ task 'copyLicenseFile'(type: Copy) {
 copyThisJar.configure { dependsOn(jar) }
 copyLicenseFile.configure { dependsOn(processResources) }
 makeFlatRuntime.configure { dependsOn(copyThisJar,copyNativeLibs,copyLicenseFile) }
+
+distZip {
+  from('native/libs/linux') {
+    include '*.so'
+    into "${project.name}-${project.version}/lib"
+  }
+  from('build/resources/main') {
+    include 'OpenICE_license.dat'
+    into "${project.name}-${project.version}/lib"
+  }
+}
+
+startScripts {
+  doLast {
+    unixScript.text = unixScript.text.replace(
+      'CLASSPATH=$APP_HOME/lib/',
+      'export RTI_LICENSE_FILE=$APP_HOME/lib/OpenICE_license.dat\nCLASSPATH=$APP_HOME/lib/'
+    )
+    unixScript.text = unixScript.text.replace(
+      'DEFAULT_JVM_OPTS=""',
+      '''DEFAULT_JVM_OPTS="--add-exports=javafx.graphics/com.sun.javafx.iio=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.javafx.iio.common=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED --add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED"'''
+    )
+    unixScript.text = unixScript.text.replace(
+      'exec "$JAVACMD" "$@"',
+      '''# Detect architecture for native libs
+ARCH=$(uname -m)
+case "$ARCH" in
+  aarch64|arm64) NATIVE_DIR=$APP_HOME/lib/aarch ;;
+  *)             NATIVE_DIR=$APP_HOME/lib ;;
+esac
+if [ -z "$LD_LIBRARY_PATH" ]; then
+  export LD_LIBRARY_PATH="$NATIVE_DIR"
+else
+  export LD_LIBRARY_PATH="$NATIVE_DIR:$LD_LIBRARY_PATH"
+fi
+exec "$JAVACMD" "$@"'''
+    )
+  }
+}
 
 jar {
     manifest {

@@ -22,6 +22,7 @@ dependencies {
   implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.6.0'
   testImplementation("junit:junit:4.13.2")
   testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.9.1")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 test {

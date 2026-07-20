@@ -1,0 +1,198 @@
+
+/*
+
+title: MDPNP Diagrama Relacional
+
+description: Primera propuesta para base de datos
+
+version: Version 1.0
+
+*/
+
+
+// Enums
+enum tipo_lectura {
+  numeric
+  waveform
+  boolean
+  texto
+  conteo
+}
+
+enum severidad_alarma {
+  baja
+  media
+  alta
+  critica
+}
+
+// Catalogos (Tablas que no se modifican constantemente)
+
+table cat_supervisor {
+  id int [pk, increment]
+  identificador varchar     [not null, unique, note: 'android_id / serial del tablet']
+  version_app varchar
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  note: "Es el encargado de gestionar a todos los dispositivos conectados con el"
+}
+
+table cat_unidades {
+  id int [pk, increment]
+  nombre varchar [not null]
+  unidad varchar [not null]
+  codigo_loinc varchar [not null]
+  codigo_ucum varchar [not null]
+  tipo_dato tipo_lectura [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]  
+
+  note: "Unidades para medir los signos vitales ya sean BPM, SpO2, etc."
+}
+
+table cat_quirofanos {
+  id int [pk, increment]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  note: "Son los quirofanos que existen en el hospital"
+}
+
+table cat_area_medica {
+  id int [pk, increment]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  note: "Son las areas o edificios que se encuentran en el hospital como Cardiologia, Neurologia, etc."
+}
+
+table cat_dispositivo {
+  id int [pk, increment]
+  codigo varchar [unique, note: "Numero de serie"]
+  fabricante varchar [not null]
+  modelo varchar [not null]
+  activo boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  note: "Son los tipos de dispositivos que tenemos Ej. Efficia, Intellivue, Massimo Radical 7"
+}
+
+table cat_alerta {
+  id int [pk, increment]
+  codigo varchar [not null, unique, note: "'desat_o2', 'arritmia', 'perdida_señal'"]
+  nombre varchar [not null]
+  severidad_default severidad_alarma [not null]
+  descripcion text
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]  
+
+  note: "Son los tipos de alertas dentro del sistema ya sean por que se desconecto el dispositivo u otra cosa"
+}
+
+table cat_cirujia {
+  id int [pk, increment]
+  nombre varchar [not null]
+  descripcion varchar [not null]
+  area_id int [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]  
+
+  note: "Catalogo de las cirujias a realizar (Todas las cirujias que realiza el hospital)"
+}
+
+
+// Hipertablas (Tablas que almacenan los datos continuos)
+
+table hipertabla_valores {
+  tiempo timestamptz [not null, note: 'partición temporal de la hypertable']
+  dispositivo_id integer [not null]
+  unidad_id integer [not null]
+  valor_num float
+  valor_texto text
+  valor_bool boolean
+  tipo_lectura tipo_lectura
+  estatus smallint [default: 1, note: '1 = ok, 0 = dudoso/error del sensor']
+ 
+  indexes {
+    (dispositivo_id, unidad_id, tiempo) [unique]
+  }
+ 
+  note: 'Hypertable TimescaleDB — datos continuos, particionada por tiempo (1 día)'
+}
+
+table hipertabla_alertas {
+  tiempo timestamptz [not null, note: 'partición temporal de la hypertable']
+  dispositivo_id int [not null]
+  tipo_alerta_id int [not null]
+ 
+  indexes {
+    (dispositivo_id, tiempo) [unique]
+  }
+ 
+  note: 'Hypertable TimescaleDB — alertas continuas'
+}
+
+// Tablas detalle (Tablas intermedias para realizar relaciones)
+
+table det_paciente_cirujia {
+  paciente_id int [not null]
+  quirofano_id int [not null]
+  cirujia_id int [not null]
+  supervisor_id int [not null]
+  fecha_programada datetime [not null]
+  fecha_finalizacion datetime [not null]
+
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (paciente_id, cirujia_id, quirofano_id, supervisor_id, fecha_programada) [unique]
+  }
+
+  note: "Registra todas las cirujias realizadas"
+
+}
+
+table det_supervisor_dispositivos {
+  supervisor_id int [not null]
+  dispositivo_id int [not null]
+  fecha_programada datetime [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (supervisor_id, dispositivo_id, fecha_programada) [unique]
+  }
+
+  note: "Relaciona el supervisor con los dispositivos en la fecha requerida"
+}
+
+// Entidades fuertes
+
+table paciente {
+  id int [pk, increment]
+  nombre varchar [not null]
+  apellido varchar [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  note: "Entidad en la cual el paciente es registrado."
+}
+
+
+// Relaciones
+ref: hipertabla_valores.dispositivo_id > cat_dispositivo.id
+ref: hipertabla_valores.unidad_id > cat_unidades.id
+
+ref: hipertabla_alertas.dispositivo_id > cat_dispositivo.id
+ref: hipertabla_alertas.tipo_alerta_id > cat_alerta.id
+
+ref: cat_cirujia.area_id > cat_area_medica.id
+
+
+ref: det_paciente_cirujia.paciente_id > paciente.id
+ref: det_paciente_cirujia.cirujia_id > cat_cirujia.id
+ref: det_paciente_cirujia.quirofano_id > cat_quirofanos.id
+ref: det_paciente_cirujia.supervisor_id > cat_supervisor.id
+
+ref: det_supervisor_dispositivos.supervisor_id > cat_supervisor.id
+ref: det_supervisor_dispositivos.dispositivo_id > cat_dispositivo.id

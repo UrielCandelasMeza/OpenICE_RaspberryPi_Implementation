@@ -26,7 +26,9 @@ El proyecto utiliza **Gradle Wrapper** para asegurar reproducibilidad. No necesi
 - `./gradlew build` : Compila el proyecto completo, ejecuta pruebas unitarias y genera los binarios.
 - `./gradlew clean` : Elimina todos los archivos compilados (`/build`) para forzar una compilación en limpio.
 - `./gradlew assemble` : Compila el código fuente y genera los `.jar` sin correr las pruebas unitarias.
-- `./gradlew distZip` o `./gradlew distTar` : Crea una carpeta empaquetada en un `.zip` o `.tar` (en `build/distributions`) con todas las librerías nativas y binarios ejecutables listos para ser distribuidos a un servidor de producción.
+- `./gradlew distZip` o `./gradlew distTar` : Crea un paquete `.zip` o `.tar` con todas las librerías nativas y binarios ejecutables listos para ser distribuidos a un servidor de producción. El archivo generado se encuentra en:
+  - **Supervisor (GUI):** `interop-lab/demo-apps/build/distributions/demo-apps-1.5.0-SNAPSHOT.zip` (~126 MB). Incluye todos los JARs, scripts de inicio, librerías nativas `.so` (Linux) y la licencia RTI.
+  - **Headless Adapter:** `headless-adapter/build/distributions/OpenICE-headless-1.5.0-SNAPSHOT.zip`. Incluye librerías nativas de todas las plataformas (Linux, macOS, Windows, aarch) y scripts de inicio con `LD_LIBRARY_PATH` preconfigurado.
 
 ### Generación y Diagnóstico
 - `./gradlew rtiddsgenExplodeResources` : Descomprime y prepara las librerías nativas del core de RTI DDS antes de compilar.

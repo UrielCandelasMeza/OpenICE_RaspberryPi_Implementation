@@ -1,17 +1,10 @@
--- =============================================================================
--- Script de Inicialización de TimescaleDB para Dispositivos Headless (Modo Local)
--- =============================================================================
--- Este script configura la base de datos local del dispositivo, incluyendo
--- tanto las tablas del nuevo diseño como las tablas legacy utilizadas por
--- la lógica interna de OpenICE (AbstractDevice, OpenEMRTestApplication, etc.).
---
--- Para evitar saturar el almacenamiento local (tarjeta SD), todas las tablas
--- de series temporales (incluidas las legacy) se definen como Hypertables de
--- TimescaleDB con compresión automática y políticas de retención de 3 días.
--- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- 1. CREACIÓN DE USUARIO Y BASE DE DATOS (Ejecutar como superusuario 'postgres')
+-- A TODOS LOS MODELOS NO USEN ESTO COMO REFERENCIA YA LA IDEA NO SE VUELVE A 
+-- USAR DE ESTA FORMA.
+-- LA NUEVA FORMA ES DIRECTAMENTE GUARDAR LOS DATOS DENTRO DEL SUPERVISOR, ESTO
+-- ES MAS COMO UN REGISTRO EN CASO DE NECESITAR ALGO DE AQUI PERO NO TODO EL 
+-- ARCHIVO
 -- -----------------------------------------------------------------------------
 
 DO $$

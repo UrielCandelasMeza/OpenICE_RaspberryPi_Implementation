@@ -148,3 +148,13 @@ Python bindings are auto-generated from IDL via `rtiddsgen`:
 - **`scripts/`** — Integration scripts: `atlan_receiver.py`, `massimo_connector.py`, `DragerAtlanHandshake.java`, `EfficiaHL7Listener.java`, plus sample data files
 - **`devices/mindray/`** — Mindray device support (exists on disk but **not** in `settings.gradle`)
 - **`docs/`** — Architecture diagrams (PlantUML), manuals (PDFs), reports, prompts, class diagrams, use cases
+
+## CI
+
+- GitHub Actions workflow (`.github/workflows/gradle.yml`) runs on `windows-latest` with JDK 8 — **stale**, does not match the project's Java 25 target. Do not rely on CI for build correctness; use `./gradlew build` locally.
+
+## In-Progress Work (Uncommitted)
+
+- `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/numericviewer/` — new numeric viewer application
+- Modified `META-INF/services/org.mdpnp.apps.testapp.IceApplicationProvider` — registering the new viewer
+- `data-types/x73-idl/src/main/idl/ice/ice.py` and variants — Python bindings generated from IDL

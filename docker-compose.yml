@@ -82,6 +82,7 @@ services:
       -cfgName openicewis
       -cfgFile /opt/web_integration_service/OPENICE_WEB_INTEGRATION_SERVICE.xml
       -documentRoot /opt/web_integration_service/docroot
+      -verbosity 6
     network_mode: host
     privileged: true
     restart: unless-stopped

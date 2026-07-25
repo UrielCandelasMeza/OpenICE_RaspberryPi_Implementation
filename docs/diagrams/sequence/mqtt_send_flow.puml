@@ -1,0 +1,136 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+title Flujo MQTT Send: Puente DDS → MQTT\nOpenICE Medical Device Data → Mosquitto Broker
+
+box "Dispositivos Médicos" #LightGray
+    participant "Device Adapter\n(Simulador/Real)" as Device
+end box
+
+box "Middleware DDS (RTI Connext)" #LightGray
+    participant "DomainParticipant\n(Subscriber DDS)" as DDS
+    participant "NumericTopic\nSampleArrayTopic\nPatientAlertTopic\nTechnicalAlertTopic" as Topics
+end box
+
+box "MQTT Send App (JavaFX)" #LightBlue
+    participant "MqttSendFactory\n(IceApplicationProvider)" as Factory
+    participant "MqttSend\n(Controller FXML)" as Controller
+    participant "NumericFxList\nSampleArrayFxList\nAlertFxList" as FxLists
+    participant "MqttClient\n(Eclipse Paho)" as Paho
+end box
+
+box "Mosquitto Broker" #LightGreen
+    participant "MQTT Broker\n(tcp://localhost:1883)" as Broker
+end box
+
+box "Subscriber Externo" #LightYellow
+    participant "MQTT Client\n(mosquitto_sub / App)" as Subscriber
+end box
+
+== 1. Inicialización (al abrir MQTT Send) ==
+
+Factory -> Controller: new
+activate Controller
+
+Controller -> FxLists: new NumericFxList(NumericTopic.VALUE)
+Controller -> FxLists: new SampleArrayFxList(SampleArrayTopic.VALUE)
+Controller -> FxLists: new AlertFxList(PatientAlertTopic.VALUE)
+Controller -> FxLists: new AlertFxList(TechnicalAlertTopic.VALUE)
+
+Controller -> DDS: numericList.start(subscriber, eventLoop, ...)
+Controller -> DDS: sampleArrayList.start(subscriber, eventLoop, ...)
+Controller -> DDS: patientAlertList.start(subscriber, eventLoop, ...)
+Controller -> DDS: technicalAlertList.start(subscriber, eventLoop, ...)
+
+Controller -> Controller: registrar ListChangeListeners\n(onNumericChanged, onSampleArrayChanged, onAlertChanged)
+
+Controller -> Controller: bindDeviceList(deviceListModel)\nMostrar dispositivos conectados en UI
+
+deactivate Controller
+
+== 2. Conexión MQTT (usuario hace click "Connect") ==
+
+Controller -> Paho: new MqttClient(broker, clientId, persistence)
+Controller -> Paho: connect(opts)\n(cleanSession=true, autoReconnect=true)
+Paho -> Broker: CONNECT\n(username/password si aplica)
+Broker --> Paho: CONNACK
+Controller -> Controller: connected = true
+
+note right of Controller
+  **IMPORTANTE:** Al conectar se ejecuta:
+  1. publishAllExistingData() - envía todo lo que ya existe
+  2. startPeriodicRepublish() - reenvía cada 5 segundos
+end note
+
+Controller -> Paho: publishAllExistingData()
+activate Paho
+    loop Para cada NumericFx en numericList
+        Paho -> Paho: publishNumeric(fx)
+        Paho -> Broker: PUBLISH\nopenice/{udi}/{metric_id}\nQoS=1, retain=false
+    end
+    loop Para cada SampleArrayFx en sampleArrayList
+        Paho -> Paho: publishSampleArray(fx)
+        Paho -> Broker: PUBLISH\nopenice/{udi}/{metric_id}\nQoS=1, retain=false
+    end
+    loop Para cada AlertFx en patientAlertList
+        Paho -> Paho: publishAlert(fx, "patient_alert")
+        Paho -> Broker: PUBLISH\nopenice/{udi}/patient_alert\nQoS=1, retain=false
+    end
+    loop Para cada AlertFx en technicalAlertList
+        Paho -> Paho: publishAlert(fx, "technical_alert")
+        Paho -> Broker: PUBLISH\nopenice/{udi}/technical_alert\nQoS=1, retain=false
+    end
+deactivate Paho
+
+== 3. Subscriber se conecta ==
+
+Subscriber -> Broker: CONNECT\n(clientId, username, password)
+Broker --> Subscriber: CONNACK
+Subscriber -> Broker: SUBSCRIBE\nopenice/#\n(QoS=1)
+
+note over Broker, Subscriber
+  **Topic filter:** El subscriber usa `openice/#` para recibir
+  TODOS los mensajes publicados bajo el prefijo `openice`.
+  Formato de topic: `openice/{device_udi}/{metric_id}`
+end note
+
+== 4. Flujo continuo de datos (DDS → MQTT) ==
+
+loop Cada ciclo de datos DDS (varios Hz)
+    Device -> DDS: write(Numeric/SampleArray/Alert)
+    DDS -> Topics: notificar DATA_AVAILABLE
+    Topics -> FxLists: on_data_available → update FxList
+    FxLists -> Controller: ListChangeListener dispara\n(onNumericChanged / onSampleArrayChanged / onAlertChanged)
+
+    Controller -> Paho: publishNumeric(fx) / publishSampleArray(fx) / publishAlert(fx)
+    Paho -> Broker: PUBLISH\nopenice/{udi}/{metric_id}\nQoS=1
+    Broker -> Subscriber: MESSAGE\nopenice/{udi}/{metric_id}
+    Subscriber -> Subscriber: messageArrived()\n imprimir [RECIBIDO] contenido
+end
+
+== 5. Republish periódico (cada 5 segundos) ==
+
+loop Cada 5 segundos (ScheduledExecutorService)
+    Controller -> Paho: publishAllExistingData()
+    Paho -> Broker: PUBLISH (todos los datos actuales)\nopenice/{udi}/{metric_id}\nQoS=1
+    Broker -> Subscriber: MESSAGE (datos frescos)
+end
+
+note over Controller, Subscriber
+  **Republish periódico** garantiza que si un subscriber
+  se conecta después del inicio, recibe datos frescos.
+end note
+
+== 6. Desconexión ==
+
+Controller -> Paho: disconnect()
+Paho -> Broker: DISCONNECT
+Controller -> Controller: connected = false\nstopPeriodicRepublish()
+Controller -> Controller: cleanup
+
+@enduml

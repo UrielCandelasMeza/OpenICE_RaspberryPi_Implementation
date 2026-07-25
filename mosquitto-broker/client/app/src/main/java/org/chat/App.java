@@ -13,7 +13,7 @@ public class App {
   public static void main(String[] args) {
 
     String broker = "tcp://localhost:1883";
-    String topic = "mosquitto";
+    String topic = "openice/#";
 
     String clientId = args[0];
     String username = args[1];

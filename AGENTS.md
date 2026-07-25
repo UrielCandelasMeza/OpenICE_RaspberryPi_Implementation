@@ -158,3 +158,150 @@ Python bindings are auto-generated from IDL via `rtiddsgen`:
 - `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/numericviewer/` — new numeric viewer application
 - Modified `META-INF/services/org.mdpnp.apps.testapp.IceApplicationProvider` — registering the new viewer
 - `data-types/x73-idl/src/main/idl/ice/ice.py` and variants — Python bindings generated from IDL
+
+## MQTT Send — Bridge DDS → MQTT
+
+The **MQTT Send** app bridges OpenICE device data from DDS to an MQTT broker, allowing external clients (web, mobile, Python, etc.) to receive real-time medical device telemetry.
+
+### Architecture
+
+```
+Device (DDS) → NumericFxList/SampleArrayFxList/AlertFxList → MqttSend → MQTT Broker → Subscriber
+```
+
+### Source Files
+
+| File | Purpose |
+|---|---|
+| `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/mqtt/MqttSend.java` | JavaFX controller: subscribes to DDS FxLists, publishes JSON to MQTT |
+| `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/mqtt/MqttSendFactory.java` | `IceApplicationProvider` factory, injects `DeviceListModel` from Spring |
+| `interop-lab/demo-apps/src/main/resources/org/mdpnp/apps/testapp/mqtt/MqttSend.fxml` | FXML layout: broker config, device list, publish log |
+| `docs/diagrams/sequence/mqtt_send_flow.puml` | PlantUML sequence diagram of full data flow |
+
+### Dependencies (build.gradle)
+
+```groovy
+implementation group: 'jakarta.json', name: 'jakarta.json-api', version: '2.1.3'
+implementation 'org.eclipse.parsson:parsson:1.1.7'
+implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+```
+
+### How It Works
+
+1. **Startup**: `MqttSendFactory.create()` loads the FXML, gets `Subscriber`, `EventLoop`, and `DeviceListModel` from the Spring `ApplicationContext`, and calls `controller.start()`.
+2. **DDS Subscription**: `start()` creates 4 `FxList` instances (Numeric, SampleArray, PatientAlert, TechnicalAlert) and registers `ListChangeListener` on each.
+3. **MQTT Connection**: User clicks "Connect" → `MqttClient` connects to the configured broker.
+4. **Initial Publish**: On connect, `publishAllExistingData()` iterates all current items in the 4 FxLists and publishes them. This ensures data arrives even if devices were already streaming before MQTT connected.
+5. **Live Publish**: Listeners fire on DDS data changes → `publishNumeric()`, `publishSampleArray()`, `publishAlert()` serialize to JSON and publish via `MqttClient`.
+6. **Periodic Republish**: Every 5 seconds, `publishAllExistingData()` re-sends all current data so late-connecting subscribers get fresh data.
+7. **Device List**: The left panel shows connected devices from `DeviceListModel.getContents()` with `[ON]/[OFF]` status.
+
+### MQTT Topic Format
+
+```
+{prefix}/{device_udi}/{metric_id}
+```
+
+Example:
+```
+openice/2480980189999/1.2.840.113554.1.2.3.4.5.0.38.6
+```
+
+- `prefix`: configurable, default `"openice"`
+- `device_udi`: Unique Device Identifier (from DDS `DeviceIdentity`)
+- `metric_id`: IEEE 11073 metric ID (e.g., heart rate, SpO2, ECG waveform)
+
+### JSON Payload Format
+
+**Numeric:**
+```json
+{
+  "device_udi": "2480980189999...",
+  "metric_id": "1.2.840.113554.1.2.3.4.5.0.38.6",
+  "vendor_metric_id": "...",
+  "instance_id": 1,
+  "value": 72.0,
+  "unit_id": "bpm",
+  "device_time": "2026-07-25T10:30:00Z",
+  "presentation_time": "2026-07-25T10:30:00Z"
+}
+```
+
+**SampleArray (waveforms):**
+```json
+{
+  "device_udi": "...",
+  "metric_id": "...",
+  "frequency": 250,
+  "values": [0.1, 0.2, -0.3, ...],
+  "device_time": "2026-07-25T10:30:00Z"
+}
+```
+
+**Alert:**
+```json
+{
+  "device_udi": "...",
+  "alert_type": "patient_alert",
+  "identifier": "HR_HIGH",
+  "text": "Heart rate above threshold"
+}
+```
+
+### QoS
+
+- **QoS 1** (At Least Once) — messages may be duplicated but will not be lost.
+- `cleanSession=true` — no persistent sessions on the broker.
+- No `retain` flag — late subscribers only get data via the 5-second republish cycle.
+
+### Creating an MQTT Subscriber Client
+
+**Java (Eclipse Paho):**
+```java
+MqttClient client = new MqttClient("tcp://localhost:1883", "my-client");
+MqttConnectOptions opts = new MqttConnectOptions();
+opts.setUserName("user");
+opts.setPassword("pass".toCharArray());
+opts.setCleanSession(true);
+client.connect(opts);
+client.subscribe("openice/#", 1);
+client.setCallback(new MqttCallback() {
+    public void messageArrived(String topic, MqttMessage msg) {
+        System.out.println(topic + " → " + new String(msg.getPayload()));
+    }
+    // ... connectionLost, deliveryComplete
+});
+```
+
+**Python (paho-mqtt):**
+```python
+import paho.mqtt.client as mqtt
+
+def on_message(client, userdata, msg):
+    print(f"{msg.topic} → {msg.payload.decode()}")
+
+client = mqtt.Client(client_id="openice-listener")
+client.username_pw_set("user", "pass")
+client.connect("localhost", 1883)
+client.subscribe("openice/#")
+client.on_message = on_message
+client.loop_forever()
+```
+
+**mosquitto_sub (CLI):**
+```bash
+mosquitto_sub -h localhost -t "openice/#" -u user -P pass -v
+```
+
+**Topic filter:** Always use `openice/#` (with wildcard `#`) to receive all device data. Subscribing to just `"openice"` will receive nothing because MqttSend publishes to sub-topics like `openice/{udi}/{metric_id}`.
+
+### Mosquitto Broker Setup
+
+The project includes a Mosquitto broker configuration at `mosquitto-broker/`:
+
+```bash
+cd mosquitto-broker
+docker compose up -d
+```
+
+Config: `mosquitto-broker/config/mosquitto.conf` — requires authentication (`allow_anonymous false`, password file at `config/pwfile`).

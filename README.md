@@ -64,6 +64,113 @@ Define las estructuras estandarizadas de datos que viajan por la red DDS.
 
 ### 5. Archivos Raíz y Configuración
 - **`docs/`**: Diagramas de arquitectura (PlantUML), guías de instalación y manuales para el Headless Adapter.
+- **`mosquitto-broker/`**: Configuración del broker MQTT Mosquitto (Docker) y cliente chat para pruebas.
 - **`gradle/`**: Contiene el Wrapper de Gradle que descarga automáticamente las dependencias del compilador.
 - **`device_adapter.sh`**: Script para instalar como servicio el adaptador en plataformas Linux/Raspberry Pi.
 - **`settings.gradle` / `build.gradle`**: Definen la jerarquía de compilación y las librerías a importar.
+
+---
+
+## MQTT Send — Puente DDS → MQTT
+
+La app **MQTT Send** (dentro del Supervisor) permite enviar datos de dispositivos médicos en tiempo real hacia un broker MQTT, para que clientes externos (web, móvil, Python, etc.) puedan recibirlos.
+
+### Flujo de datos
+
+```
+Dispositivo (DDS) → FxList (Numeric/SampleArray/Alert) → MqttSend → Mosquitto Broker → Subscriber
+```
+
+### Cómo usar MQTT Send
+
+1. Iniciar el Supervisor: `./gradlew :interop-lab:demo-apps:run`
+2. Conectar un dispositivo (real o simulador)
+3. Abrir la app **MQTT Send** desde el menú de aplicaciones
+4. Configurar la URL del broker (default: `tcp://localhost:1883`)
+5. Clic **Connect**
+
+### Topic MQTT
+
+```
+openice/{device_udi}/{metric_id}
+```
+
+- `openice/` — prefijo configurable
+- `{device_udi}` — Identificador Único del Dispositivo
+- `{metric_id}` — ID de métrica IEEE 11073 (HR, SpO2, ECG, etc.)
+
+### Crear un subscriber (ejemplo Python)
+
+```python
+import paho.mqtt.client as mqtt
+
+def on_message(client, userdata, msg):
+    print(f"{msg.topic} → {msg.payload.decode()}")
+
+client = mqtt.Client(client_id="openice-listener")
+client.username_pw_set("openice", "openice")
+client.connect("localhost", 1883)
+client.subscribe("openice/#")  # ← wildcard # para recibir todo
+client.on_message = on_message
+client.loop_forever()
+```
+
+**Importante:** Suscribirse a `"openice/#"` (con wildcard), NO a `"openice"` solamente. MqttSend publica a sub-topics como `openice/{udi}/{metric_id}`.
+
+### Crear un subscriber (ejemplo Java)
+
+```java
+MqttClient client = new MqttClient("tcp://localhost:1883", "my-client");
+MqttConnectOptions opts = new MqttConnectOptions();
+opts.setUserName("openice");
+opts.setPassword("openice".toCharArray());
+client.connect(opts);
+client.subscribe("openice/#", 1);
+client.setCallback(new MqttCallback() {
+    public void messageArrived(String topic, MqttMessage msg) {
+        System.out.println(topic + " → " + new String(msg.getPayload()));
+    }
+    public void connectionLost(Throwable cause) {}
+    public void deliveryComplete(IMqttDeliveryToken token) {}
+});
+```
+
+### Formato del payload JSON
+
+**Numérico (HR, SpO2, etc.):**
+```json
+{
+  "device_udi": "2480980189999...",
+  "metric_id": "1.2.840.113554.1.2.3.4.5.0.38.6",
+  "vendor_metric_id": "...",
+  "instance_id": 1,
+  "value": 72.0,
+  "unit_id": "bpm",
+  "device_time": "2026-07-25T10:30:00Z",
+  "presentation_time": "2026-07-25T10:30:00Z"
+}
+```
+
+**Waveform (ECG, pleth):**
+```json
+{
+  "device_udi": "...",
+  "metric_id": "...",
+  "frequency": 250,
+  "values": [0.1, 0.2, -0.3, ...],
+  "device_time": "2026-07-25T10:30:00Z"
+}
+```
+
+### Broker Mosquitto
+
+```bash
+cd mosquitto-broker
+docker compose up -d
+```
+
+Configuración: `mosquitto-broker/config/mosquitto.conf` — autenticación requerida (`allow_anonymous false`).
+
+### Diagrama de secuencia
+
+Ver `docs/diagrams/sequence/mqtt_send_flow.puml` para el diagrama completo del flujo de datos.

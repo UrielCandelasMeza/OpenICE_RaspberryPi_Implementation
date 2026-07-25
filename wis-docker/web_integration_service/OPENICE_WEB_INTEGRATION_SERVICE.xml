@@ -1,8 +1,7 @@
 <!-- RTI Data Distribution Service Deployment -->
-<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/6.0.1/6.0.0/rti_web_integration_service.xsd">
+<dds>
 
-<types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:////home/simon/rti_connext_dds-6.0.1/bin/../resource/app/app_support/rtiddsgen/schema/rti_dds_topic_types.xsd">
+<types>
 <module name="ice">
   <typedef name="UniqueDeviceIdentifier" stringMaxLength="64" type="string"/>
   <typedef name="MetricIdentifier" stringMaxLength="64" type="string"/>
@@ -518,9 +517,9 @@
         <!-- Discarding samples based upon sequence via history (if durability
          increased) -->
         <resource_limits>
-          <max_samples>1000000</max_samples>
-          <max_instances>1000000</max_instances>
-          <max_samples_per_instance>1000000</max_samples_per_instance>
+          <max_samples>-1</max_samples>
+          <max_instances>-1</max_instances>
+          <max_samples_per_instance>-1</max_samples_per_instance>
         </resource_limits>
         <!-- JP 30-Sep-2013 get_key_value is failing on unalive instances maybe
          they are being purged too quickly? -->
@@ -605,9 +604,9 @@
         </history>
 
         <resource_limits>
-          <max_samples>1000000</max_samples>
-          <max_instances>1000000</max_instances>
-          <max_samples_per_instance>1000000</max_samples_per_instance>
+          <max_samples>-1</max_samples>
+          <max_instances>-1</max_instances>
+          <max_samples_per_instance>-1</max_samples_per_instance>
         </resource_limits>
       </datawriter_qos>
     </qos_profile>
@@ -865,7 +864,7 @@
       <datawriter_qos>
         <batch>
           <enable>false</enable>
-          <max_samples>1000000</max_samples>
+          <max_samples>-1</max_samples>
           <max_flush_delay>
             <sec>2147483647</sec>
             <nanosec>2147483647</nanosec>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="520" prefWidth="700" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.mdpnp.apps.testapp.mqtt.MqttSend">
+ <top>
+  <VBox spacing="8" style="-fx-padding: 12;">
+   <children>
+    <Label style="-fx-font-weight: bold; -fx-font-size: 16;" text="MQTT Send" />
+    <Separator />
+    <GridPane hgap="8" vgap="6">
+     <columnConstraints>
+      <ColumnConstraints minWidth="100" prefWidth="100" />
+      <ColumnConstraints minWidth="300" prefWidth="400" />
+     </columnConstraints>
+     <children>
+      <Label GridPane.columnIndex="0" GridPane.rowIndex="0" text="Broker URL:" />
+      <TextField fx:id="brokerUrlField" GridPane.columnIndex="1" GridPane.rowIndex="0" promptText="tcp://localhost:1883" text="tcp://localhost:1883" />
+      <Label GridPane.columnIndex="0" GridPane.rowIndex="1" text="Username:" />
+      <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="optional" />
+      <Label GridPane.columnIndex="0" GridPane.rowIndex="2" text="Password:" />
+      <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="2" promptText="optional" />
+      <Label GridPane.columnIndex="0" GridPane.rowIndex="3" text="Topic Prefix:" />
+      <TextField fx:id="topicPrefixField" GridPane.columnIndex="1" GridPane.rowIndex="3" promptText="openice" text="openice" />
+     </children>
+    </GridPane>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+     <children>
+      <Button fx:id="connectButton" mnemonicParsing="false" onAction="#onConnect" text="Connect" />
+      <Button fx:id="disconnectButton" disable="true" mnemonicParsing="false" onAction="#onDisconnect" text="Disconnect" />
+      <Label text="  " />
+      <Label fx:id="statusLabel" text="Disconnected" />
+      <Label text="  |  Sent: " />
+      <Label fx:id="sentLabel" text="0" />
+     </children>
+    </HBox>
+    <Separator />
+   </children>
+  </VBox>
+ </top>
+ <left>
+  <VBox spacing="4" prefWidth="220" style="-fx-padding: 0 0 0 12;">
+   <children>
+    <Label style="-fx-font-weight: bold;" text="Connected Devices" />
+    <ListView fx:id="deviceList" VBox.vgrow="ALWAYS" />
+    <Label fx:id="deviceCountLabel" text="0 devices" style="-fx-text-fill: gray; -fx-font-size: 11;" />
+   </children>
+   <BorderPane.margin>
+    <Insets bottom="8" left="0" right="8" top="0" />
+   </BorderPane.margin>
+  </VBox>
+ </left>
+ <center>
+  <VBox spacing="4" style="-fx-padding: 0 12 8 0;">
+   <children>
+    <Label style="-fx-font-weight: bold;" text="Publish Log" />
+    <ListView fx:id="logView" VBox.vgrow="ALWAYS" />
+   </children>
+  </VBox>
+ </center>
+</BorderPane>

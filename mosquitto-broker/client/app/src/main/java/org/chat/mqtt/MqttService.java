@@ -15,7 +15,7 @@ import lombok.Setter;
 @Setter
 public class MqttService implements MqttCallback {
 
-  private final int QOS = 2;
+  private final int QOS = 1;
   private String username;
   private String password;
 

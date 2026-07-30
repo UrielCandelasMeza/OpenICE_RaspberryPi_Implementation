@@ -235,6 +235,7 @@ dependencies {
     implementation group: 'org.controlsfx', name: 'controlsfx', version: '11.1.2'
 
     implementation group: 'org.hsqldb', name: 'hsqldb', version: '2.3.2'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.2'
 
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.4.1'
 
@@ -316,6 +317,7 @@ run {
                '--add-exports=javafx.graphics/com.sun.javafx.iio.common=ALL-UNNAMED',
                '--add-exports=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED',
                '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+               '--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED',
                '--add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED',
     ]
 
@@ -349,6 +351,7 @@ task 'runDevice'(type: JavaExec) {
                '--add-exports=javafx.graphics/com.sun.javafx.iio.common=ALL-UNNAMED',
                '--add-exports=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED',
                '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+               '--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED',
                '--add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED',
     ]
 

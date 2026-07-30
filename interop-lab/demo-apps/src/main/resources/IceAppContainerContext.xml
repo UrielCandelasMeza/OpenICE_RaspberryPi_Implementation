@@ -199,9 +199,9 @@
     </bean>    
 
     <bean id="vitalModel" class="org.mdpnp.apps.testapp.vital.VitalModelFactory" lazy-init="true">
-        <constructor-arg name="deviceListModel" ref="deviceListModel" />
-        <constructor-arg name="publisher"       ref="publisher" />
         <constructor-arg name="eventLoop"       ref="eventLoop" />
+        <constructor-arg name="publisher"       ref="publisher" />
+        <constructor-arg name="deviceListModel" ref="deviceListModel" />
         <constructor-arg name="numericList"     ref="numericList"/>
         <constructor-arg name="defaultVitals">
             <array>

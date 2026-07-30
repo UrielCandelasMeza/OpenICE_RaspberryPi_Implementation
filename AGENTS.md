@@ -1,307 +1,105 @@
 # AGENTS.md — OpenICE / MD PnP
 
-## Versions
+Project `1.5.0-SNAPSHOT`. Gradle 9.0.0, Java source/target 25, JavaFX 25 (demo-apps). No lint/formatter — verify via compile + tests only.
 
-- Project: `1.5.0-SNAPSHOT` (defined in `gradle.properties`)
-- Gradle wrapper: **9.0.0**
-- Java source/target: **25**
-- JavaFX: **25** (modules: base, controls, fxml, swing, web)
-- Spring: **6.0.2**
-- RTI Connext DDS: 5.1.0 (QoS XML schema version)
-- `rtiddsgen` code generator: 4.3.0
+## Important Build Prerequisites
 
-## Build & Test Commands
+- **7 non-Maven JARs must exist in `artifacts/`**: `nddsjava.jar`, `pixelmed.jar`, `Utility-0.0.1.jar`, `mdpnp-sounds-0.1.0.jar`, `rtiddsgen2.jar`, `rtiusagemetrics-api.jar`, `cpp-bin-1.2.8-SNAPSHOT.zip`. Build fails without them.
+- **`RTI_LICENSE_FILE`** must point to a valid license (e.g. `interop-lab/demo-apps/src/main/resources/OpenICE_license.dat`).
+- **`LD_LIBRARY_PATH`** must include `native/libs/linux` (or `aarch`, `macosx`, `windows`) — already configured in `build.gradle` `test` and `run` blocks.
+- Tests need `SEC_ARTIFACT_DIR`, `DOCBOX_RTPS_HOST_ID`, `DOCBOX_RTPS_APP_ID` env vars (set in `demo-apps/build.gradle:300-314`).
+- The `:setupLocalDb` task runs `sudo -u postgres psql` — requires postgres superuser.
+
+## Module Structure & Entry Points
+
+| Module | Purpose |
+|---|---|
+| `interop-lab/demo-apps` | JavaFX GUI (Supervisor). Entry point: `org.mdpnp.apps.testapp.Main` |
+| `headless-adapter` | No-JavaFX embedded device runtime. Entry point: `org.mdpnp.headless.HeadlessMain` |
+| `interop-lab/demo-devices` | Device adapter framework + Spring XML config, shared by both above |
+| `interop-lab/demo-guis-javafx` | JavaFX GUI components (builds with JavaFX **17**, not 25) |
+| `devices/*` | 40+ physical device protocol implementations (serial/TCP) |
+| `data-types/x73-idl` | IEEE 11073 IDL type definitions |
+| `data-types/x73-idl-rti-dds` | RTI code-generated Java types from IDL |
+
+`Main` runs GUI by default, headless when `-domain -app -device` args passed.
+
+## ServiceLoader SPI — Two Separate Registries
+
+When adding a device driver, **both** SPI files must be updated:
+
+| SPI file | Lines |
+|---|---|
+| `interop-lab/demo-devices/src/main/resources/META-INF/services/org.mdpnp.devices.DeviceDriverProvider` | ~41 |
+| `headless-adapter/src/main/resources/META-INF/services/org.mdpnp.devices.DeviceDriverProvider` | ~51 |
+
+ICE applications (charting, PCA, EMR, etc.) register at:
+`interop-lab/demo-apps/src/main/resources/META-INF/services/org.mdpnp.apps.testapp.IceApplicationProvider` (~25).
+
+## Commands
 
 ```bash
-# Full build + tests
-./gradlew build
-
-# Compile only (no tests)
-./gradlew assemble
-
-# Run GUI app
-./gradlew :interop-lab:demo-apps:run
-
-# Run headless device (from demo-apps module — Main.java detects args)
-./gradlew :interop-lab:demo-apps:runDevice --args="-domain 0 -device Pump_Simulator"
-
-# Run headless (headless-adapter module, no JavaFX)
-./gradlew :headless-adapter:run --args="-domain 0 -device Controllable_Pump"
-
-# Run all tests in a module
-./gradlew :interop-lab:demo-apps:test
-
-# Run a single test class
-./gradlew :interop-lab:demo-apps:test --tests org.mdpnp.apps.testapp.DeviceFactoryTest
-
-# Run a single test method
-./gradlew :interop-lab:demo-apps:test --tests org.mdpnp.apps.testapp.DeviceFactoryTest.testLocateDrivers
-
-# Distribution ZIP (includes native libs)
-./gradlew :interop-lab:demo-apps:distZip        # ~126 MB
-./gradlew :headless-adapter:distZip
-
-# Python code generation (IDL → ice.py)
-./gradlew :data-types:x73-idl-rti-dds:iceddsgenPython
-./gradlew :data-types:x73-idl-rti-dds:copyIceDotPy
-
-# Setup local TimescaleDB (requires postgres superuser, runs setup_local_timescale.sql)
-./gradlew setupLocalDb
+./gradlew build                                          # full build + tests
+./gradlew :interop-lab:demo-apps:run                     # GUI supervisor
+./gradlew :interop-lab:demo-apps:runDevice --args="..."  # headless via Main
+./gradlew :headless-adapter:run --args="..."             # headless (no JavaFX at all)
+./gradlew :interop-lab:demo-apps:distZip                 # ~126 MB distribution
+./gradlew :headless-adapter:distZip                      # headless distribution
+./gradlew :interop-lab:demo-apps:test                    # all tests in module
+./gradlew :interop-lab:demo-apps:test --tests "*.MyTest" # single class
+./gradlew :interop-lab:demo-apps:test --tests "*.MyTest.testMethod" # single method
+./gradlew :interop-lab:demo-apps:makeFlatRuntime --no-daemon -x test  # before Docker build
+./gradlew :data-types:x73-idl-rti-dds:iceddsgenPython    # IDL → Python
+./gradlew :data-types:x73-idl-rti-dds:iceddsgenJava      # IDL → Java
 ```
 
-**No lint or formatting tools are configured** — there is no Checkstyle, Spotless, or similar. Verify correctness through compilation and tests only.
+## Docker
 
-## Entry Points (two independent ones)
-
-- **`org.mdpnp.apps.testapp.Main`** (`interop-lab/demo-apps`) — GUI mode by default (launches JavaFX); headless mode when CLI args (`-domain`, `-app`, `-device`) are passed.
-- **`org.mdpnp.headless.HeadlessMain`** (`headless-adapter/`) — pure headless, no JavaFX dependency. Runs on embedded devices.
-
-Both can launch the same device drivers, but `HeadlessMain` uses its own parallel SPI file.
-
-## ServiceLoader SPI — two registries for devices
-
-| SPI file | Location | Purpose |
-|---|---|---|
-| `org.mdpnp.devices.DeviceDriverProvider` | `interop-lab/demo-devices/src/main/resources/META-INF/services/` | References `DeviceFactory$*` inner classes (require demo-apps/JavaFX). ~42 entries. |
-| `org.mdpnp.devices.DeviceDriverProvider` | `headless-adapter/src/main/resources/META-INF/services/` | References `HeadlessDeviceFactory$*` inner classes (no JavaFX). ~51 entries. |
-
-When adding a new device driver, both SPI files must be updated — they shadow each other because `demo-devices` entries reference `org.mdpnp.apps.testapp.DeviceFactory$*` which isn't on the headless classpath.
-
-ICE application SPI lives at `interop-lab/demo-apps/src/main/resources/META-INF/services/org.mdpnp.apps.testapp.IceApplicationProvider` (~25 entries).
-
-## Build Gotchas
-
-- **Artifacts not in Maven Central**: 7 files must exist in `artifacts/`: `nddsjava.jar`, `pixelmed.jar`, `Utility-0.0.1.jar`, `mdpnp-sounds-0.1.0.jar`, `rtiddsgen2.jar`, `rtiusagemetrics-api.jar`, `cpp-bin-1.2.8-SNAPSHOT.zip`.
-- **Docker build**: run `./gradlew :interop-lab:demo-apps:makeFlatRuntime --no-daemon -x test` to create `flat/` first, then `docker build`. Script: `build.sh` (also builds `openice-wis:1.0` image from `wis-docker/`).
-- **Docker containers need `privileged: true`** and `network_mode: host` — RTI DDS native libs call `mprotect(PROT_EXEC)`, blocked by seccomp. JavaFX GUI cannot run in Docker (only headless mode).
-- **JavaFX JVM args**: `--add-exports=javafx.graphics/com.sun.javafx.iio=ALL-UNNAMED` (and 4 more) are required at runtime — see the `run` block in `interop-lab/demo-apps/build.gradle:308`.
-- **Java 25 native access**: `--enable-native-access=ALL-UNNAMED` is required in Docker commands (see `docker-compose.yml`).
-- **Java module system disabled**: `modularity.inferModulePath.set(false)` — the project does not use JPMS modules.
+- `./build.sh` runs `makeFlatRuntime` then `sudo docker build` (images: `openice:1.0`, `openice-wis:1.0`).
+- Containers require `privileged: true` + `network_mode: host` (RTI DDS native libs call `mprotect(PROT_EXEC)`, blocked by seccomp).
+- JavaFX GUI cannot run in Docker — only headless device mode (`-Djava.awt.headless=true`).
+- Docker profiles: `wis`, `pump`, `monitor` (see `docker-compose.yml`).
 
 ## Testing
 
-- Test framework: JUnit 4 (4.13.2) via JUnit 5 Vintage engine (`junit-vintage-engine:5.9.1`)
-- Tests run with `useJUnitPlatform()` and timezone forced to EST (`systemProperty 'user.timezone', 'EST'`)
-- Tests need `LD_LIBRARY_PATH` pointing to `native/libs/linux` (or `aarch`, `macosx`, `windows`) and `RTI_LICENSE_FILE` set — both configured already in `build.gradle` `test` block.
+- JUnit 4 via JUnit 5 Vintage engine (`junit-vintage-engine:5.9.1`).
+- Timezone forced to `EST`.
+- `modularity.inferModulePath.set(false)` — JPMS not used.
 
-## Medical Device Driver Requirements
+## Runtime Quirks
 
-When writing or modifying any device driver (`org.mdpnp.devices`):
+- JavaFX `--add-exports` JVM args required (5 exports, see `demo-apps/build.gradle:316-321`).
+- `--enable-native-access=ALL-UNNAMED` required in Docker.
+- Spring XML context chain: `RtConfig.xml` (DDS infra) → `DeviceAdapterContext.xml` / `IceAppContainerContext.xml` → `DriverContext.xml`.
+- `${mdpnp.domain}` placeholder defaults to `0` via `ice.properties`; override with `-Dmdpnp.domain=N`.
+- Settings persist to `.JumpStartSettings` in cwd or `$HOME`.
+- `ice.system.properties` (classpath + cwd override) sets `java.net.preferIPv4Stack=true`.
+- `demo-guis-javafx` pins JavaFX **17.0.11** (not 25 like demo-apps). May cause classpath conflicts.
 
-1. Read all provided protocol documentation in full.
-2. Produce an `ASSUMPTIONS.md` in the driver's source directory listing every assumption (parameter values, byte order, timing, error handling, defaults for absent fields, etc.) with source and risk.
-3. Flag every ambiguous or silent point in the spec.
-4. Wait for explicit user confirmation before writing code.
-5. Commit `ASSUMPTIONS.md` alongside the driver; update if assumptions change.
+## Device Driver Requirements (must follow)
 
-## Architecture Wiring
+1. Read protocol docs in full.
+2. Produce `ASSUMPTIONS.md` in driver source dir (parameter, source, risk for every assumption).
+3. Flag every ambiguous/silent spec point.
+4. Wait for `confirmed` before writing code.
+5. Commit `ASSUMPTIONS.md` alongside driver.
 
-Spring XML context chain:
-- `DeviceAdapterContext.xml` → imports `RtConfig.xml` (DDS participant, subscriber, publisher, event loop)
-- `IceAppContainerContext.xml` → imports `RtConfig.xml`, adds FX observable lists, data writers, EMR facade
-- `DriverContext.xml` → per-device driver, executor, partition assignment, TimeManager, JMX
-
-Property placeholder `${mdpnp.domain}` must be supplied (default `0` in `ice.properties` or via `-Dmdpnp.domain=N`).
-
-Settings persist to `.JumpStartSettings` in current dir or `$HOME/.JumpStartSettings` — the file is loaded on GUI startup to restore last config.
-
-## DDS Discovery Configuration
-
-- **Multicast address**: `239.255.0.1` (RTPS standard default, defined in `ice_library.xml`)
-- **Transport**: UDPv4 only (shared memory disabled)
-- **Discovery mode**: Promiscuous (`accept_unknown_peers: true`) — suitable for lab environments
-- **Domain announcements**: Disabled (`ignore_default_domain_announcements: true`)
-- QoS profiles defined in `data-types/x73-idl/src/main/idl/ice/samples/ice_library.xml`
-
-## Headless Adapter — Database Integration
-
-The `headless-adapter` module includes PostgreSQL/TimescaleDB persistence:
-- **`db/ConnectionPool.java`** — HikariCP-based connection pool (PostgreSQL 42.7.2, HikariCP 5.1.0)
-- **`db/TimescalePersister.java`** — writes device data to TimescaleDB hypertables
-- **`db/DeviceRegistry.java`** — device registry backed by PostgreSQL
-- Connection configured in `headless-adapter/src/main/resources/ice.properties`: `localhost:5432`, user `openice`, db `openice_local`
-
-## Docker / Deployment
-
-- **`Dockerfile`** — based on `eclipse-temurin:25-jre`, copies `flat/` runtime
-- **`docker-compose.yml`** — profiles: `wis`, `pump`, `monitor`. Uses `x-openice-base` template with `privileged: true`, `network_mode: host`, domain ID via `ICE_DOMAIN_ID` env var (default 10)
-- **`build.sh`** — two-step: Gradle `makeFlatRuntime` → Docker build. Builds both `openice:1.0` and `openice-wis:1.0`
-- **`wis-docker/`** — Fedora-based Docker image for RTI Web Integration Service (port 8080)
-- **`device_adapter.sh`** — SysV init script for Raspberry Pi deployment (`headless-adapter.init`)
-
-## Config Files
-
-- `ice.properties` (classpath) — `mdpnp.domain`, `mdpnp.fhir.url`, `dds.discovery.peers`
-- `ice.system.properties` (classpath + cwd override) — loaded by `Main.loadSystemProps()` before any app logic; sets `java.net.preferIPv4Stack=true`
-- `log4j2-test.xml` — logs to `~/demo-apps.log`, `~/easy-tiva.log`
-
-## Python Bindings
-
-Python bindings are auto-generated from IDL via `rtiddsgen`:
-- **Root**: `data-types/x73-idl/src/main/idl/ice/ice.py` (~730 lines, all IDL types)
-- **Subdirectories** (also receive copies): `pump_controller/`, `samples/`, `numeric_subscriber/`
-- **Gradle tasks**: `iceddsgenPython` (generate), `copyIceDotPy` (distribute to subdirs)
-- Additional Python scripts: `pump_controller/pumpcontroller.py`, `samples/ice_program.py`, `numeric_subscriber/read_numerics.py`
-
-## Project Structure — Additional Directories
-
-- **`scripts/`** — Integration scripts: `atlan_receiver.py`, `massimo_connector.py`, `DragerAtlanHandshake.java`, `EfficiaHL7Listener.java`, plus sample data files
-- **`devices/mindray/`** — Mindray device support (exists on disk but **not** in `settings.gradle`)
-- **`docs/`** — Architecture diagrams (PlantUML), manuals (PDFs), reports, prompts, class diagrams, use cases
-
-## CI
-
-- GitHub Actions workflow (`.github/workflows/gradle.yml`) runs on `windows-latest` with JDK 8 — **stale**, does not match the project's Java 25 target. Do not rely on CI for build correctness; use `./gradlew build` locally.
-
-## In-Progress Work (Uncommitted)
-
-- `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/numericviewer/` — new numeric viewer application
-- Modified `META-INF/services/org.mdpnp.apps.testapp.IceApplicationProvider` — registering the new viewer
-- `data-types/x73-idl/src/main/idl/ice/ice.py` and variants — Python bindings generated from IDL
-
-## MQTT Send — Bridge DDS → MQTT
-
-The **MQTT Send** app bridges OpenICE device data from DDS to an MQTT broker, allowing external clients (web, mobile, Python, etc.) to receive real-time medical device telemetry.
-
-### Architecture
-
-```
-Device (DDS) → NumericFxList/SampleArrayFxList/AlertFxList → MqttSend → MQTT Broker → Subscriber
-```
-
-### Source Files
+## Configuration Files
 
 | File | Purpose |
 |---|---|
-| `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/mqtt/MqttSend.java` | JavaFX controller: subscribes to DDS FxLists, publishes JSON to MQTT |
-| `interop-lab/demo-apps/src/main/java/org/mdpnp/apps/testapp/mqtt/MqttSendFactory.java` | `IceApplicationProvider` factory, injects `DeviceListModel` from Spring |
-| `interop-lab/demo-apps/src/main/resources/org/mdpnp/apps/testapp/mqtt/MqttSend.fxml` | FXML layout: broker config, device list, publish log |
-| `docs/diagrams/sequence/mqtt_send_flow.puml` | PlantUML sequence diagram of full data flow |
+| `ice.properties` (classpath) | `mdpnp.domain`, `mdpnp.fhir.url`, `dds.discovery.peers` |
+| `ice.system.properties` (classpath + cwd) | Sets `java.net.preferIPv4Stack=true`, loaded before all app logic |
+| `log4j2-test.xml` | Logs to `~/demo-apps.log`, `~/easy-tiva.log` |
+| `interop-lab/demo-devices/src/main/resources/RtConfig.xml` | DDS participant, publisher, subscriber, event loop |
+| `data-types/x73-idl/src/main/idl/ice/samples/ice_library.xml` | DDS QoS profiles |
 
-### Dependencies (build.gradle)
+## DDS Discovery
 
-```groovy
-implementation group: 'jakarta.json', name: 'jakarta.json-api', version: '2.1.3'
-implementation 'org.eclipse.parsson:parsson:1.1.7'
-implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
-```
+- Multicast: `239.255.0.1`, UDPv4 only (shared memory disabled).
+- Promiscuous discovery (`accept_unknown_peers: true`).
+- Domain announcements disabled.
 
-### How It Works
+## Headless Database
 
-1. **Startup**: `MqttSendFactory.create()` loads the FXML, gets `Subscriber`, `EventLoop`, and `DeviceListModel` from the Spring `ApplicationContext`, and calls `controller.start()`.
-2. **DDS Subscription**: `start()` creates 4 `FxList` instances (Numeric, SampleArray, PatientAlert, TechnicalAlert) and registers `ListChangeListener` on each.
-3. **MQTT Connection**: User clicks "Connect" → `MqttClient` connects to the configured broker.
-4. **Initial Publish**: On connect, `publishAllExistingData()` iterates all current items in the 4 FxLists and publishes them. This ensures data arrives even if devices were already streaming before MQTT connected.
-5. **Live Publish**: Listeners fire on DDS data changes → `publishNumeric()`, `publishSampleArray()`, `publishAlert()` serialize to JSON and publish via `MqttClient`.
-6. **Periodic Republish**: Every 5 seconds, `publishAllExistingData()` re-sends all current data so late-connecting subscribers get fresh data.
-7. **Device List**: The left panel shows connected devices from `DeviceListModel.getContents()` with `[ON]/[OFF]` status.
-
-### MQTT Topic Format
-
-```
-{prefix}/{device_udi}/{metric_id}
-```
-
-Example:
-```
-openice/2480980189999/1.2.840.113554.1.2.3.4.5.0.38.6
-```
-
-- `prefix`: configurable, default `"openice"`
-- `device_udi`: Unique Device Identifier (from DDS `DeviceIdentity`)
-- `metric_id`: IEEE 11073 metric ID (e.g., heart rate, SpO2, ECG waveform)
-
-### JSON Payload Format
-
-**Numeric:**
-```json
-{
-  "device_udi": "2480980189999...",
-  "metric_id": "1.2.840.113554.1.2.3.4.5.0.38.6",
-  "vendor_metric_id": "...",
-  "instance_id": 1,
-  "value": 72.0,
-  "unit_id": "bpm",
-  "device_time": "2026-07-25T10:30:00Z",
-  "presentation_time": "2026-07-25T10:30:00Z"
-}
-```
-
-**SampleArray (waveforms):**
-```json
-{
-  "device_udi": "...",
-  "metric_id": "...",
-  "frequency": 250,
-  "values": [0.1, 0.2, -0.3, ...],
-  "device_time": "2026-07-25T10:30:00Z"
-}
-```
-
-**Alert:**
-```json
-{
-  "device_udi": "...",
-  "alert_type": "patient_alert",
-  "identifier": "HR_HIGH",
-  "text": "Heart rate above threshold"
-}
-```
-
-### QoS
-
-- **QoS 1** (At Least Once) — messages may be duplicated but will not be lost.
-- `cleanSession=true` — no persistent sessions on the broker.
-- No `retain` flag — late subscribers only get data via the 5-second republish cycle.
-
-### Creating an MQTT Subscriber Client
-
-**Java (Eclipse Paho):**
-```java
-MqttClient client = new MqttClient("tcp://localhost:1883", "my-client");
-MqttConnectOptions opts = new MqttConnectOptions();
-opts.setUserName("user");
-opts.setPassword("pass".toCharArray());
-opts.setCleanSession(true);
-client.connect(opts);
-client.subscribe("openice/#", 1);
-client.setCallback(new MqttCallback() {
-    public void messageArrived(String topic, MqttMessage msg) {
-        System.out.println(topic + " → " + new String(msg.getPayload()));
-    }
-    // ... connectionLost, deliveryComplete
-});
-```
-
-**Python (paho-mqtt):**
-```python
-import paho.mqtt.client as mqtt
-
-def on_message(client, userdata, msg):
-    print(f"{msg.topic} → {msg.payload.decode()}")
-
-client = mqtt.Client(client_id="openice-listener")
-client.username_pw_set("user", "pass")
-client.connect("localhost", 1883)
-client.subscribe("openice/#")
-client.on_message = on_message
-client.loop_forever()
-```
-
-**mosquitto_sub (CLI):**
-```bash
-mosquitto_sub -h localhost -t "openice/#" -u user -P pass -v
-```
-
-**Topic filter:** Always use `openice/#` (with wildcard `#`) to receive all device data. Subscribing to just `"openice"` will receive nothing because MqttSend publishes to sub-topics like `openice/{udi}/{metric_id}`.
-
-### Mosquitto Broker Setup
-
-The project includes a Mosquitto broker configuration at `mosquitto-broker/`:
-
-```bash
-cd mosquitto-broker
-docker compose up -d
-```
-
-Config: `mosquitto-broker/config/mosquitto.conf` — requires authentication (`allow_anonymous false`, password file at `config/pwfile`).
+PostgreSQL/TimescaleDB at `localhost:5432`, user `openice`, db `openice_local`. HikariCP pool. Setup via `./gradlew setupLocalDb` or `setup_local_timescale.sql`.

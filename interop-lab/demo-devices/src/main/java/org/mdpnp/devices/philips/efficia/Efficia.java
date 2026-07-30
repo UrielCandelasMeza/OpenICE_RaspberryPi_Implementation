@@ -61,8 +61,7 @@ public class Efficia extends AbstractConnectedDevice {
     private InstanceHolder<ice.Numeric> spo2;
     private InstanceHolder<ice.Numeric> respRate;
     private InstanceHolder<ice.Numeric> pulse;
-    // TODO: perfusionIndex — crear cuando se defina el MDC code adecuado
-    // private InstanceHolder<ice.Numeric> perfusionIndex;
+    private InstanceHolder<ice.Numeric> perfusionIndex;
 
     /**
      * Constructor del driver real Efficia.
@@ -90,7 +89,8 @@ public class Efficia extends AbstractConnectedDevice {
         spo2 = createNumericInstance(rosetta.MDC_PULS_OXIM_SAT_O2.VALUE, "%");
         respRate = createNumericInstance(rosetta.MDC_CO2_RESP_RATE.VALUE, "rpm");
         pulse = createNumericInstance(rosetta.MDC_PULS_OXIM_PULS_RATE.VALUE, "bpm");
-        // TODO: perfusionIndex
+        perfusionIndex = createNumericInstance(rosetta.MDC_PULS_OXIM_PERF_REL.VALUE, "");
+        // TODO: more metrics
     }
 
     @Override

@@ -1,8 +1,8 @@
 
 
-## ICE Data Export Application
+# ICE Data Export Application
  
-# General architecture notes
+## General architecture notes
 
 In the center of the application there is a DataCollectorApp object. It works as a mux connecting available 
 DataCollectors and PersisterUIControllers. The components are tied together using quavas EventBus. 
@@ -30,7 +30,7 @@ Available data writers and their support of various data types is listed below:
 
 
 
-#CSVPersister
+## CSVPersister
 
 All data is dumped in the same CSV file in the following format:
 
@@ -43,7 +43,7 @@ where:
 * DATE: yyyyMMddHHmmssZ format
 * N: integer - number of values to follow
 
-#JdbcPersister
+## JdbcPersister
 
 Numerics and Arrays are stored in the same table. Arrays are broken up into individual 
 numeric samples. Observations are stored separately. See DbSchema.sql for schema 

@@ -25,6 +25,16 @@ public class HumanReadable {
 		MetricLabels.put(rosetta.MDC_ECG_HEART_RATE.VALUE, "Heart Rate");
 		MetricLabels.put(rosetta.MDC_PULS_OXIM_PULS_RATE.VALUE, "Pulse");
 		MetricLabels.put(rosetta.MDC_PULS_OXIM_SAT_O2.VALUE, "SpO\u2082");
+		MetricLabels.put(rosetta.MDC_PULS_OXIM_PERF_REL.VALUE, "Perf Index");
+		
+		MetricLabels.put("Masimo_SPHB", "SpHb");
+		MetricLabels.put("Masimo_SPOC", "SpOC");
+		MetricLabels.put("Masimo_PVI", "PVI");
+		MetricLabels.put("Masimo_DESAT", "Desat");
+		MetricLabels.put("Masimo_eegPSI", "EEG PSI");
+		MetricLabels.put("Masimo_eegEMG", "EEG EMG");
+		MetricLabels.put("Masimo_eegSEFL", "EEG SEF L");
+		MetricLabels.put("Masimo_eegSEFR", "EEG SEF R");
 		
 		/*
 		 * Some new values for ventilator application.  Note that not all of these keys are using rosetta or ice

@@ -34,8 +34,6 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
             insertVital.setDouble   (6, v);
 
             insertVital.execute();
-
-            conn.commit();
         }
     }
 
@@ -48,8 +46,6 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
             insertObservation.setString   (4, v);
 
             insertObservation.execute();
-
-            conn.commit();
         }
     }
 
@@ -76,19 +72,19 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
 
 
     static void createSchema(Connection conn) throws SQLException {
-        conn.createStatement().execute( "CREATE TABLE VITAL_VALUES " +
-                                        "(DEVICE_ID VARCHAR(25), " +
-                                        "METRIC_ID VARCHAR(25), " +
+        conn.createStatement().execute( "CREATE TABLE IF NOT EXISTS VITAL_VALUES " +
+                                        "(DEVICE_ID VARCHAR(128), " +
+                                        "METRIC_ID VARCHAR(128), " +
                                         "INSTANCE_ID INTEGER, " +
                                         "TIME_TICK TIMESTAMP, " +
-                                        "PATIENT_ID VARCHAR(25), " +
-                                        "VITAL_VALUE DOUBLE)");
+                                        "PATIENT_ID VARCHAR(128), " +
+                                        "VITAL_VALUE DOUBLE PRECISION)");
 
-        conn.createStatement().execute( "CREATE TABLE OBSERVATION_VALUES " +
-                                        "(MD_ID VARCHAR(25), " +
+        conn.createStatement().execute( "CREATE TABLE IF NOT EXISTS OBSERVATION_VALUES " +
+                                        "(MD_ID VARCHAR(128), " +
                                         "TIME_TICK TIMESTAMP, " +
-                                        "PATIENT_ID VARCHAR(25), " +
-                                        "OBSERVATION VARCHAR(255))");
+                                        "PATIENT_ID VARCHAR(128), " +
+                                        "OBSERVATION VARCHAR(512))");
     }
 
     @Override
@@ -100,6 +96,7 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
     public boolean start() throws Exception {
         conn = createConnection();
         if(conn != null) {
+            createSchema(conn);
             insertVital = conn.prepareStatement("INSERT INTO VITAL_VALUES (DEVICE_ID, METRIC_ID, INSTANCE_ID, TIME_TICK, PATIENT_ID, VITAL_VALUE) VALUES(?,?,?,?,?,?)");
             insertObservation = conn.prepareStatement("INSERT INTO OBSERVATION_VALUES (MD_ID, TIME_TICK, PATIENT_ID, OBSERVATION) VALUES(?,?,?,?)");
         }

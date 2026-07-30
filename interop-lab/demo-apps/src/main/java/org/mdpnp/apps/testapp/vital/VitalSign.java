@@ -114,6 +114,16 @@ public enum VitalSign {
     }, 10.0, 300.0, 10.0, 300.0, 10.0, 300.0, 5000L, 5000L, Color.red
     ),
 
+    PerfusionIndex("Perfusion Index", "%", new String[] { rosetta.MDC_PULS_OXIM_PERF_REL.VALUE }, 0.5, 5.0, 0.1, 10.0, 0.0, 100.0, 5000L, 5000L, Color.cyan),
+    MasimoSpHb("SpHb", "g/dL", new String[] { "Masimo_SPHB" }, 7.0, 15.0, 5.0, 18.0, 0.0, 25.0, 5000L, 5000L, Color.magenta),
+    MasimoSpOC("SpOC", "%", new String[] { "Masimo_SPOC" }, 90.0, 100.0, 80.0, 100.0, 0.0, 100.0, 5000L, 5000L, Color.orange),
+    MasimoPVI("PVI", "", new String[] { "Masimo_PVI" }, 5.0, 20.0, 0.0, 40.0, 0.0, 100.0, 5000L, 5000L, Color.lightGray),
+    MasimoDesat("Desat Index", "", new String[] { "Masimo_DESAT" }, 0.0, 5.0, 0.0, 10.0, 0.0, 100.0, 5000L, 5000L, Color.blue),
+    MasimoEEGPSI("EEG PSI", "", new String[] { "Masimo_eegPSI" }, 40.0, 60.0, 20.0, 80.0, 0.0, 100.0, 5000L, 5000L, Color.darkGray),
+    MasimoEEGEMG("EEG EMG", "%", new String[] { "Masimo_eegEMG" }, 0.0, 30.0, 0.0, 50.0, 0.0, 100.0, 5000L, 5000L, Color.pink),
+    MasimoEEGSEFL("EEG SEF Left", "Hz", new String[] { "Masimo_eegSEFL" }, 10.0, 30.0, 5.0, 40.0, 0.0, 60.0, 5000L, 5000L, Color.yellow),
+    MasimoEEGSEFR("EEG SEF Right", "Hz", new String[] { "Masimo_eegSEFR" }, 10.0, 30.0, 5.0, 40.0, 0.0, 60.0, 5000L, 5000L, Color.yellow),
+
     Test("Test", "", new String[] {}, 60.0, 100.0, 40.0, 120.0, 10.0, 200.0, 5000L, 5000L, Color.red),
     ;
 

@@ -223,7 +223,7 @@
     </bean>
 
     <bean id="fhirContext" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod" value="ca.uhn.fhir.context.FhirContext.forDstu2"/>
+        <property name="staticMethod" value="ca.uhn.fhir.context.FhirContext.forR4"/>
     </bean>
     
     <bean id="jdbcDB" class="org.mdpnp.apps.testapp.EmbeddedDB">

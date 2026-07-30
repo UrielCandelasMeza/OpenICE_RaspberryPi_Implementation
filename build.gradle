@@ -86,6 +86,14 @@ subprojects {
     apply plugin: 'eclipse'
     version = VERSION_NUMBER
 
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'com.fasterxml.jackson' && details.requested.name == 'jackson-bom') {
+                details.useVersion '2.13.5'
+            }
+        }
+    }
+
     group = 'org.mdpnp'
     buildscript {
         repositories {

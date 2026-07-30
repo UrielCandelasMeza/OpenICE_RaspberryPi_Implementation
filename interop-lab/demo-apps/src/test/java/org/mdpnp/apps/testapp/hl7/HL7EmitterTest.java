@@ -39,7 +39,7 @@ public class HL7EmitterTest {
             EventLoop eventLoop = context.getBean(EventLoop.class);
             Subscriber subscriber = (Subscriber)context.getBean("subscriber");
 
-            FhirContext fhirContext = ca.uhn.fhir.context.FhirContext.forDstu2();
+            FhirContext fhirContext = ca.uhn.fhir.context.FhirContext.forR4();
             ValidationOracle validationOracle = new ValidationOracle();
             validationOracle.add(new Validation(number));
 
@@ -75,7 +75,7 @@ public class HL7EmitterTest {
             EventLoop eventLoop = context.getBean(EventLoop.class);
             Subscriber subscriber = (Subscriber)context.getBean("subscriber");
 
-            FhirContext fhirContext = ca.uhn.fhir.context.FhirContext.forDstu2();
+            FhirContext fhirContext = ca.uhn.fhir.context.FhirContext.forR4();
 
             HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, null, fhirContext);
 

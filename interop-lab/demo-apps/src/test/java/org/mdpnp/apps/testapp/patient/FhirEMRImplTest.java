@@ -1,8 +1,8 @@
 package org.mdpnp.apps.testapp.patient;
 
-import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.client.IGenericClient;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import org.hl7.fhir.r4.model.IdType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class FhirEMRImplTest {
 
         FhirEMRImpl emr = new FhirEMRImpl(new FxRuntimeSupport.CurrentThreadExecutor());
         emr.setUrl(url);
-        emr.setFhirContext(ca.uhn.fhir.context.FhirContext.forDstu2());
+        emr.setFhirContext(ca.uhn.fhir.context.FhirContext.forR4());
 
         emr.refresh();
         List<PatientInfo> l = emr.getPatients();
@@ -69,7 +69,7 @@ public class FhirEMRImplTest {
         try {
             JdbcFhirEMRImpl emr = new JdbcFhirEMRImpl(new FxRuntimeSupport.CurrentThreadExecutor());
             emr.setUrl(url);
-            emr.setFhirContext(ca.uhn.fhir.context.FhirContext.forDstu2());
+            emr.setFhirContext(ca.uhn.fhir.context.FhirContext.forR4());
             emr.setDataSource(ds);
 
             List<PatientInfo> listdb = emr.getDatabaseHandle().fetchAllPatients();
@@ -112,7 +112,7 @@ public class FhirEMRImplTest {
 
         FhirEMRImpl emr = new FhirEMRImpl(new FxRuntimeSupport.CurrentThreadExecutor());
         emr.setUrl(url);
-        emr.setFhirContext(ca.uhn.fhir.context.FhirContext.forDstu2());
+        emr.setFhirContext(ca.uhn.fhir.context.FhirContext.forR4());
 
         long now = System.currentTimeMillis();
         String id = Long.toHexString(now);
@@ -127,10 +127,10 @@ public class FhirEMRImplTest {
         deleteFhirRecord(emr, created.getId());
     }
 
-    private void deleteFhirRecord(FhirEMRImpl emr, IdDt id)
+    private void deleteFhirRecord(FhirEMRImpl emr, IdType id)
     {
         IGenericClient fhirClient = emr.getFhirClient();
-        fhirClient.delete().resourceById(id).execute();
+        fhirClient.delete().resourceById(id.getValue()).execute();
         log.info("deleted " + id.getValueAsString());
     }
 }

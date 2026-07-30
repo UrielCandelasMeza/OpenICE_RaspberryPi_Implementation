@@ -1,6 +1,6 @@
 package org.mdpnp.devices.fhir;
 
-import ca.uhn.fhir.model.dstu2.resource.Observation;
+import org.hl7.fhir.r4.model.Observation;
 
 import com.rti.dds.publication.Publisher;
 import com.rti.dds.subscription.Subscriber;

@@ -9,19 +9,19 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
-import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
-import ca.uhn.fhir.model.dstu2.resource.Patient;
-import ca.uhn.fhir.model.dstu2.valueset.AdministrativeGenderEnum;
-import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.client.IGenericClient;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.DateType;
+import org.hl7.fhir.r4.model.Enumerations;
+import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static ca.uhn.fhir.model.dstu2.valueset.AdministrativeGenderEnum.FEMALE;
-import static ca.uhn.fhir.model.dstu2.valueset.AdministrativeGenderEnum.MALE;
-import static ca.uhn.fhir.model.dstu2.valueset.IdentifierUseEnum.OFFICIAL;
+import static org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.FEMALE;
+import static org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.MALE;
 
 /**
  * @author mfeinberg
@@ -85,28 +85,28 @@ class FhirEMRImpl extends EMRFacade {
 
         IGenericClient fhirClient = getFhirClient();
 
-        ca.uhn.fhir.model.api.Bundle bundle = fhirClient
+        Bundle bundle = fhirClient
                 .search()
                 .forResource(Patient.class)
+                .returnBundle(Bundle.class)
                 .execute();
 
         final List<PatientInfo> toRet = new ArrayList<>();
-        List<Patient> patients = bundle.getResources(Patient.class);
 
-        String official = ca.uhn.fhir.model.dstu2.valueset.IdentifierUseEnum.OFFICIAL.getCode();
-        for (Patient p : patients) {
-            IdentifierDt id = p.getIdentifierFirstRep();
-            if (!HL7_ICE_URN_OID.equals(id.getSystem()))
+        for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+            if (!(entry.getResource() instanceof Patient)) continue;
+            Patient p = (Patient) entry.getResource();
+            Identifier id = p.getIdentifierFirstRep();
+            if (id == null || !HL7_ICE_URN_OID.equals(id.getSystem()))
                 continue;
-            String mrn = p.getIdentifierFirstRep().getValue();
+            String mrn = id.getValue();
 
-            // now find the official name used on the record.
-            for (HumanNameDt n : p.getName()) {
-                if (official.equals(n.getUse()) || null == n.getUse()) {
-                    String lName = n.getFamilyAsSingleString();
+            for (HumanName n : p.getName()) {
+                if (n.getUse() == HumanName.NameUse.OFFICIAL || n.getUse() == null) {
+                    String lName = n.getFamily();
                     String fName = n.getGivenAsSingleString();
                     Date bDay = p.getBirthDate();
-                    String g = p.getGender();
+                    Enumerations.AdministrativeGender g = p.getGender();
                     if (lName != null && fName != null && bDay != null && g != null) {
                         PatientInfo pi = new PatientInfo(mrn, fName, lName, fromFhire(g), bDay);
                         toRet.add(pi);
@@ -115,8 +115,6 @@ class FhirEMRImpl extends EMRFacade {
                 }
             }
         }
-
-        patients.retainAll(toRet);
 
         return toRet;
     }
@@ -140,13 +138,12 @@ class FhirEMRImpl extends EMRFacade {
         String mrnId = p.getMrn();
 
         Patient patient = new Patient();
-        patient.addIdentifier().setUse(OFFICIAL).setSystem(HL7_ICE_URN_OID).setValue(mrnId);
-        HumanNameDt name = patient.addName();
-        name.addFamily(p.getLastName());
+        patient.addIdentifier().setUse(Identifier.IdentifierUse.OFFICIAL).setSystem(HL7_ICE_URN_OID).setValue(mrnId);
+        HumanName name = patient.addName();
+        name.setFamily(p.getLastName());
         name.addGiven(p.getFirstName());
         patient.setGender(toFhire(p.getGender()));
-        DateDt dob = new DateDt(p.getDob());
-        patient.setBirthDate(dob);
+        patient.setBirthDate(p.getDob());
 
         MethodOutcome outcome = fhirClient.update()
                 .resource(patient)
@@ -161,7 +158,7 @@ class FhirEMRImpl extends EMRFacade {
         return fhirContext.newRestfulGenericClient(fhirURL);
     }
 
-    static AdministrativeGenderEnum toFhire(PatientInfo.Gender g) {
+    static Enumerations.AdministrativeGender toFhire(PatientInfo.Gender g) {
         switch (g) {
             default:
             case M: return MALE;
@@ -170,10 +167,10 @@ class FhirEMRImpl extends EMRFacade {
     }
 
     static PatientInfo.Gender fromFhire(String g) {
-        return fromFhire(AdministrativeGenderEnum.UNKNOWN.forCode(g));
+        return fromFhire(Enumerations.AdministrativeGender.fromCode(g));
     }
 
-    static PatientInfo.Gender fromFhire(AdministrativeGenderEnum g) {
+    static PatientInfo.Gender fromFhire(Enumerations.AdministrativeGender g) {
         switch (g) {
             default:     throw new IllegalArgumentException("Unknown conversion " + g);
             case MALE:   return PatientInfo.Gender.M;

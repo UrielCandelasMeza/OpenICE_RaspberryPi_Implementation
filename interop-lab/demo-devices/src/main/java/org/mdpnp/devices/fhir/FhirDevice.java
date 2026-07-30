@@ -1,11 +1,9 @@
 package org.mdpnp.devices.fhir;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import ca.uhn.fhir.model.base.composite.BaseQuantityDt;
-import ca.uhn.fhir.model.dstu2.composite.QuantityDt;
-import ca.uhn.fhir.model.dstu2.resource.Observation;
-import ca.uhn.fhir.model.dstu2.valueset.ObservationStatusEnum;
-import ca.uhn.fhir.model.primitive.DateTimeDt;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Quantity;
 import com.rti.dds.publication.Publisher;
 import com.rti.dds.subscription.Subscriber;
 import ice.Numeric;
@@ -45,10 +43,11 @@ public abstract class FhirDevice extends AbstractConnectedDevice {
     public static Observation createObservation(String metricId, Number value, Date asOf) {
 
         Observation obs = new Observation();
-        obs.setValue(new QuantityDt(value.doubleValue()).setUnits(MDC_DIM_DIMLESS.VALUE).setCode(metricId).setSystem("OpenICE"));
-        //SK - for update to hapi-fhir-structures-dstu2 version 6.1.3, updating setApplies to setEffective - that may not be correct
-        obs.setApplies(new DateTimeDt(asOf, TemporalPrecisionEnum.SECOND, TimeZone.getTimeZone("UTC")));
-        obs.setStatus(ObservationStatusEnum.PRELIMINARY);
+        obs.setValue(new Quantity().setValue(value.doubleValue()).setUnit(MDC_DIM_DIMLESS.VALUE).setCode(metricId).setSystem("OpenICE"));
+        DateTimeType dt = new DateTimeType(asOf, TemporalPrecisionEnum.SECOND);
+        dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        obs.setEffective(dt);
+        obs.setStatus(Observation.ObservationStatus.PRELIMINARY);
 
         return obs;
     }
@@ -116,15 +115,15 @@ public abstract class FhirDevice extends AbstractConnectedDevice {
 
         NumericObservation observationOnIce(Observation obs) {
 
-            BaseQuantityDt bqdt = (BaseQuantityDt) obs.getValue();
-            double value = bqdt.getValueElement().getValue().doubleValue();
+            Quantity qty = (Quantity) obs.getValue();
+            double value = qty.getValue().doubleValue();
 
-            String code = bqdt.getCodeElement().getValue();
+            String code = qty.getCode();
             InstanceHolder<Numeric> holder = getInstanceHolderForCode(code);
 
             log.info("Converting observation:" + code + "=" + value);
 
-            DateTimeDt dt = (DateTimeDt) obs.getApplies();
+            DateTimeType dt = (DateTimeType) obs.getEffective();
             Date d = dt.getValue();
             DeviceClock.Reading clockReading = new DeviceClock.ReadingImpl(d.getTime());
 

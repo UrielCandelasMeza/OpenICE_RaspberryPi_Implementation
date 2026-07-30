@@ -4,7 +4,6 @@ import ice.MDSConnectivity;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,19 +38,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
-import ca.uhn.fhir.model.dstu2.composite.QuantityDt;
-import ca.uhn.fhir.model.dstu2.composite.ResourceReferenceDt;
-import ca.uhn.fhir.model.dstu2.resource.Device;
-import ca.uhn.fhir.model.dstu2.resource.Observation;
-import ca.uhn.fhir.model.dstu2.resource.Patient;
-import ca.uhn.fhir.model.dstu2.valueset.ObservationStatusEnum;
-import ca.uhn.fhir.model.primitive.DateTimeDt;
-import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.client.IGenericClient;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Device;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.instance.model.api.IIdType;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.Resource;
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
@@ -87,9 +86,9 @@ public class HL7Emitter implements MDSListener, Runnable {
     protected final ScheduledExecutorService executor;
     
     private final Map<String, String> deviceUdiToPatientMRN = Collections.synchronizedMap(new HashMap<String, String>());
-    private final Map<String, IdDt> patientMRNtoResourceId = Collections.synchronizedMap(new HashMap<String, IdDt>());
-    private final Map<String, IdDt> deviceUDItoResourceId = Collections.synchronizedMap(new HashMap<String, IdDt>());
-    
+    private final Map<String, IIdType> patientMRNtoResourceId = Collections.synchronizedMap(new HashMap<>());
+
+    private final Map<String, IIdType> deviceUDItoResourceId = Collections.synchronizedMap(new HashMap<>());
     private final Set<Validation> recentUpdates = Collections.synchronizedSet(new HashSet<>());
 
     private final ListenerList<LineEmitterListener> listeners = new ListenerList<LineEmitterListener>(LineEmitterListener.class);
@@ -308,11 +307,11 @@ public class HL7Emitter implements MDSListener, Runnable {
         });
     }
     
-    public IdDt getDeviceResource(String udi) {
-        IdDt resourceId = deviceUDItoResourceId.get(udi);
+    public IIdType getDeviceResource(String udi) {
+        IIdType resourceId = deviceUDItoResourceId.get(udi);
         if(null == resourceId && fhirClient != null) {
             Device device = new Device();
-            device.setIdentifier(Arrays.asList(new IdentifierDt[] {new IdentifierDt(PTID_SYSTEM, udi)}));
+            device.addIdentifier().setSystem(PTID_SYSTEM).setValue(udi);
             MethodOutcome outcome = fhirClient.update()
             .resource(device)
             .conditional()
@@ -326,15 +325,21 @@ public class HL7Emitter implements MDSListener, Runnable {
         
     }
     
-    public IdDt getPatientResource(String mrn) {
-        IdDt resourceId = patientMRNtoResourceId.get(mrn);
+    public IIdType getPatientResource(String mrn) {
+        IIdType resourceId = patientMRNtoResourceId.get(mrn);
         if(null == resourceId && fhirClient != null) {
-            ca.uhn.fhir.model.api.Bundle bundle = fhirClient
+            Bundle bundle = fhirClient
                     .search()
                     .forResource(Patient.class)
                     .where(Patient.IDENTIFIER.exactly().systemAndIdentifier(PTID_SYSTEM, mrn))
+                    .returnBundle(Bundle.class)
                     .execute();
-            List<Patient> patients = bundle.getResources(Patient.class);
+            List<Patient> patients = new ArrayList<>();
+            for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+                if (entry.getResource() instanceof Patient) {
+                    patients.add((Patient) entry.getResource());
+                }
+            }
             if(patients.isEmpty()) {
                 log.warn("No patient in remote system with MRN="+mrn);
                 return null;
@@ -342,7 +347,7 @@ public class HL7Emitter implements MDSListener, Runnable {
                 if(patients.size()>1) {
                     log.warn("Duplicate resource ids for mrn="+mrn+" using first");
                 }
-                resourceId = patients.get(0).getId();
+                resourceId = patients.get(0).getIdElement();
                 patientMRNtoResourceId.put(mrn, resourceId);
             }
             
@@ -411,24 +416,26 @@ public class HL7Emitter implements MDSListener, Runnable {
         
         
         
-        IdDt resourceId = null == mrn ? null : getPatientResource(mrn);
+        IIdType resourceId = null == mrn ? null : getPatientResource(mrn);
         if(null == resourceId) {
             log.debug("No known patient resource id for mrn="+mrn);
         } else {
-            obs.setSubject(new ResourceReferenceDt(resourceId));
+            obs.setSubject(new Reference(resourceId));
         }
         
-        IdDt deviceResourceId = getDeviceResource(data.getUnique_device_identifier());
+        IIdType deviceResourceId = getDeviceResource(data.getUnique_device_identifier());
         if(null == deviceResourceId) {
             log.debug("No known device resource id for udi="+data.getUnique_device_identifier());
         } else {
-            obs.setDevice(new ResourceReferenceDt(deviceResourceId));
+            obs.setDevice(new Reference(deviceResourceId));
         }
         
-        obs.setValue(new QuantityDt(data.getValue()).setUnits(data.getUnit_id()).setCode(data.getMetric_id()).setSystem("OpenICE"));
+        obs.setValue(new Quantity().setValue(data.getValue()).setUnit(data.getUnit_id()).setCode(data.getMetric_id()).setSystem("OpenICE"));
 //        obs.addIdentifier().setSystem("urn:info.openice").setValue(uuidFromSequence(sampleInfo.publication_sequence_number).toString());
-        obs.setApplies(new DateTimeDt(data.getPresentation_time(), TemporalPrecisionEnum.SECOND, TimeZone.getTimeZone("UTC")));
-        obs.setStatus(validation.isValidated()?ObservationStatusEnum.FINAL:ObservationStatusEnum.PRELIMINARY);
+        DateTimeType dt = new DateTimeType(data.getPresentation_time(), TemporalPrecisionEnum.SECOND);
+        dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        obs.setEffective(dt);
+        obs.setStatus(validation.isValidated() ? Observation.ObservationStatus.FINAL : Observation.ObservationStatus.PRELIMINARY);
 
         
         return obs;
@@ -439,8 +446,8 @@ public class HL7Emitter implements MDSListener, Runnable {
     
     
     public void sendFHIR() throws InterruptedException {
-        List<IResource> bundle = new ArrayList<IResource>();
-        List<String> jsonStrings = new ArrayList<String>();
+        List<Resource> bundle = new ArrayList<>();
+        List<String> jsonStrings = new ArrayList<>();
         synchronized(recentUpdates) {
             recentUpdates.forEach((x) -> {
                 Observation obs = fhirObservation(x);

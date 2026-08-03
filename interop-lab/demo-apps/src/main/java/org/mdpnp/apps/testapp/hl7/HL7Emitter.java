@@ -45,6 +45,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Device;
 import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
@@ -71,9 +72,8 @@ import com.rti.dds.subscription.Subscriber;
 
 public class HL7Emitter implements MDSListener, Runnable {
     public enum Type {
-        FHIR_DSTU2, V26,
+        FHIR_R4, V26,
     }
-    
 
     protected static final Logger log = LoggerFactory.getLogger(HL7Emitter.class);
 
@@ -84,27 +84,29 @@ public class HL7Emitter implements MDSListener, Runnable {
     protected Connection hl7Connection;
     protected IGenericClient fhirClient;
     protected final ScheduledExecutorService executor;
-    
-    private final Map<String, String> deviceUdiToPatientMRN = Collections.synchronizedMap(new HashMap<String, String>());
+
+    private final Map<String, String> deviceUdiToPatientMRN = Collections
+            .synchronizedMap(new HashMap<String, String>());
     private final Map<String, IIdType> patientMRNtoResourceId = Collections.synchronizedMap(new HashMap<>());
 
     private final Map<String, IIdType> deviceUDItoResourceId = Collections.synchronizedMap(new HashMap<>());
     private final Set<Validation> recentUpdates = Collections.synchronizedSet(new HashSet<>());
 
-    private final ListenerList<LineEmitterListener> listeners = new ListenerList<LineEmitterListener>(LineEmitterListener.class);
-    private final ListenerList<StartStopListener> ssListeners = new ListenerList<StartStopListener>(StartStopListener.class);
+    private final ListenerList<LineEmitterListener> listeners = new ListenerList<LineEmitterListener>(
+            LineEmitterListener.class);
+    private final ListenerList<StartStopListener> ssListeners = new ListenerList<StartStopListener>(
+            StartStopListener.class);
 
     public HL7Emitter(final Subscriber subscriber, final EventLoop eventLoop,
-                      final ValidationOracle validationOracle,
-                      final FhirContext fhirContext)
-    {
+            final ValidationOracle validationOracle,
+            final FhirContext fhirContext) {
 
         executor = Executors.newSingleThreadScheduledExecutor();
         hl7Context = new DefaultHapiContext();
         this.fhirContext = fhirContext;
         this.validationOracle = validationOracle;
 
-        if(validationOracle != null) {
+        if (validationOracle != null) {
             validationObserver = attachValidationObserver(validationOracle);
             validationOracle.forEach((t) -> add(t));
         }
@@ -115,36 +117,37 @@ public class HL7Emitter implements MDSListener, Runnable {
 
     }
 
-    ElementObserver<Validation>  attachValidationObserver(ValidationOracle validationOracle) {
+    ElementObserver<Validation> attachValidationObserver(ValidationOracle validationOracle) {
         // Observes changes to source_timestamp and queues the NumericFx for emission
-        ElementObserver<Validation> observer = new ElementObserver<Validation>(new Callback<Validation, Observable[]>() {
-
-            @Override
-            public Observable[] call(Validation param) {
-                return new Observable[] {param.getNumeric().presentation_timeProperty()};
-            }
-
-        }, new Callback<Validation, InvalidationListener>() {
-
-            @Override
-            public InvalidationListener call(final Validation param) {
-                return new InvalidationListener() {
-                    private Date lastPresentationTime = null;
+        ElementObserver<Validation> observer = new ElementObserver<Validation>(
+                new Callback<Validation, Observable[]>() {
 
                     @Override
-                    public void invalidated(Observable observable) {
-                        Date dt = param.getNumeric().getPresentation_time();
-                        if(null == lastPresentationTime || !lastPresentationTime.equals(dt)) {
-                            recentUpdates.add(param);
-                            lastPresentationTime = dt;
-                        } else {
-                            log.trace("Ignoring a redundant " + param.getNumeric().getMetric_id());
-                        }
+                    public Observable[] call(Validation param) {
+                        return new Observable[] { param.getNumeric().presentation_timeProperty() };
                     }
-                };
-            }
 
-        }, validationOracle);
+                }, new Callback<Validation, InvalidationListener>() {
+
+                    @Override
+                    public InvalidationListener call(final Validation param) {
+                        return new InvalidationListener() {
+                            private Date lastPresentationTime = null;
+
+                            @Override
+                            public void invalidated(Observable observable) {
+                                Date dt = param.getNumeric().getPresentation_time();
+                                if (null == lastPresentationTime || !lastPresentationTime.equals(dt)) {
+                                    recentUpdates.add(param);
+                                    lastPresentationTime = dt;
+                                } else {
+                                    log.trace("Ignoring a redundant " + param.getNumeric().getMetric_id());
+                                }
+                            }
+                        };
+                    }
+
+                }, validationOracle);
 
         validationOracle.addListener(new OnListChange<>((t) -> add(t), null, (t) -> remove(t)));
 
@@ -154,10 +157,10 @@ public class HL7Emitter implements MDSListener, Runnable {
     private final ValidationOracle validationOracle;
     private Type type;
     private ScheduledFuture<?> emit;
-   
+
     public void start(final String host, final int port, final Type type, final long interval) {
         this.type = type;
-        
+
         if (host != null && !host.isEmpty()) {
             if (Type.V26.equals(type)) {
                 try {
@@ -172,7 +175,7 @@ public class HL7Emitter implements MDSListener, Runnable {
                     log.error("", re);
                     stop();
                 }
-            } else if (Type.FHIR_DSTU2.equals(type)) {
+            } else if (Type.FHIR_R4.equals(type)) {
                 fhirClient = fhirContext.newRestfulGenericClient(host);
                 ssListeners.fire(started);
             }
@@ -181,13 +184,13 @@ public class HL7Emitter implements MDSListener, Runnable {
             // just to demo the ability to compose HL7 messages
             ssListeners.fire(started);
         }
-        if(null == emit) {
+        if (null == emit) {
             emit = executor.scheduleAtFixedRate(this, 0L, interval, TimeUnit.MILLISECONDS);
         }
     }
 
     public void stop() {
-        if(null != emit) {
+        if (null != emit) {
             emit.cancel(true);
             emit = null;
         }
@@ -201,7 +204,7 @@ public class HL7Emitter implements MDSListener, Runnable {
             fhirClient = null;
         }
     }
-    
+
     public void shutdown() {
         executor.shutdownNow();
         mdsHandler.shutdown();
@@ -265,14 +268,14 @@ public class HL7Emitter implements MDSListener, Runnable {
     protected void sendHL7v26() throws InterruptedException {
         List<ORU_R01> bundle = new ArrayList<ORU_R01>();
         CountDownLatch latch = new CountDownLatch(1);
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             try {
-                validationOracle.forEach((fx)-> {
-                    if(fx.getNumeric().getMetric_id().startsWith("MDC_")) {
+                validationOracle.forEach((fx) -> {
+                    if (fx.getNumeric().getMetric_id().startsWith("MDC_")) {
                         ORU_R01 obs;
                         try {
                             obs = hl7Observation(fx.getNumeric());
-                            if(null != obs) {
+                            if (null != obs) {
                                 bundle.add(obs);
                             }
                         } catch (Exception e) {
@@ -288,10 +291,10 @@ public class HL7Emitter implements MDSListener, Runnable {
         latch.await();
 
         Parser parser = hl7Context.getPipeParser();
-     // Now, let's encode the message and look at the output
+        // Now, let's encode the message and look at the output
         Connection hapiConnection = HL7Emitter.this.hl7Connection;
-        
-        bundle.forEach((x)->{
+
+        bundle.forEach((x) -> {
             try {
                 String encodedMessage = parser.encode(x);
                 listeners.fire(new DispatchLine(encodedMessage));
@@ -301,33 +304,33 @@ public class HL7Emitter implements MDSListener, Runnable {
                     String responseString = parser.encode(response);
                     log.debug("Received Response:" + responseString);
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 log.error("unable to send HL7 message", e);
             }
         });
     }
-    
+
     public IIdType getDeviceResource(String udi) {
         IIdType resourceId = deviceUDItoResourceId.get(udi);
-        if(null == resourceId && fhirClient != null) {
+        if (null == resourceId && fhirClient != null) {
             Device device = new Device();
             device.addIdentifier().setSystem(PTID_SYSTEM).setValue(udi);
             MethodOutcome outcome = fhirClient.update()
-            .resource(device)
-            .conditional()
-            .where(Device.IDENTIFIER.exactly().systemAndIdentifier(PTID_SYSTEM, udi))
-            .execute();
+                    .resource(device)
+                    .conditional()
+                    .where(Device.IDENTIFIER.exactly().systemAndIdentifier(PTID_SYSTEM, udi))
+                    .execute();
             resourceId = outcome.getId();
             log.info("udi " + udi + " is " + resourceId);
             deviceUDItoResourceId.put(udi, resourceId);
         }
         return resourceId;
-        
+
     }
-    
+
     public IIdType getPatientResource(String mrn) {
         IIdType resourceId = patientMRNtoResourceId.get(mrn);
-        if(null == resourceId && fhirClient != null) {
+        if (null == resourceId && fhirClient != null) {
             Bundle bundle = fhirClient
                     .search()
                     .forResource(Patient.class)
@@ -340,21 +343,21 @@ public class HL7Emitter implements MDSListener, Runnable {
                     patients.add((Patient) entry.getResource());
                 }
             }
-            if(patients.isEmpty()) {
-                log.warn("No patient in remote system with MRN="+mrn);
+            if (patients.isEmpty()) {
+                log.warn("No patient in remote system with MRN=" + mrn);
                 return null;
             } else {
-                if(patients.size()>1) {
-                    log.warn("Duplicate resource ids for mrn="+mrn+" using first");
+                if (patients.size() > 1) {
+                    log.warn("Duplicate resource ids for mrn=" + mrn + " using first");
                 }
                 resourceId = patients.get(0).getIdElement();
                 patientMRNtoResourceId.put(mrn, resourceId);
             }
-            
+
         }
         return resourceId;
     }
-    
+
     public ORU_R01 hl7Observation(NumericFx data) throws HL7Exception, IOException {
         ORU_R01 r01 = new ORU_R01();
         // ORU is an observation
@@ -403,55 +406,52 @@ public class HL7Emitter implements MDSListener, Runnable {
         obx.getObservationValue(0).setData(nm);
         return r01;
     }
-    
-    
+
     Observation fhirObservation(Validation validation) {
         NumericFx data = validation.getNumeric();
-        
+
         Observation obs = new Observation();
         final String mrn = deviceUdiToPatientMRN.get(data.getUnique_device_identifier());
-        if(null == mrn) {
-            log.debug("No known mrn for udi="+data.getUnique_device_identifier());
+        if (null == mrn) {
+            log.debug("No known mrn for udi=" + data.getUnique_device_identifier());
         }
-        
-        
-        
+
         IIdType resourceId = null == mrn ? null : getPatientResource(mrn);
-        if(null == resourceId) {
-            log.debug("No known patient resource id for mrn="+mrn);
+        if (null == resourceId) {
+            log.debug("No known patient resource id for mrn=" + mrn);
         } else {
-            obs.setSubject(new Reference(resourceId));
+            obs.setSubject(new Reference(resourceId.toUnqualifiedVersionless()));
         }
-        
+
         IIdType deviceResourceId = getDeviceResource(data.getUnique_device_identifier());
-        if(null == deviceResourceId) {
-            log.debug("No known device resource id for udi="+data.getUnique_device_identifier());
+        if (null == deviceResourceId) {
+            log.debug("No known device resource id for udi=" + data.getUnique_device_identifier());
         } else {
-            obs.setDevice(new Reference(deviceResourceId));
+            obs.setDevice(new Reference(deviceResourceId.toUnqualifiedVersionless()));
         }
-        
-        obs.setValue(new Quantity().setValue(data.getValue()).setUnit(data.getUnit_id()).setCode(data.getMetric_id()).setSystem("OpenICE"));
-//        obs.addIdentifier().setSystem("urn:info.openice").setValue(uuidFromSequence(sampleInfo.publication_sequence_number).toString());
+
+        obs.setValue(new Quantity().setValue(data.getValue()).setUnit(data.getUnit_id()).setCode(data.getMetric_id())
+                .setSystem("OpenICE"));
+        // obs.addIdentifier().setSystem("urn:info.openice").setValue(uuidFromSequence(sampleInfo.publication_sequence_number).toString());
         DateTimeType dt = new DateTimeType(data.getPresentation_time(), TemporalPrecisionEnum.SECOND);
         dt.setTimeZone(TimeZone.getTimeZone("UTC"));
         obs.setEffective(dt);
-        obs.setStatus(validation.isValidated() ? Observation.ObservationStatus.FINAL : Observation.ObservationStatus.PRELIMINARY);
+        obs.setStatus(validation.isValidated() ? Observation.ObservationStatus.FINAL
+                : Observation.ObservationStatus.PRELIMINARY);
 
-        
         return obs;
     }
 
     static final String METRIC_PREFIX = "MDC_";
     static final String PTID_SYSTEM = "urn:oid:2.16.840.1.113883.3.1974";
-    
-    
+
     public void sendFHIR() throws InterruptedException {
         List<Resource> bundle = new ArrayList<>();
         List<String> jsonStrings = new ArrayList<>();
-        synchronized(recentUpdates) {
+        synchronized (recentUpdates) {
             recentUpdates.forEach((x) -> {
                 Observation obs = fhirObservation(x);
-                if(null != obs) {
+                if (null != obs) {
                     bundle.add(obs);
                     String jsonEncoded = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(obs);
                     jsonStrings.add(jsonEncoded + "\n");
@@ -460,14 +460,18 @@ public class HL7Emitter implements MDSListener, Runnable {
             log.debug("flushing {} FHIR observations", recentUpdates.size());
             recentUpdates.clear();
         }
-        
-        Platform.runLater(() ->
-        jsonStrings.forEach((t)->listeners.fire(new DispatchLine(t))));
-        
+
+        Platform.runLater(() -> jsonStrings.forEach((t) -> listeners.fire(new DispatchLine(t))));
+
         IGenericClient client = fhirClient;
-        
+
         if (null != client) {
-            client.transaction().withResources(bundle).encodedJson().execute();
+            List<IBaseResource> created = client.transaction().withResources(bundle).encodedJson().execute();
+            for (IBaseResource r : created) {
+                if (r != null && r.getIdElement().hasIdPart()) {
+                    log.info("Created {} id={}", r.fhirType(), r.getIdElement().getIdPart());
+                }
+            }
         }
     }
 
@@ -478,7 +482,7 @@ public class HL7Emitter implements MDSListener, Runnable {
     public void send() throws InterruptedException {
         if (Type.V26.equals(type)) {
             sendHL7v26();
-        } else if (Type.FHIR_DSTU2.equals(type)) {
+        } else if (Type.FHIR_R4.equals(type)) {
             sendFHIR();
         }
     }
@@ -488,22 +492,23 @@ public class HL7Emitter implements MDSListener, Runnable {
         ice.MDSConnectivity c = (MDSConnectivity) evt.getSource();
 
         String mrnPartition = PartitionAssignmentController.findMRNPartition(c.partition);
-        if(mrnPartition != null) {
+        if (mrnPartition != null) {
             log.info("udi " + c.unique_device_identifier + " is " + mrnPartition);
             deviceUdiToPatientMRN.put(c.unique_device_identifier, PartitionAssignmentController.toMRN(mrnPartition));
         }
     }
-    
+
     private ElementObserver<Validation> validationObserver;
 
     private void add(Validation validation) {
-        if(validation.getNumeric().getMetric_id().startsWith(METRIC_PREFIX)) {
+        if (validation.getNumeric().getMetric_id().startsWith(METRIC_PREFIX)) {
             validationObserver.attachListener(validation);
         }
     }
+
     private void remove(Validation validation) {
         // Must not detach what we did not attach
-        if(validation.getNumeric().getMetric_id().startsWith(METRIC_PREFIX)) {
+        if (validation.getNumeric().getMetric_id().startsWith(METRIC_PREFIX)) {
             validationObserver.detachListener(validation);
         }
     }
@@ -518,6 +523,6 @@ public class HL7Emitter implements MDSListener, Runnable {
             log.error("Error sending FHIR data", t);
             stop();
         }
-        
+
     }
 }

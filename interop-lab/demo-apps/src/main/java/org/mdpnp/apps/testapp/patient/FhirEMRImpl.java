@@ -3,6 +3,7 @@ package org.mdpnp.apps.testapp.patient;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,8 +32,8 @@ class FhirEMRImpl extends EMRFacade {
     private static final Logger log = LoggerFactory.getLogger(FhirEMRImpl.class);
 
     private static final String HL7_ICE_URN_OID = "urn:oid:2.16.840.1.113883.3.1974";
-    private FhirContext       fhirContext;
-    private String            fhirURL;
+    private FhirContext fhirContext;
+    private String fhirURL;
 
     public FhirEMRImpl(Executor executor) {
         super(executor);
@@ -45,26 +46,30 @@ class FhirEMRImpl extends EMRFacade {
     public String getUrl() {
         return fhirURL;
     }
+
     public void setUrl(String url) {
         fhirURL = url;
     }
+
     public FhirContext getFhirContext() {
         return fhirContext;
     }
+
     public void setFhirContext(FhirContext fhirContext) {
         this.fhirContext = fhirContext;
     }
 
     public static boolean isServerThere(String u) throws Exception {
         try {
-            URL url = new URL(u + "/metadata");
+            URI uri = URI.create(u + "/metadata");
+            URL url = uri.toURL();
+
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             // This will throw if server is not there.
             InputStream is = conn.getInputStream();
             return is != null;
-        }
-        catch(Exception ex) {
+        } catch (Exception ex) {
             return false;
         }
     }
@@ -94,7 +99,8 @@ class FhirEMRImpl extends EMRFacade {
         final List<PatientInfo> toRet = new ArrayList<>();
 
         for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
-            if (!(entry.getResource() instanceof Patient)) continue;
+            if (!(entry.getResource() instanceof Patient))
+                continue;
             Patient p = (Patient) entry.getResource();
             Identifier id = p.getIdentifierFirstRep();
             if (id == null || !HL7_ICE_URN_OID.equals(id.getSystem()))
@@ -118,7 +124,6 @@ class FhirEMRImpl extends EMRFacade {
 
         return toRet;
     }
-
 
     public boolean createPatient(final PatientInfo p) {
         boolean ok = super.createPatient(p);
@@ -161,8 +166,10 @@ class FhirEMRImpl extends EMRFacade {
     static Enumerations.AdministrativeGender toFhire(PatientInfo.Gender g) {
         switch (g) {
             default:
-            case M: return MALE;
-            case F: return FEMALE;
+            case M:
+                return MALE;
+            case F:
+                return FEMALE;
         }
     }
 
@@ -172,9 +179,12 @@ class FhirEMRImpl extends EMRFacade {
 
     static PatientInfo.Gender fromFhire(Enumerations.AdministrativeGender g) {
         switch (g) {
-            default:     throw new IllegalArgumentException("Unknown conversion " + g);
-            case MALE:   return PatientInfo.Gender.M;
-            case FEMALE: return PatientInfo.Gender.F;
+            default:
+                throw new IllegalArgumentException("Unknown conversion " + g);
+            case MALE:
+                return PatientInfo.Gender.M;
+            case FEMALE:
+                return PatientInfo.Gender.F;
         }
     }
 }

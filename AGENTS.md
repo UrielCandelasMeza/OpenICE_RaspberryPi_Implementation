@@ -1,13 +1,13 @@
 # AGENTS.md — OpenICE / MD PnP
 
-Project `1.5.0-SNAPSHOT`. Gradle 9.0.0, Java source/target 25, JavaFX 25 (demo-apps). No lint/formatter — verify via compile + tests only.
+Project `1.5.0-SNAPSHOT`. Gradle 9.0.0, Java source/target 25, JavaFX 25 (demo-apps). No lint/formatter — verify via compile + tests only. See `CLAUDE.md` for expanded walkthroughs (ICE app / simulated device creation).
 
 ## Important Build Prerequisites
 
 - **7 non-Maven JARs must exist in `artifacts/`**: `nddsjava.jar`, `pixelmed.jar`, `Utility-0.0.1.jar`, `mdpnp-sounds-0.1.0.jar`, `rtiddsgen2.jar`, `rtiusagemetrics-api.jar`, `cpp-bin-1.2.8-SNAPSHOT.zip`. Build fails without them.
 - **`RTI_LICENSE_FILE`** must point to a valid license (e.g. `interop-lab/demo-apps/src/main/resources/OpenICE_license.dat`).
 - **`LD_LIBRARY_PATH`** must include `native/libs/linux` (or `aarch`, `macosx`, `windows`) — already configured in `build.gradle` `test` and `run` blocks.
-- Tests need `SEC_ARTIFACT_DIR`, `DOCBOX_RTPS_HOST_ID`, `DOCBOX_RTPS_APP_ID` env vars (set in `demo-apps/build.gradle:300-314`).
+- Tests need `SEC_ARTIFACT_DIR` env var; `RTI_LICENSE_FILE` and `LD_LIBRARY_PATH` are set automatically in the `test`/`run` blocks of `demo-apps/build.gradle`. `DOCBOX_RTPS_HOST_ID`/`DOCBOX_RTPS_APP_ID` are set **only on Windows**.
 - The `:setupLocalDb` task runs `sudo -u postgres psql` — requires postgres superuser.
 
 ## CI / Stale Config
@@ -26,7 +26,7 @@ Only CI workflow is `.github/workflows/gradle.yml` — targets **JDK 1.8** on `w
 | `data-types/x73-idl` | IEEE 11073 IDL type definitions |
 | `data-types/x73-idl-rti-dds` | RTI code-generated Java types from IDL |
 
-`Main` runs GUI by default, headless when `-domain -app -device` args passed.
+`Main` runs GUI by default, headless when `-domain -app -device` args passed. `HeadlessMain` takes `-domain -device [-address <serial|ip>] [-peers <hosts>]` — no `-app` (it runs a single device).
 
 ## Key Packages
 
@@ -82,7 +82,7 @@ ICE applications (charting, PCA, EMR, etc.) register at:
 
 ## Runtime Quirks
 
-- JavaFX `--add-exports` JVM args required (6 exports, see `demo-apps/build.gradle:316-322`).
+- JavaFX `--add-exports` JVM args required (6 exports, see the `run`, `runDevice`, and `startScripts` blocks of `demo-apps/build.gradle`).
 - `--enable-native-access=ALL-UNNAMED` required in Docker.
 - Spring XML context chain: `RtConfig.xml` (DDS infra) → `DeviceAdapterContext.xml` / `IceAppContainerContext.xml` → `DriverContext.xml`.
 - `${mdpnp.domain}` placeholder defaults to `0` via `ice.properties`; override with `-Dmdpnp.domain=N`.
@@ -128,6 +128,10 @@ When adding a struct to `ice.idl`, annotate primary keys with `@key`. RTI auto-g
 - Multicast: `239.255.0.1`, UDPv4 only (shared memory disabled).
 - Promiscuous discovery (`accept_unknown_peers: true`).
 - Domain announcements disabled.
+
+## MQTT Send Bridge
+
+The Supervisor app **MQTT Send** (`org.mdpnp.apps.testapp.mqtt`) publishes DDS Numeric/SampleArray/Alert data to a Mosquitto broker at `openice/{udi}/{metric_id}`. Broker: `docker compose up -d` in `mosquitto-broker/` (auth required, `allow_anonymous false`). Full topic/payload reference in README "MQTT Send".
 
 ## Headless Database
 

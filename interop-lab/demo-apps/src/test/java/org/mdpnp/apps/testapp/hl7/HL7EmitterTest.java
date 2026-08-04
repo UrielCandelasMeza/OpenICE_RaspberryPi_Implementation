@@ -43,7 +43,7 @@ public class HL7EmitterTest {
             ValidationOracle validationOracle = new ValidationOracle();
             validationOracle.add(new Validation(number));
 
-            HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, validationOracle, fhirContext);
+            HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, validationOracle, fhirContext, null);
 
             number.setPresentation_time(new Date());
             Set<Validation> updates = emitter.getRecentUpdates();
@@ -77,7 +77,7 @@ public class HL7EmitterTest {
 
             FhirContext fhirContext = ca.uhn.fhir.context.FhirContext.forR4();
 
-            HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, null, fhirContext);
+            HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, null, fhirContext, null);
 
             assessment.setDate_and_time(new Date());
             Set<Validation> updates = emitter.getRecentUpdates();

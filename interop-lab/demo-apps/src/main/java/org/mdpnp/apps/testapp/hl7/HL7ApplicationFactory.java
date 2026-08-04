@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 
 import org.mdpnp.apps.testapp.IceApplicationProvider;
+import org.mdpnp.apps.testapp.patient.EMRFacade;
 import org.mdpnp.apps.testapp.validate.ValidationOracle;
 import org.mdpnp.rtiapi.data.EventLoop;
 import org.springframework.context.ApplicationContext;
@@ -35,8 +36,10 @@ public class HL7ApplicationFactory implements IceApplicationProvider {
         final ValidationOracle validationOracle = parentContext.getBean("validationOracle", ValidationOracle.class);
 
         final FhirContext fhirContext = parentContext.getBean("fhirContext", FhirContext.class);
-        
-        final HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, validationOracle, fhirContext);
+
+        final EMRFacade emr = parentContext.getBean("emr", EMRFacade.class);
+
+        final HL7Emitter emitter = new HL7Emitter(subscriber, eventLoop, validationOracle, fhirContext, emr);
 
         FXMLLoader loader = new FXMLLoader(HL7Application.class.getResource("HL7Application.fxml"));
         
@@ -45,6 +48,7 @@ public class HL7ApplicationFactory implements IceApplicationProvider {
         final HL7Application controller = ((HL7Application)loader.getController());
 
         controller.setModel(emitter);
+        controller.setEMR(emr);
         
 
         return new IceApplicationProvider.IceApp() {

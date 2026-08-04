@@ -142,6 +142,79 @@ In addition to `RTI_LICENSE_FILE`, the DDS QoS profiles in `RtConfig.xml` may re
 - `DOCBOX_RTPS_HOST_ID` — identifies the DDS host
 - `DOCBOX_RTPS_APP_ID` — identifies the DDS application instance
 
+### FHIR R4 Auth (HL7 Emitter only)
+
+OAuth2 bearer tokens (`TokenProvider`, props `mdpnp.fhir.token.*` in `ice.properties`) are used **only** by the HL7 FHIR R4 emitter (`org.mdpnp.apps.testapp.hl7.HL7Emitter`) to add `Authorization: Bearer` headers. The EMR app (`FhirEMRImpl`, `org.mdpnp.apps.testapp.patient`) does **not** use the token — its FHIR client is unauthenticated. Do not attach tokens there.
+
+### FHIR Gateway Architecture
+
+OpenICE sends FHIR R4 observations through a **Google FHIR Info Gateway** with Keycloak + ListAccessChecker:
+
+```
+OpenICE HL7 Emitter → FHIR Gateway (localhost:8080) → HAPI FHIR Backend (localhost:8099)
+                                    ↑
+                              Keycloak (localhost:9080) for token endpoint
+```
+
+- **Gateway** (`localhost:8080`): enforces patient-based list access control via `ListAccessChecker`. Every resource write must reference a patient in the user's authorized list.
+- **HAPI Backend** (`localhost:8099`): the actual FHIR store, no auth required.
+- **Keycloak** (`localhost:9080`): issues OAuth2 bearer tokens (5 min TTL).
+
+### ListAccessChecker
+
+The gateway's `ListAccessChecker` validates that every Observation's `subject` reference points to a Patient that exists in the `patient-list-example` List resource. If the Patient is not in the list, the gateway returns 403 "User is not authorized".
+
+- `patient-list-example` is a FHIR `ListResource` in HAPI (8099) containing authorized Patient references (e.g., `Patient/3177`, `Patient/2835`).
+- The `HL7Emitter.addToAuthorizedList()` method automatically adds newly created Patients to this List via `backendClient` (8099, no auth).
+- `Device` resources are written directly to the backend (8099) because Device is NOT in the patient compartment (`CompartmentDefinition-patient.json` has Device with no params, and `patient_paths.json` has no Device entry).
+
+### HL7 Emitter Patient Selection
+
+The HL7 Exporter app has a **ComboBox** (`patientCombo`) that lists patients from the local EMR database (HSQLDB via `EMRFacade`). When a patient is selected:
+
+1. `HL7Application.patientCombo.setOnAction()` calls `model.setSelectedPatientMRN(mrn)`
+2. `HL7Emitter.fhirObservation()` uses `selectedPatientMRN` as the primary MRN source
+3. `getPatientResource(mrn)` searches HAPI via `backendClient` (8099) by `patientIdentifierSystem` + MRN
+4. If not found, creates the Patient in HAPI via conditional PUT, then adds it to `patient-list-example` via `addToAuthorizedList()`
+5. Observations are sent as a transaction bundle to the gateway (8080) with `Authorization: Bearer` header
+
+### HL7 Emitter Data Flow
+
+```
+DDS Numeric events → ValidationOracle → recentUpdates → sendFHIR()
+  → fhirObservation() per validation:
+      1. Resolve MRN: selectedPatientMRN → deviceUdiToPatientMRN fallback
+      2. getPatientResource(mrn): search/create Patient in HAPI (8099)
+      3. addToAuthorizedList(): ensure Patient is in patient-list-example
+      4. getDeviceResource(udi, resourceId): search/create Device in HAPI (8099)
+  → sendObservations(): always display in console, only bundle if obs.hasSubject()
+  → Transaction POST to gateway (8080) with bearer token
+```
+
+### Key FHIR Files
+
+| File | Role |
+|---|---|
+| `HL7Emitter.java` | Core emission logic: Patient/Device creation, Observation bundling, gateway submission |
+| `HL7Application.java` | JavaFX controller: patient ComboBox, Start/Stop button, frequency slider |
+| `HL7Application.fxml` | FXML layout with ComboBox, host/port fields, protocol radio buttons |
+| `HL7ApplicationFactory.java` | Spring factory: wires `EMRFacade`, `ValidationOracle`, `FhirContext` into emitter |
+| `TokenProvider.java` | OAuth2 token fetch from Keycloak (5 min TTL, `setToken()` for force-refresh) |
+| `FhirEMRImpl.java` | FHIR-based EMR: creates patients in HAPI with OID system `urn:oid:2.16.840.1.113883.3.1974` |
+| `EMRFacade.java` | Abstract EMR facade, `fetchAllPatients()` returns patients from HSQLDB |
+
+### ice.properties (FHIR-related)
+
+```properties
+mdpnp.fhir.url=                              # EMR FHIR URL (empty = JDBC-only EMR)
+mdpnp.fhir.backend.url=http://localhost:8099/fhir   # HAPI backend (no auth)
+mdpnp.fhir.token.url=http://localhost:9080/auth/realms/test/protocol/openid-connect/token
+mdpnp.fhir.token.user=testuser
+mdpnp.fhir.token.password=testpass
+mdpnp.fhir.token.clientId=my-fhir-client
+mdpnp.fhir.patient.identifier.system=urn:oid:2.16.840.1.113883.3.1974  # OID for patient MRN lookup
+```
+
 ## Medical Device Driver Requirements
 
 These rules apply whenever writing or modifying a device driver (any class under `org.mdpnp.devices`).

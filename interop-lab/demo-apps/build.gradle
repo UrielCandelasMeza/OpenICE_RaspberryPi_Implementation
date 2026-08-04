@@ -231,6 +231,8 @@ dependencies {
     implementation group: 'ca.uhn.hapi.fhir', name: 'hapi-fhir-structures-r4', version: '6.2.5'
     implementation group: 'ca.uhn.hapi.fhir', name: 'hapi-fhir-client', version: '6.2.5'
     
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.5'
+    
     implementation files('../../artifacts/Utility-0.0.1.jar')
     
     implementation group: 'org.controlsfx', name: 'controlsfx', version: '11.1.2'

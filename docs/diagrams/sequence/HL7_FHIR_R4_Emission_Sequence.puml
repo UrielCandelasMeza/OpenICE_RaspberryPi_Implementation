@@ -1,0 +1,156 @@
+@startuml
+title Diagrama de Secuencia — HL7 FHIR R4 Emission + Gateway
+
+actor Usuario
+participant "HL7Application\n(ComboBox + TextArea)" as App
+participant "HL7Emitter" as Emitter
+participant "TokenProvider" as Token
+participant "ValidationOracle" as Val
+participant "HAPI Backend\n(localhost:8099)" as HAPI
+participant "Keycloak\n(localhost:9080)" as KC
+participant "FHIR Gateway\n(localhost:8080)" as GW
+
+== Inicio ==
+
+Usuario -> App: Selecciona paciente en ComboBox
+App -> Emitter: setSelectedPatientMRN(mrn)
+
+Usuario -> App: Click "Start"
+App -> Emitter: start(host, port, FHIR_R4, interval)
+Emitter -> Emitter: Crear backendClient\n(HAPI FHIR, 8099, sin auth)
+Emitter -> Emitter: Crear gatewayClient\n(FHIR Gateway, 8080)
+Emitter -> Emitter: Crear TokenProvider\n(Keycloak, 9080)
+Emitter -> Token: fetchBearerToken()
+Token -> KC: POST /token\n(grant_type=password)
+KC --> Token: access_token (5 min TTL)
+Token -> Token: tokenCache = token
+Emitter -> Emitter: Schedule emit task
+
+== Ciclo de emisión ==
+
+loop Cada intervalo
+
+  Emitter -> Val: getRecentUpdates()
+  Val --> Emitter: recentUpdates
+
+  loop Para cada validación en recentUpdates
+
+    Emitter -> Emitter: fhirObservation()
+
+    alt selectedPatientMRN != null
+      Emitter -> Emitter: MRN = selectedPatientMRN
+    else fallback DDS
+      Emitter -> Emitter: MRN = deviceUdiToPatientMRN\n(legacy map)
+    end
+
+    alt MRN == null
+      Emitter -> Emitter: crear Obs sin subject\n(solo display en consola)
+    else MRN != null
+
+      Emitter -> HAPI: GET /Patient?identifier=<system>|<MRN>
+
+      alt Paciente existe en HAPI
+        HAPI --> Emitter: Patient/<id>
+      else Paciente NO existe
+        HAPI --> Emitter: 404 Not Found
+
+        Emitter -> HAPI: PUT /Patient/<uuid>\n(conditional create)
+        Note right: Patient con identifier:\nsystem = urn:oid:2.16.840.1.113883.3.1974\nvalue = MRN
+        HAPI --> Emitter: Patient/<newId>
+
+        Emitter -> Emitter: addToAuthorizedList(patientId)
+
+        Emitter -> HAPI: GET /List/patient-list-example
+        HAPI --> Emitter: ListResource
+
+        alt Patient YA está en la lista
+          Emitter -> Emitter: log("ya está en la lista")
+        else Patient NO está en la lista
+          Emitter -> HAPI: PUT /List/patient-list-example\n(agregar entry con item=Patient/<id>)
+          HAPI --> Emitter: 200 OK
+          Emitter -> Emitter: log("agregado a la lista")
+        end
+
+      end
+
+      Emitter -> HAPI: GET /Device?<udi>
+      alt Device existe
+        HAPI --> Emitter: Device/<id>
+      else Device NO existe
+        Emitter -> HAPI: POST /Device
+        Note right: Device escrito directo al backend\n(no pasa por gateway — no está\nen patient compartment)
+        HAPI --> Emitter: Device/<newId>
+      end
+
+      Emitter -> Emitter: Obs.setSubject(PatientRef)\nObs.setDevice(DeviceRef)\nObs.setCode(metric)\nObs.setValue(Quantity)
+      Emitter -> Emitter: bundle.addEntry(obs)
+
+    end
+
+  end
+
+  Emitter -> Emitter: sendObservations()
+
+  Emitter -> Emitter: Construir Transaction Bundle
+  Note right: Bundle con type = transaction\nentries = Observations listas
+
+  Emitter -> Token: fetchBearerToken()
+
+  alt tokenCache vencido (< 10s TTL)
+    Token -> KC: POST /token\n(grant_type=password)
+    KC --> Token: nuevo access_token
+    Token -> Token: tokenCache = token
+  end
+
+  Token --> Emitter: token
+
+  Emitter -> GW: POST /\nAuthorization: Bearer <token>\nContent-Type: application/json\n{ Transaction Bundle }
+
+  GW -> GW: Validar bearer token\n(Keycloak introspection)
+
+  alt Token inválido
+    GW --> Emitter: 401 Unauthorized
+    Emitter -> Emitter: log("Unauthorized")
+  else Token válido
+    GW -> GW: Para cada Observation en bundle:
+
+    alt Observation tiene subject
+      GW -> GW: PatientRef = obs.subject.reference
+
+      GW -> HAPI: GET /List?_id=patient-list-example\n&_elements=id&item=<PatientRef>
+
+      alt Patient está en authorized list
+        GW -> HAPI: POST /Observation\n(gateway → backend)
+        HAPI --> GW: 201 Created
+        GW --> Emitter: 200 OK\n(entry results)
+      else Patient NO está en authorized list
+        GW --> Emitter: 403 Forbidden\n"User is not authorized"\n"Reference Patients not in List!"
+        Note right: ListAccessChecker\nrechaza la escritura
+      end
+
+    else Observation NO tiene subject
+      GW --> Emitter: 400 Bad Request\n"Missing Subject"
+      Note right: PatientFinderImp\nrequiere subject
+    end
+
+  end
+
+  Emitter -> Emitter: log("Response: " + status)
+
+  Emitter -> App: newLine(jsonStrings)
+  Note right: Siempre muestra en consola\n(since sendObservations display=always)
+
+  App -> App: TextArea.appendText(jsonStrings)
+
+end
+
+== Detención ==
+
+Usuario -> App: Click "Stop"
+App -> Emitter: stop()
+Emitter -> Emitter: cancel(emit task)
+Emitter -> Emitter: close(clients)
+Emitter --> App: stopped()
+App -> App: Botón Start habilitado\nStop deshabilitado
+
+@enduml

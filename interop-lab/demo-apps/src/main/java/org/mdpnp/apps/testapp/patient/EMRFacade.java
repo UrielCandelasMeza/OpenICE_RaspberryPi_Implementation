@@ -66,7 +66,7 @@ public abstract class EMRFacade {
         return listHandler.getPatients();
     }
 
-    abstract List<PatientInfo> fetchAllPatients();
+    public abstract List<PatientInfo> fetchAllPatients();
 
     public boolean createPatient(PatientInfo p) {
         listHandler.createPatient(p);

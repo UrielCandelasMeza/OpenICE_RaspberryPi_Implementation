@@ -89,7 +89,7 @@ public class OpenEMRImpl extends EMRFacade {
 	}
 
 	@Override
-	List<PatientInfo> fetchAllPatients() {
+	public List<PatientInfo> fetchAllPatients() {
 		List<PatientInfo> returnList=new ArrayList<>();
 		if(accessToken==null || expired()) {
 			try {

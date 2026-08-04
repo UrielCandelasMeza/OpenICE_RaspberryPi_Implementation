@@ -26,6 +26,9 @@ import javafx.util.Callback;
 import org.mdpnp.apps.device.OnListChange;
 import org.mdpnp.apps.fxbeans.ElementObserver;
 import org.mdpnp.apps.fxbeans.NumericFx;
+import org.mdpnp.apps.testapp.IceProperties;
+import org.mdpnp.apps.testapp.patient.EMRFacade;
+import org.mdpnp.apps.testapp.patient.PatientInfo;
 import org.mdpnp.apps.testapp.validate.Validation;
 import org.mdpnp.apps.testapp.validate.ValidationOracle;
 import org.mdpnp.devices.MDSHandler;
@@ -41,10 +44,12 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
+import ca.uhn.fhir.rest.server.exceptions.BaseServerResponseException;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Device;
-import org.hl7.fhir.r4.model.Identifier;
+//import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Observation;
@@ -83,11 +88,18 @@ public class HL7Emitter implements MDSListener, Runnable {
 
     protected Connection hl7Connection;
     protected IGenericClient fhirClient;
+    protected IGenericClient backendClient;
+    private String patientIdentifierSystem = PTID_SYSTEM;
+    private final EMRFacade emr;
     protected final ScheduledExecutorService executor;
+
+    private final TokenProvider tokenProvider = new TokenProvider();
+    private BearerTokenAuthInterceptor bearerInterceptor;
 
     private final Map<String, String> deviceUdiToPatientMRN = Collections
             .synchronizedMap(new HashMap<String, String>());
     private final Map<String, IIdType> patientMRNtoResourceId = Collections.synchronizedMap(new HashMap<>());
+    private volatile String selectedPatientMRN;
 
     private final Map<String, IIdType> deviceUDItoResourceId = Collections.synchronizedMap(new HashMap<>());
     private final Set<Validation> recentUpdates = Collections.synchronizedSet(new HashSet<>());
@@ -99,8 +111,10 @@ public class HL7Emitter implements MDSListener, Runnable {
 
     public HL7Emitter(final Subscriber subscriber, final EventLoop eventLoop,
             final ValidationOracle validationOracle,
-            final FhirContext fhirContext) {
+            final FhirContext fhirContext,
+            final EMRFacade emr) {
 
+        this.emr = emr;
         executor = Executors.newSingleThreadScheduledExecutor();
         hl7Context = new DefaultHapiContext();
         this.fhirContext = fhirContext;
@@ -177,6 +191,11 @@ public class HL7Emitter implements MDSListener, Runnable {
                 }
             } else if (Type.FHIR_R4.equals(type)) {
                 fhirClient = fhirContext.newRestfulGenericClient(host);
+                backendClient = fhirContext.newRestfulGenericClient(backendUrl());
+                patientIdentifierSystem = new IceProperties("mdpnp.fhir.patient.identifier.system")
+                        .getValue().orElse(PTID_SYSTEM);
+                bearerInterceptor = null;
+                refreshBearerToken(fhirClient);
                 ssListeners.fire(started);
             }
         } else {
@@ -187,6 +206,25 @@ public class HL7Emitter implements MDSListener, Runnable {
         if (null == emit) {
             emit = executor.scheduleAtFixedRate(this, 0L, interval, TimeUnit.MILLISECONDS);
         }
+    }
+
+    private void refreshBearerToken(IGenericClient client) {
+        String token = tokenProvider.getToken();
+        if (bearerInterceptor == null) {
+            bearerInterceptor = new BearerTokenAuthInterceptor(token == null ? "" : token);
+            client.registerInterceptor(bearerInterceptor);
+        } else if (token != null && !token.isEmpty()) {
+            bearerInterceptor.setToken(token);
+        }
+        System.out.println("Authorization header que se enviara: Bearer " + (token == null || token.isEmpty() ? "(SIN TOKEN)" : token));
+        if (token == null || token.isEmpty()) {
+            log.warn("No valid token available; FHIR requests will be sent without Authorization header");
+        }
+    }
+
+    public void setSelectedPatientMRN(String mrn) {
+        this.selectedPatientMRN = mrn;
+        log.info("MRN seleccionado desde UI: {}", mrn);
     }
 
     public void stop() {
@@ -310,12 +348,15 @@ public class HL7Emitter implements MDSListener, Runnable {
         });
     }
 
-    public IIdType getDeviceResource(String udi) {
+    public IIdType getDeviceResource(String udi, IIdType patientResourceId) {
         IIdType resourceId = deviceUDItoResourceId.get(udi);
-        if (null == resourceId && fhirClient != null) {
+        if (null == resourceId && backendClient != null) {
             Device device = new Device();
             device.addIdentifier().setSystem(PTID_SYSTEM).setValue(udi);
-            MethodOutcome outcome = fhirClient.update()
+            if (null != patientResourceId) {
+                device.setPatient(new Reference(patientResourceId.toUnqualifiedVersionless()));
+            }
+            MethodOutcome outcome = backendClient.update()
                     .resource(device)
                     .conditional()
                     .where(Device.IDENTIFIER.exactly().systemAndIdentifier(PTID_SYSTEM, udi))
@@ -330,32 +371,90 @@ public class HL7Emitter implements MDSListener, Runnable {
 
     public IIdType getPatientResource(String mrn) {
         IIdType resourceId = patientMRNtoResourceId.get(mrn);
-        if (null == resourceId && fhirClient != null) {
-            Bundle bundle = fhirClient
-                    .search()
-                    .forResource(Patient.class)
-                    .where(Patient.IDENTIFIER.exactly().systemAndIdentifier(PTID_SYSTEM, mrn))
-                    .returnBundle(Bundle.class)
-                    .execute();
-            List<Patient> patients = new ArrayList<>();
-            for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
-                if (entry.getResource() instanceof Patient) {
-                    patients.add((Patient) entry.getResource());
+        if (null == resourceId && backendClient != null) {
+            try {
+                Bundle bundle = backendClient
+                        .search()
+                        .forResource(Patient.class)
+                        .where(Patient.IDENTIFIER.exactly().systemAndIdentifier(patientIdentifierSystem, mrn))
+                        .returnBundle(Bundle.class)
+                        .execute();
+                List<Patient> patients = new ArrayList<>();
+                for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+                    if (entry.getResource() instanceof Patient) {
+                        patients.add((Patient) entry.getResource());
+                    }
                 }
-            }
-            if (patients.isEmpty()) {
-                log.warn("No patient in remote system with MRN=" + mrn);
-                return null;
-            } else {
-                if (patients.size() > 1) {
-                    log.warn("Duplicate resource ids for mrn=" + mrn + " using first");
+                if (patients.isEmpty()) {
+                    log.info("Patient con MRN={} no existe en backend, creando...", mrn);
+                    Patient patient = new Patient();
+                    patient.addIdentifier().setSystem(patientIdentifierSystem).setValue(mrn);
+                    patient.addName().setFamily("Unknown").addGiven("Patient");
+                    MethodOutcome outcome = backendClient.update()
+                            .resource(patient)
+                            .conditional()
+                            .where(Patient.IDENTIFIER.exactly().systemAndIdentifier(patientIdentifierSystem, mrn))
+                            .execute();
+                    resourceId = outcome.getId();
+                    log.info("Patient creado en backend: {} MRN={}", resourceId.getIdPart(), mrn);
+                    patientMRNtoResourceId.put(mrn, resourceId);
+                } else {
+                    if (patients.size() > 1) {
+                        log.warn("Duplicate resource ids for mrn=" + mrn + " using first");
+                    }
+                    resourceId = patients.get(0).getIdElement();
+                    patientMRNtoResourceId.put(mrn, resourceId);
                 }
-                resourceId = patients.get(0).getIdElement();
-                patientMRNtoResourceId.put(mrn, resourceId);
+                addToAuthorizedList(resourceId);
+            } catch (BaseServerResponseException e) {
+                log.warn("Failed to resolve patient for MRN=" + mrn + ": " + e.getMessage());
             }
-
         }
         return resourceId;
+    }
+
+    private String backendUrl() {
+        return new IceProperties("mdpnp.fhir.backend.url").getValue().orElse("http://localhost:8099/fhir");
+    }
+
+    private static final String AUTHORIZED_LIST_ID = "patient-list-example";
+
+    private void addToAuthorizedList(IIdType patientId) {
+        if (backendClient == null) {
+            log.error("addToAuthorizedList: backendClient es null, no se puede agregar paciente a lista");
+            return;
+        }
+        try {
+            String ref = patientId.toUnqualifiedVersionless().getValue();
+            log.info("addToAuthorizedList: verificando si {} esta en la lista {}...", ref, AUTHORIZED_LIST_ID);
+
+            org.hl7.fhir.r4.model.ListResource fhirList = backendClient.read()
+                    .resource(org.hl7.fhir.r4.model.ListResource.class)
+                    .withId(AUTHORIZED_LIST_ID)
+                    .execute();
+
+            boolean alreadyInList = false;
+            for (org.hl7.fhir.r4.model.ListResource.ListEntryComponent entry : fhirList.getEntry()) {
+                String entryRef = entry.getItem() != null ? entry.getItem().getReference() : null;
+                log.debug("  entry in list: {}", entryRef);
+                if (ref.equals(entryRef)) {
+                    alreadyInList = true;
+                    break;
+                }
+            }
+
+            if (!alreadyInList) {
+                log.info("addToAuthorizedList: {} NO esta en la lista, agregando...", ref);
+                org.hl7.fhir.r4.model.ListResource.ListEntryComponent newEntry = fhirList.addEntry();
+                newEntry.getItem().setReference(ref);
+                MethodOutcome outcome = backendClient.update().resource(fhirList).execute();
+                log.info("addToAuthorizedList: {} agregado a la lista, outcome={}", ref, outcome.getId());
+            } else {
+                log.info("addToAuthorizedList: {} ya esta en la lista", ref);
+            }
+        } catch (Exception e) {
+            log.error("addToAuthorizedList: FALLO al agregar {} a la lista: {}", patientId.getIdPart(), e.getMessage(), e);
+        }
     }
 
     public ORU_R01 hl7Observation(NumericFx data) throws HL7Exception, IOException {
@@ -409,24 +508,27 @@ public class HL7Emitter implements MDSListener, Runnable {
 
     Observation fhirObservation(Validation validation) {
         NumericFx data = validation.getNumeric();
-
         Observation obs = new Observation();
-        final String mrn = deviceUdiToPatientMRN.get(data.getUnique_device_identifier());
-        if (null == mrn) {
-            log.debug("No known mrn for udi=" + data.getUnique_device_identifier());
+        String udi = data.getUnique_device_identifier();
+
+        String mrn = selectedPatientMRN;
+        if (mrn == null) {
+            mrn = deviceUdiToPatientMRN.get(udi);
+        }
+        if (mrn == null) {
+            log.debug("No known mrn for udi=" + udi);
         }
 
         IIdType resourceId = null == mrn ? null : getPatientResource(mrn);
         if (null == resourceId) {
-            log.debug("No known patient resource id for mrn=" + mrn);
+            log.warn("Observacion sin subject: udi={} mrn={} no resolvio Patient (identifierSystem={})",
+                    udi, mrn, patientIdentifierSystem);
         } else {
             obs.setSubject(new Reference(resourceId.toUnqualifiedVersionless()));
         }
 
-        IIdType deviceResourceId = getDeviceResource(data.getUnique_device_identifier());
-        if (null == deviceResourceId) {
-            log.debug("No known device resource id for udi=" + data.getUnique_device_identifier());
-        } else {
+        IIdType deviceResourceId = getDeviceResource(data.getUnique_device_identifier(), resourceId);
+        if (null != deviceResourceId) {
             obs.setDevice(new Reference(deviceResourceId.toUnqualifiedVersionless()));
         }
 
@@ -446,31 +548,62 @@ public class HL7Emitter implements MDSListener, Runnable {
     static final String PTID_SYSTEM = "urn:oid:2.16.840.1.113883.3.1974";
 
     public void sendFHIR() throws InterruptedException {
+        IGenericClient client = fhirClient;
+
+        if (client == null) {
+            return;
+        }
+
+        refreshBearerToken(client);
+
+        List<Validation> pending;
+        synchronized (recentUpdates) {
+            pending = new ArrayList<>(recentUpdates);
+            recentUpdates.clear();
+        }
+        if (pending.isEmpty()) {
+            return;
+        }
+
+        try {
+            sendObservations(client, pending);
+        } catch (BaseServerResponseException e) {
+            log.warn("FHIR request failed with status {}; refreshing token and retrying once", e.getStatusCode());
+            tokenProvider.setToken();
+            refreshBearerToken(client);
+            sendObservations(client, pending);
+        }
+    }
+
+    private void sendObservations(IGenericClient client, List<Validation> pending) {
+        System.out.println("Enviando " + pending.size() + " observaciones FHIR...");
         List<Resource> bundle = new ArrayList<>();
         List<String> jsonStrings = new ArrayList<>();
-        synchronized (recentUpdates) {
-            recentUpdates.forEach((x) -> {
-                Observation obs = fhirObservation(x);
-                if (null != obs) {
-                    bundle.add(obs);
-                    String jsonEncoded = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(obs);
-                    jsonStrings.add(jsonEncoded + "\n");
-                }
-            });
-            log.debug("flushing {} FHIR observations", recentUpdates.size());
-            recentUpdates.clear();
+        for (Validation x : pending) {
+            Observation obs = fhirObservation(x);
+            String jsonEncoded = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(obs);
+            jsonStrings.add(jsonEncoded + "\n");
+            if (obs.hasSubject()) {
+                bundle.add(obs);
+            } else {
+                log.info("Observacion sin subject, no se envia al gateway: udi={}",
+                        obs.hasDevice() ? obs.getDevice().getReference() : "unknown");
+            }
         }
 
         Platform.runLater(() -> jsonStrings.forEach((t) -> listeners.fire(new DispatchLine(t))));
 
-        IGenericClient client = fhirClient;
+        if (bundle.isEmpty()) {
+            System.out.println("Ninguna observacion tiene subject; no se envia al gateway.");
+            return;
+        }
 
-        if (null != client) {
-            List<IBaseResource> created = client.transaction().withResources(bundle).encodedJson().execute();
-            for (IBaseResource r : created) {
-                if (r != null && r.getIdElement().hasIdPart()) {
-                    log.info("Created {} id={}", r.fhirType(), r.getIdElement().getIdPart());
-                }
+        System.out.println("Enviando " + bundle.size() + " observaciones con subject al gateway FHIR...");
+
+        List<IBaseResource> created = client.transaction().withResources(bundle).encodedJson().execute();
+        for (IBaseResource r : created) {
+            if (r != null && r.getIdElement().hasIdPart()) {
+                log.info("Created {} id={}", r.fhirType(), r.getIdElement().getIdPart());
             }
         }
     }
@@ -495,6 +628,9 @@ public class HL7Emitter implements MDSListener, Runnable {
         if (mrnPartition != null) {
             log.info("udi " + c.unique_device_identifier + " is " + mrnPartition);
             deviceUdiToPatientMRN.put(c.unique_device_identifier, PartitionAssignmentController.toMRN(mrnPartition));
+        } else {
+            log.debug("udi {} partitions={} sin MRN (se usa MRN del ComboBox si esta seleccionado)",
+                    c.unique_device_identifier, c.partition);
         }
     }
 

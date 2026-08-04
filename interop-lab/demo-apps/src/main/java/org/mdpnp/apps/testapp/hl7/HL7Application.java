@@ -5,9 +5,12 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
+import org.mdpnp.apps.testapp.patient.EMRFacade;
+import org.mdpnp.apps.testapp.patient.PatientInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +26,8 @@ public class HL7Application implements LineEmitterListener, StartStopListener {
     protected TextField host, port;
     @FXML
     protected Button startStop;
+    @FXML
+    protected ComboBox<PatientInfo> patientCombo;
 
     enum Settings {
         _5SECONDS("5s", 5000L),
@@ -135,6 +140,36 @@ public class HL7Application implements LineEmitterListener, StartStopListener {
             }
 
         });
+    }
+
+    public void setEMR(EMRFacade emr) {
+        if (emr == null) return;
+
+        patientCombo.setConverter(new StringConverter<PatientInfo>() {
+            @Override
+            public String toString(PatientInfo p) {
+                return p == null ? "" : p.getFirstName() + " " + p.getLastName() + " (" + p.getMrn() + ")";
+            }
+
+            @Override
+            public PatientInfo fromString(String string) {
+                return null;
+            }
+        });
+
+        patientCombo.setItems(emr.getPatients());
+
+        patientCombo.setOnAction(e -> {
+            PatientInfo selected = patientCombo.getValue();
+            if (model != null && selected != null) {
+                model.setSelectedPatientMRN(selected.getMrn());
+                log.info("Paciente seleccionado para HL7: {} MRN={}", selected.getFirstName(), selected.getMrn());
+            }
+        });
+
+        if (!patientCombo.getItems().isEmpty()) {
+            patientCombo.getSelectionModel().selectFirst();
+        }
     }
 
     public void shutdown() {

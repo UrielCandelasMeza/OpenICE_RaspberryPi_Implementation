@@ -1,0 +1,186 @@
+@startuml
+title Diagrama de Actividades — HL7 FHIR R4 Emission Flow
+
+|#LightBlue|OpenICE DDS|
+|#LightGreen|HL7 Emitter|
+|#LightYellow|HAPI Backend (8099)|
+|#LightCoral|FHIR Gateway (8080)|
+
+|OpenICE DDS|
+start
+
+:DDS Numeric events\n(subscription activa);
+
+|HL7 Emitter|
+:ValidationOracle procesa eventos;
+
+if (Hay validaciones recientes?) then (no)
+  stop
+endif
+
+:recentUpdates ← ValidationOracle;
+
+:Iterar por cada validación;
+
+partition "fhirObservation()" {
+  |HL7 Emitter|
+
+  if (¿selectedPatientMRN != null?) then (sí)
+    :MRN ← selectedPatientMRN\n(seleccionado en ComboBox);
+  else (no)
+    :MRN ← deviceUdiToPatientMRN\n(fallback del mapa DDS);
+  endif
+
+  if (¿MRN != null?) then (sí)
+    |HL7 Emitter|
+    :Obs ← crear Observation\n(FHIR R4, type = numeric);
+
+    |HAPI Backend (8099)|
+    :GET /Patient?identifier=<system>|<MRN>;
+
+    if (¿Paciente existe?) then (sí)
+      :Retorna Patient;
+    else (no)
+      :Crear Patient\n(conditional PUT);
+      note right
+        Patient con identifier:
+        system = urn:oid:2.16.840.1.113883.3.1974
+        value = MRN
+      end note
+
+      |HL7 Emitter|
+      :addToAuthorizedList(patientId);
+
+      |HAPI Backend (8099)|
+      :GET /List/patient-list-example;
+      :Verificar si Patient ya está\nen el List;
+
+      if (¿Ya está en la lista?) then (sí)
+        :Log: "ya está en la lista";
+      else (no)
+        :Agregar entry al List\n(item = Patient/<id>);
+        :PUT /List/patient-list-example;
+        :Log: "agregado a la lista";
+      endif
+
+      note right
+        ListAccessChecker del gateway
+        valida este List
+      end note
+
+      |HL7 Emitter|
+      :Obs.setSubject(patientRef);
+    endif
+
+    |HAPI Backend (8099)|
+    :GET /Device?<udi>|identifier;
+
+    if (¿Device existe?) then (sí)
+      :Retorna Device;
+    else (no)
+      :Crear Device\n(patientResourceId);
+      note right
+        Device se escribe directo
+        al backend (no pasa por
+        el gateway — no está en
+        patient compartment)
+      end note
+    endif
+
+    |HL7 Emitter|
+    :Obs.setDevice(deviceRef);
+
+    :Agregar obs a bundle\n(con subject + device);
+
+  else (no)
+    note right: No se resuelve MRN\nskip obs (nunca null)
+
+    :Obs ← crear Observation\n(sin subject);
+    :Agregar obs a jsonStrings\n(solo display en consola);
+  endif
+}
+
+|HL7 Emitter|
+:sendObservations();
+
+:Log: JSON del bundle;
+
+partition "Envío al Gateway" {
+  |HL7 Emitter|
+  :Construir Transaction Bundle\n(obs listas);
+
+  |HL7 Emitter|
+  :Obtener token de Keycloak\n(refresh si TTL vencido);
+
+  |HL7 Emitter|
+  :POST TransactionBundle\ncon Authorization: Bearer;
+
+  |FHIR Gateway (8080)|
+  :Validar bearer token\n(Keycloak introspection);
+
+  if (¿Token válido?) then (sí)
+    :Parsear bundle;
+    :Para cada Observation:
+
+    if (¿Obs tiene subject?) then (sí)
+      :PatientRef ← obs.subject.reference;
+
+      :GET /List?_id=patient-list-example\n&_elements=id&item=<PatientRef>;
+
+      if (¿Paciente está en authorized list?) then (sí)
+        |HAPI Backend (8099)|
+        :POST Observation\n(gateway → backend);
+        note right
+          HAPI retorna 201 Created
+          con el Resource ID
+        end note
+      else (no)
+        |FHIR Gateway (8080)|
+        :RETORNAR 403\n"User is not authorized"\n"Reference Patients not in List!";
+        note right
+          ListAccessChecker
+          rechaza la escritura
+        end note
+      endif
+
+    else (no)
+      |FHIR Gateway (8080)|
+      :RETORNAR 400\n"Missing Subject";
+      note right
+        PatientFinderImp
+        requiere subject
+      end note
+    endif
+
+  else (no)
+    |FHIR Gateway (8080)|
+    :RETORNAR 401\nUnauthorized;
+  endif
+}
+
+|HL7 Emitter|
+:HL7Emitter.DispatchLine\n(enviar línea a UI);
+
+|OpenICE DDS|
+:HL7Application recibe línea\ny actualiza TextArea;
+
+stop
+
+legend right
+  **Flujo principal:**
+  1. DDS events → ValidationOracle
+  2. fhirObservation(): resolver Patient/Device
+  3. sendObservations(): display + bundle
+  4. POST al gateway con bearer token
+  5. Gateway valida token + lista de pacientes
+  6. Backend recibe observations válidas
+
+  **Archivos clave:**
+  - HL7Emitter.java
+  - HL7Application.java
+  - TokenProvider.java
+  - HAPI FHIR (8099)
+  - FHIR Gateway (8080)
+end legend
+
+@enduml

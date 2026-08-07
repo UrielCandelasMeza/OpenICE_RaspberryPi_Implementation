@@ -9,14 +9,15 @@ import javafx.scene.Parent;
 import org.mdpnp.apps.testapp.DeviceListModel;
 import org.mdpnp.apps.testapp.IceApplicationProvider;
 import org.mdpnp.rtiapi.data.EventLoop;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
 import com.rti.dds.subscription.Subscriber;
 
 public class MqttSendFactory implements IceApplicationProvider {
-    private static final Logger log = LoggerFactory.getLogger(MqttSendFactory.class);
+    // private static final Logger log =
+    // LoggerFactory.getLogger(MqttSendFactory.class);
 
     private final IceApplicationProvider.AppType appType = new IceApplicationProvider.AppType(
             "MQTT Send", "NOMQTT",

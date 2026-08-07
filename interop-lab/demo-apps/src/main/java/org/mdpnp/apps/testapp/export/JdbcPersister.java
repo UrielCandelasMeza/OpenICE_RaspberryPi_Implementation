@@ -9,29 +9,32 @@ import com.google.common.eventbus.Subscribe;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 
 public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcPersister.class);
+    // private static final Logger log =
+    // LoggerFactory.getLogger(JdbcPersister.class);
 
     private Connection conn = null;
     private PreparedStatement insertVital = null;
     private PreparedStatement insertObservation = null;
 
-    @FXML TextField fDriver, fURL, fUser;
-    @FXML PasswordField fPassword;
+    @FXML
+    TextField fDriver, fURL, fUser;
+    @FXML
+    PasswordField fPassword;
 
     void persistVital(DataCollector.DataSampleEvent value, long ms, double v) throws Exception {
 
-        if(insertVital != null) {
-            insertVital.setString   (1, value.getUniqueDeviceIdentifier());
-            insertVital.setString   (2, value.getMetricId());
-            insertVital.setInt      (3, value.getInstanceId());
+        if (insertVital != null) {
+            insertVital.setString(1, value.getUniqueDeviceIdentifier());
+            insertVital.setString(2, value.getMetricId());
+            insertVital.setInt(3, value.getInstanceId());
             insertVital.setTimestamp(4, new java.sql.Timestamp(ms));
-            insertVital.setString   (5, value.getPatientId());
-            insertVital.setDouble   (6, v);
+            insertVital.setString(5, value.getPatientId());
+            insertVital.setDouble(6, v);
 
             insertVital.execute();
         }
@@ -39,11 +42,11 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
 
     void persistObservation(DataCollector.DataSampleEvent value, long ms, String v) throws Exception {
 
-        if(insertObservation != null) {
-            insertObservation.setString   (1, value.getUniqueDeviceIdentifier());
+        if (insertObservation != null) {
+            insertObservation.setString(1, value.getUniqueDeviceIdentifier());
             insertObservation.setTimestamp(2, new java.sql.Timestamp(ms));
-            insertObservation.setString   (3, value.getPatientId());
-            insertObservation.setString   (4, v);
+            insertObservation.setString(3, value.getPatientId());
+            insertObservation.setString(4, v);
 
             insertObservation.execute();
         }
@@ -56,35 +59,31 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
 
     @Subscribe
     public void handleDataSampleEvent(SampleArrayDataCollector.SampleArrayEvent evt) throws Exception {
-        SampleArrayDataCollector.ArrayToNumeric.convert(evt, (DataCollector.DataSampleEvent meta, long ms, double v)->{
-            persistVital(meta, ms, v);
-        });
+        SampleArrayDataCollector.ArrayToNumeric.convert(evt,
+                (DataCollector.DataSampleEvent meta, long ms, double v) -> {
+                    persistVital(meta, ms, v);
+                });
     }
-
 
     @Subscribe
     public void handleDataSampleEvent(PatientAssessmentDataCollector.PatientAssessmentEvent evt) throws Exception {
         persistObservation(evt, evt.getDevTime(), evt.getValue().getKey());
     }
 
-
-
-
-
     static void createSchema(Connection conn) throws SQLException {
-        conn.createStatement().execute( "CREATE TABLE IF NOT EXISTS VITAL_VALUES " +
-                                        "(DEVICE_ID VARCHAR(128), " +
-                                        "METRIC_ID VARCHAR(128), " +
-                                        "INSTANCE_ID INTEGER, " +
-                                        "TIME_TICK TIMESTAMP, " +
-                                        "PATIENT_ID VARCHAR(128), " +
-                                        "VITAL_VALUE DOUBLE PRECISION)");
+        conn.createStatement().execute("CREATE TABLE IF NOT EXISTS VITAL_VALUES " +
+                "(DEVICE_ID VARCHAR(128), " +
+                "METRIC_ID VARCHAR(128), " +
+                "INSTANCE_ID INTEGER, " +
+                "TIME_TICK TIMESTAMP, " +
+                "PATIENT_ID VARCHAR(128), " +
+                "VITAL_VALUE DOUBLE PRECISION)");
 
-        conn.createStatement().execute( "CREATE TABLE IF NOT EXISTS OBSERVATION_VALUES " +
-                                        "(MD_ID VARCHAR(128), " +
-                                        "TIME_TICK TIMESTAMP, " +
-                                        "PATIENT_ID VARCHAR(128), " +
-                                        "OBSERVATION VARCHAR(512))");
+        conn.createStatement().execute("CREATE TABLE IF NOT EXISTS OBSERVATION_VALUES " +
+                "(MD_ID VARCHAR(128), " +
+                "TIME_TICK TIMESTAMP, " +
+                "PATIENT_ID VARCHAR(128), " +
+                "OBSERVATION VARCHAR(512))");
     }
 
     @Override
@@ -95,18 +94,22 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
     @Override
     public boolean start() throws Exception {
         conn = createConnection();
-        if(conn != null) {
+        if (conn != null) {
             createSchema(conn);
-            insertVital = conn.prepareStatement("INSERT INTO VITAL_VALUES (DEVICE_ID, METRIC_ID, INSTANCE_ID, TIME_TICK, PATIENT_ID, VITAL_VALUE) VALUES(?,?,?,?,?,?)");
-            insertObservation = conn.prepareStatement("INSERT INTO OBSERVATION_VALUES (MD_ID, TIME_TICK, PATIENT_ID, OBSERVATION) VALUES(?,?,?,?)");
+            insertVital = conn.prepareStatement(
+                    "INSERT INTO VITAL_VALUES (DEVICE_ID, METRIC_ID, INSTANCE_ID, TIME_TICK, PATIENT_ID, VITAL_VALUE) VALUES(?,?,?,?,?,?)");
+            insertObservation = conn.prepareStatement(
+                    "INSERT INTO OBSERVATION_VALUES (MD_ID, TIME_TICK, PATIENT_ID, OBSERVATION) VALUES(?,?,?,?)");
         }
         return conn != null;
     }
 
     @Override
     public void stop() throws Exception {
-        if(insertVital != null) insertVital.close();
-        if(conn != null) conn.close();
+        if (insertVital != null)
+            insertVital.close();
+        if (conn != null)
+            conn.close();
         insertVital = null;
         conn = null;
     }
@@ -128,13 +131,12 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
 
         try {
             Class.forName(driver.trim());
-        }
-        catch (ClassNotFoundException ex) {
+        } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException("Invalid driver: " + driver.trim());
         }
 
-        Connection conn= DriverManager.getConnection(url.trim(), user.trim(), password.trim());
-        if(conn == null)
+        Connection conn = DriverManager.getConnection(url.trim(), user.trim(), password.trim());
+        if (conn == null)
             throw new IllegalStateException("Failed to create a connection");
         return conn;
     }
@@ -144,12 +146,12 @@ public class JdbcPersister extends DataCollectorAppFactory.PersisterUIController
     }
 
     private static boolean isEmpty(String s) {
-        return s == null || s.trim().length()==0;
+        return s == null || s.trim().length() == 0;
     }
-    
+
     @Override
     public void setup() {
-        
+
     }
 
     public JdbcPersister() {

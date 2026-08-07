@@ -2,14 +2,14 @@ package org.mdpnp.apps.testapp.mqtt;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
+// import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+// import java.util.concurrent.atomic.AtomicInteger;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -46,7 +46,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonWriter;
+// import jakarta.json.JsonWriter;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;

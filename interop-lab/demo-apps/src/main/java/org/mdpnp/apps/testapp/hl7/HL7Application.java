@@ -118,11 +118,11 @@ public class HL7Application implements LineEmitterListener, StartStopListener {
             @Override
             public void handle(ActionEvent event) {
                 if ("Start".equals(startStop.getText())) {
-                    HL7Emitter.Type type;
+                    EmitterType type;
                     if (hl7version.getSelectedToggle().equals(hl7FhirR4)) {
-                        type = HL7Emitter.Type.FHIR_R4;
+                        type = EmitterType.FHIR_R4;
                     } else if (hl7version.getSelectedToggle().equals(hl7V26)) {
-                        type = HL7Emitter.Type.V26;
+                        type = EmitterType.V26;
                     } else {
                         return;
                     }
@@ -143,7 +143,8 @@ public class HL7Application implements LineEmitterListener, StartStopListener {
     }
 
     public void setEMR(EMRFacade emr) {
-        if (emr == null) return;
+        if (emr == null)
+            return;
 
         patientCombo.setConverter(new StringConverter<PatientInfo>() {
             @Override

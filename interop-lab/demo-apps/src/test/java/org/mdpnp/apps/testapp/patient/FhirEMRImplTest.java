@@ -2,7 +2,8 @@ package org.mdpnp.apps.testapp.patient;
 
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
-import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.instance.model.api.IIdType;
+//import org.hl7.fhir.r4.model.IdType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +38,6 @@ public class FhirEMRImplTest {
         org.junit.Assume.assumeTrue(url + " is not running", FhirEMRImpl.isServerThere(url));
 
     }
-
 
     @Test
     public void testFetchPatients() throws Exception {
@@ -89,18 +89,17 @@ public class FhirEMRImplTest {
             emr.updateLocal(listfhir);
 
             List<PatientInfo> finalList = emr.getDatabaseHandle().fetchAllPatients();
-            Assert.assertEquals("Database does not have updated record", listdb.size()+1, finalList.size());
+            Assert.assertEquals("Database does not have updated record", listdb.size() + 1, finalList.size());
 
             int idx = finalList.indexOf(pi);
-            Assert.assertTrue("Database should have patient with this MRN", idx>0);
+            Assert.assertTrue("Database should have patient with this MRN", idx > 0);
             pi = finalList.get(idx);
 
             // Confirm that name had been filled in from the fhir record.
             //
             Assert.assertTrue("Invalid data", pi.getLastName().length() != 0);
             Assert.assertTrue("Invalid data", pi.getFirstName().length() != 0);
-        }
-        finally {
+        } finally {
             db.destroy();
         }
     }
@@ -127,10 +126,9 @@ public class FhirEMRImplTest {
         deleteFhirRecord(emr, created.getId());
     }
 
-    private void deleteFhirRecord(FhirEMRImpl emr, IdType id)
-    {
+    private void deleteFhirRecord(FhirEMRImpl emr, IIdType id) {
         IGenericClient fhirClient = emr.getFhirClient();
-        fhirClient.delete().resourceById(id.getValue()).execute();
-        log.info("deleted " + id.getValueAsString());
+        fhirClient.delete().resourceById(id).execute();
+        log.info("deleted " + id.getValue());
     }
 }

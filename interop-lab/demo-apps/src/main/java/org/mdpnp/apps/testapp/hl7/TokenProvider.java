@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.mdpnp.apps.testapp.JwtService;
+
 /**
  * <h3>Token Provider</h3>
  * <p>
@@ -66,7 +68,10 @@ public class TokenProvider {
    * el primer valor corresponde al {@code access_token} y el segundo para el
    * {@code refresh_token}
    */
-  private Map<String, String> tokensMap;
+  private final Map<String, String> tokensMap = new HashMap<>();
+
+  /** Servicio de validación de expiración de tokens JWT. */
+  private final JwtService jwt = new JwtService();
 
   /**
    * <p>
@@ -78,8 +83,6 @@ public class TokenProvider {
    * </p>
    */
   public TokenProvider() {
-    this.tokensMap = new HashMap<>();
-
     this.access_token = Optional.ofNullable(pref.get("access_token", null));
     this.refresh_token = Optional.ofNullable(pref.get("refresh_token", null));
 
@@ -100,33 +103,17 @@ public class TokenProvider {
    * @return El token de acceso como {@link String}, o {@code null} si falló la
    *         obtención.
    */
-  public String getAccessToken() {
+  public synchronized String getAccessToken() {
 
-    Optional<String[]> tokens = fetchTokenRefresh();
+    if (this.access_token.isPresent()) {
+      boolean isExpired = jwt.verifyExpired(this.access_token.get());
 
-    if (tokens.isEmpty()) {
-      log.error("No se pudo obtener los tokens.");
-      return null;
+      if (!isExpired) {
+        return this.access_token.get();
+      }
     }
 
-    String[] t = tokens.get();
-
-    this.access_token = Optional.of(t[0]);
-    this.refresh_token = Optional.of(t[1]);
-
-    this.tokensMap.put(t[0], t[1]);
-    this.pref.put("access_token", t[0]);
-    this.pref.put("refresh_token", t[1]);
-
-    return this.access_token.orElse(null);
-  }
-
-  /**
-   * Fuerza la obtención de un nuevo token de acceso (invalida el token en caché
-   * y realiza una petición síncrona al endpoint de autenticación).
-   */
-  public String updateToken() {
-    Optional<String[]> tokens = fetchTokenPassword();
+    Optional<String[]> tokens = fetchTokenRefresh();
 
     if (tokens.isEmpty()) {
       log.error("No se pudo obtener los tokens.");
@@ -250,21 +237,23 @@ public class TokenProvider {
           .build();
 
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      JsonNode json = new ObjectMapper().readTree(response.body());
 
       // Si el refresh_token fue invalidado, se realiza la peticion con las
       // credenciales
-      if (response.statusCode() == 400 && json.path("error").asText(null).equals("invalid_grant")) {
-        log.info("Refresh token invalidado, obteniendo nuevos tokens...");
-        Optional<String[]> tokens = fetchTokenPassword();
-
-        return tokens;
+      if (response.statusCode() == 400) {
+        JsonNode json = new ObjectMapper().readTree(response.body());
+        if ("invalid_grant".equals(json.path("error").asText(null))) {
+          log.info("Refresh token invalidado, obteniendo nuevos tokens...");
+          return fetchTokenPassword();
+        }
       }
 
-      if (!(response.statusCode() == 200)) {
+      if (response.statusCode() != 200) {
         log.error("Envio un estatus: " + response.statusCode());
         return Optional.empty();
       }
+
+      JsonNode json = new ObjectMapper().readTree(response.body());
 
       String accessToken = json.path("access_token").asText(null);
       String refreshToken = json.path("refresh_token").asText(null);

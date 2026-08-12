@@ -12,7 +12,7 @@ Project `1.5.0-SNAPSHOT`. Gradle 9.0.0, Java source/target 25, JavaFX 25 (demo-a
 
 ## CI / Stale Config
 
-Only CI workflow is `.github/workflows/gradle.yml` — targets **JDK 1.8** on `windows-latest`. This is stale (project now uses Java 25). Ignore CI failures; use local `./gradlew build` for truth.
+Only CI workflow is `.github/workflows/gradle.yml` — targets **JDK 1.8** on `windows-latest`, and the build step is `continue-on-error: true` (non-blocking). This is stale (project now uses Java 25). Ignore CI failures; use local `./gradlew build` for truth.
 
 ## Module Structure & Entry Points
 
@@ -63,13 +63,15 @@ ICE applications (charting, PCA, EMR, etc.) register at:
 ./gradlew :interop-lab:demo-apps:test --tests "*.MyTest" # single class
 ./gradlew :interop-lab:demo-apps:test --tests "*.MyTest.testMethod" # single method
 ./gradlew :interop-lab:demo-apps:makeFlatRuntime --no-daemon -x test  # before Docker build
+./gradlew :interop-lab:demo-apps:generateDeviceList   # list supported devices
+./gradlew :data-types:x73-idl-rti-dds:rtiddsgenExplodeResources  # unpack RTI native libs before IDL gen
 ./gradlew :data-types:x73-idl-rti-dds:iceddsgenPython    # IDL → Python
 ./gradlew :data-types:x73-idl-rti-dds:iceddsgenJava      # IDL → Java
 ```
 
 ## Docker
 
-- `./build.sh` runs `makeFlatRuntime` then `sudo docker build` (images: `openice:1.0`, `openice-wis:1.0`).
+- `./build.sh` runs `makeFlatRuntime` then `sudo docker build` (images: `openice:1.0`, `openice-wis:1.0`). Needs sudo for docker; `--skip-gradle` skips Gradle if `flat/` already exists.
 - Containers require `privileged: true` + `network_mode: host` (RTI DDS native libs call `mprotect(PROT_EXEC)`, blocked by seccomp).
 - JavaFX GUI cannot run in Docker — only headless device mode (`-Djava.awt.headless=true`).
 - Docker profiles: `wis`, `pump`, `monitor` (see `docker-compose.yml`).
@@ -122,6 +124,8 @@ When adding a struct to `ice.idl`, annotate primary keys with `@key`. RTI auto-g
 | `log4j2-test.xml` | Logs to `~/demo-apps.log`, `~/easy-tiva.log` |
 | `interop-lab/demo-devices/src/main/resources/RtConfig.xml` | DDS participant, publisher, subscriber, event loop |
 | `data-types/x73-idl/src/main/idl/ice/samples/ice_library.xml` | DDS QoS profiles |
+
+Note: the **root** `ice.properties` holds only commented-out defaults and is **not** on the classpath — effective defaults live in `interop-lab/demo-apps/src/main/resources/ice.properties` (`mdpnp.domain=0`, etc.). Edit the classpath copy to change defaults.
 
 ## DDS Discovery
 
@@ -209,3 +213,39 @@ mdpnp.fhir.patient.identifier.system=urn:oid:2.16.840.1.113883.3.1974  # OID for
 ## Headless Database
 
 PostgreSQL/TimescaleDB at `localhost:5432`, user `openice`, db `openice_local`. HikariCP pool. Setup via `./gradlew setupLocalDb` or `setup_local_timescale.sql`.
+
+The **headless-adapter** connects to this DB at startup (`ConnectionPool` + `DeviceRegistry` persist device identities and connection types) — TimescaleDB must be running when you launch it. The JavaFX Supervisor does not require it.
+
+## Documentation Format (docs/*.md)
+
+Every new or edited document under `docs/` (guides, reports, architecture, use cases) **must** use the same skeleton. Header order is fixed; the closing "origin" line is mandatory. Only the middle body sections vary by document type.
+
+```markdown
+# <Título del documento>  ← si es Propuesta, el título DEBE marcarlo (ej. "Propuesta de Arquitectura ...")
+
+**Fecha:** <fecha, ej. 12 de agosto de 2026>
+
+**Proyecto:** OpenICE / MD PnP (`1.5.0-SNAPSHOT`)
+
+**Sistema:** <sistema/componente analizado>
+
+**Alcance:** <qué cubre el documento>
+
+**Versión:** <x.y.z>  ← SOLO en propuestas; en reportes/investigaciones/guías NO va
+
+---
+
+<contenido del documento>
+
+---
+
+*<Guía|Reporte|Caso de Uso> generado a partir de <origen del documento>.*
+```
+
+Rules:
+
+- **Header order is fixed**: Fecha → Proyecto → Sistema → Alcance → Versión. Do not reorder or omit fields.
+- **`Versión` solo va en propuestas** (documentos marcados como "Propuesta" en el título). En reportes, investigaciones, guías y arquitectura sin carácter de propuesta, **omitir** `**Versión:**`. En los casos de uso la versión ya está incluida en su variante de cabecera.
+- **Reports** (`docs/reports/*`) follow the section structure of `Diagnóstico de Comunicación DDS en LAN sin Internet.md`: Contexto → Problema reportado → Hipótesis → Proceso de diagnóstico → Resultado → Conclusión → Recomendaciones.
+- **Use cases** (`docs/usecases/*`) keep their existing ID/Actor header variant (`**ID:**`, `**Versión:**`, `**Fecha:**`, `**Actor Principal:**`, `**Sistema:**`) — the title + origin-line rules still apply.
+- Documents are written in **Spanish**.

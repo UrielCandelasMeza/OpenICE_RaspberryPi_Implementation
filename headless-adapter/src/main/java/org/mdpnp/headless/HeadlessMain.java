@@ -1,13 +1,7 @@
 package org.mdpnp.headless;
 
-import com.rti.dds.domain.DomainParticipant;
-import com.rti.dds.subscription.Subscriber;
 import org.apache.commons.cli.*;
 import org.mdpnp.devices.DeviceDriverProvider;
-import org.mdpnp.headless.db.ConnectionPool;
-import org.mdpnp.headless.db.DeviceRegistry;
-import org.mdpnp.headless.db.TimescalePersister;
-import org.mdpnp.rtiapi.data.EventLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
@@ -57,25 +51,6 @@ public class HeadlessMain {
         String address = line.hasOption("address") ? line.getOptionValue("address") : null;
         String discoveryPeers = line.hasOption("peers") ? line.getOptionValue("peers") : "";
 
-        // ── 1.5 Database configuration (TimescaleDB/PostgreSQL) ───────────────
-        String dbHost = line.hasOption("dbhost") ? line.getOptionValue("dbhost")
-                : System.getProperty("postgresql.host", "localhost");
-        String dbPortStr = line.hasOption("dbport") ? line.getOptionValue("dbport")
-                : System.getProperty("postgresql.port", "5432");
-        int dbPort = Integer.parseInt(dbPortStr);
-        String dbName = line.hasOption("dbname") ? line.getOptionValue("dbname")
-                : System.getProperty("postgresql.database", "openice_local");
-        String dbUser = line.hasOption("dbuser") ? line.getOptionValue("dbuser")
-                : System.getProperty("postgresql.username", "openice");
-        String dbPassword = line.hasOption("dbpassword") ? line.getOptionValue("dbpassword")
-                : System.getProperty("postgresql.password", "openice");
-
-        // Also set legacy system properties for SQLLogging (AbstractDevice)
-        System.setProperty("ice.jdbc.url",
-                String.format("jdbc:postgresql://%s:%d/%s", dbHost, dbPort, dbName));
-        System.setProperty("ice.jdbc.username", dbUser);
-        System.setProperty("ice.jdbc.password", dbPassword);
-
         // ── 2. Resolve the device driver ──────────────────────────────────────
         DeviceDriverProvider ddp = resolveDriver(deviceAlias);
         log.info("Starting headless adapter for device: {}", ddp.getDeviceType());
@@ -97,37 +72,19 @@ public class HeadlessMain {
         context.addBeanFactoryPostProcessor(ppc);
         context.refresh();
 
-        // ── 4. Setup TimescaleDB persistence (before device starts publishing) ──
-        DomainParticipant ddsParticipant = context.getBean(DomainParticipant.class);
-        Subscriber ddsSubscriber = context.getBean(Subscriber.class);
-        EventLoop eventLoop = context.getBean(EventLoop.class);
-
-        ConnectionPool dbPool = new ConnectionPool(dbHost, dbPort, dbName, dbUser, dbPassword);
-        DeviceRegistry deviceRegistry = new DeviceRegistry(dbPool);
-        TimescalePersister persister = new TimescalePersister(
-                ddsParticipant, ddsSubscriber, eventLoop, dbPool, deviceRegistry);
-
-        // Start DDS subscribers BEFORE device creation so we catch DeviceIdentity
-        persister.start();
-
-        // ── 5. Create the device adapter ───────────────────────────────────────
+        // ── 4. Create the device adapter ───────────────────────────────────────
         DeviceDriverProvider.DeviceAdapter adapter = ddp.create(context);
         if (address != null)
             adapter.setAddress(address);
-
-        // Set connection_type on the device (DeviceIdentity DDS topic lacks this field)
-        String deviceUdi = adapter.getDevice().getUniqueDeviceIdentifier();
-        deviceRegistry.setConnectionType(deviceUdi,
-                ddp.getDeviceType().getConnectionType().toString());
 
         // Shutdown hook: graceful stop on Ctrl+C / SIGTERM
         final CountDownLatch stopLatch = new CountDownLatch(1);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received – stopping...");
-            try {
-                persister.stop();
-            } catch (Exception ex) {
-                log.warn("Error stopping persister", ex);
+            if (!context.isActive()) {
+                log.info("Application context already closed – skipping shutdown cleanup.");
+                stopLatch.countDown();
+                return;
             }
             try {
                 adapter.disconnect();
@@ -135,7 +92,6 @@ public class HeadlessMain {
             } catch (Exception ex) {
                 log.error("Error during shutdown", ex);
             } finally {
-                dbPool.close();
                 stopLatch.countDown();
             }
         }));
@@ -176,26 +132,6 @@ public class HeadlessMain {
                 .hasArg().isRequired(false)
                 .withDescription("Comma-separated DDS discovery peer IPs. Empty = local multicast.")
                 .create("peers"));
-        opts.addOption(OptionBuilder.withArgName("host")
-                .hasArg().isRequired(false)
-                .withDescription("TimescaleDB host (default: localhost)")
-                .create("dbhost"));
-        opts.addOption(OptionBuilder.withArgName("port")
-                .hasArg().isRequired(false)
-                .withDescription("TimescaleDB port (default: 5432)")
-                .create("dbport"));
-        opts.addOption(OptionBuilder.withArgName("name")
-                .hasArg().isRequired(false)
-                .withDescription("TimescaleDB database name (default: openice_local)")
-                .create("dbname"));
-        opts.addOption(OptionBuilder.withArgName("user")
-                .hasArg().isRequired(false)
-                .withDescription("TimescaleDB username (default: openice)")
-                .create("dbuser"));
-        opts.addOption(OptionBuilder.withArgName("pass")
-                .hasArg().isRequired(false)
-                .withDescription("TimescaleDB password (default: openice)")
-                .create("dbpassword"));
         opts.addOption("help", false, "Display this help message");
         return opts;
     }

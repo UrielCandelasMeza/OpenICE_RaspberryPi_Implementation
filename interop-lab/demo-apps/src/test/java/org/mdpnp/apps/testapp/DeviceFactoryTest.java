@@ -42,7 +42,11 @@ public class DeviceFactoryTest {
                 DeviceDriverProvider.DeviceType dt = ddp.getDeviceType();
 
                 try {
-                    AbstractDevice ad = ddp.newInstance(parentContext);
+                    // Mirror the real flow (DeviceAdapterCommand.HeadlessAdapter):
+                    // create() builds the child DriverContext (which provides the
+                    // Hl7Service bean) and getDevice() instantiates the driver.
+                    DeviceDriverProvider.DeviceAdapter adapter = ddp.create(parentContext);
+                    AbstractDevice ad = adapter.getDevice();
                     Assert.assertNotNull(ddp.getClass().getSimpleName() + " failed to create instance of type " + dt, ad);
                     log.info("Device provider " + dt + " verified");
                 } catch (Exception ex) {

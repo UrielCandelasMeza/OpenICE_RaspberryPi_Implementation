@@ -105,6 +105,12 @@ public class Efficia extends AbstractConnectedDevice {
      */
     @Override
     public boolean connect(String address) {
+        ice.ConnectionState state = getState();
+        if (ice.ConnectionState.Connected.equals(state) || ice.ConnectionState.Connecting.equals(state)
+                || ice.ConnectionState.Negotiating.equals(state)) {
+            return true;
+        }
+
         stateMachine.transitionWhenLegal(ice.ConnectionState.Connecting, 5000,
                 "Iniciando servidor HL7 para Efficia");
 
@@ -131,6 +137,8 @@ public class Efficia extends AbstractConnectedDevice {
             hl7Server = hl7Service.createServer(port, handler);
             hl7Server.start();
 
+            stateMachine.transitionWhenLegal(ice.ConnectionState.Negotiating, 5000,
+                    "Servidor HL7 escuchando en puerto " + port);
             stateMachine.transitionWhenLegal(ice.ConnectionState.Connected, 5000,
                     "Servidor HL7 escuchando en puerto " + port);
 
@@ -138,6 +146,10 @@ public class Efficia extends AbstractConnectedDevice {
             return true;
         } catch (Exception e) {
             log.error("Failed to start HL7 server", e);
+            if (hl7Server != null) {
+                hl7Server.stop();
+                hl7Server = null;
+            }
             stateMachine.transitionWhenLegal(ice.ConnectionState.Terminal, 5000,
                     "Error al iniciar servidor: " + e.getMessage());
             return false;
@@ -150,8 +162,10 @@ public class Efficia extends AbstractConnectedDevice {
             hl7Server.stop();
             hl7Server = null;
         }
-        stateMachine.transitionWhenLegal(ice.ConnectionState.Terminal, 5000,
-                "Desconectado");
+        if (!ice.ConnectionState.Terminal.equals(getState())) {
+            stateMachine.transitionWhenLegal(ice.ConnectionState.Terminal, 5000,
+                    "Desconectado");
+        }
         log.info("Efficia driver stopped");
     }
 

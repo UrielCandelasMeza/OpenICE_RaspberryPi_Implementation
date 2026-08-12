@@ -24,16 +24,11 @@ import ice.SampleArray;
 import ice.SampleArrayDataWriter;
 import ice.SampleArrayTypeSupport;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +38,6 @@ import java.util.function.Consumer;
 
 import org.mdpnp.rtiapi.data.EventLoop;
 import org.mdpnp.rtiapi.data.EventLoop.ConditionHandler;
-import org.mdpnp.sql.SQLLogging;
 import org.mdpnp.rtiapi.data.QosProfiles;
 import org.mdpnp.rtiapi.data.TopicUtil;
 import org.slf4j.Logger;
@@ -69,10 +63,6 @@ import com.rti.dds.subscription.ViewStateKind;
 import com.rti.dds.topic.Topic;
 
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-
 @ManagedResource(description="MDPNP Device Driver")
 public abstract class AbstractDevice {
 
@@ -89,11 +79,6 @@ public abstract class AbstractDevice {
 //        threadGroup.setDaemon(true);
 //    }
     
-    protected Connection dbconn;
-    protected PreparedStatement numericStatement;
-    protected PreparedStatement sampleStatement;
-    protected PreparedStatement numericExportStatement;
-
     protected final EventLoop eventLoop;
     protected ScheduledExecutorService executor;
 
@@ -138,14 +123,6 @@ public abstract class AbstractDevice {
 
     
     protected InstanceHolder<ice.DeviceAlertCondition> deviceAlertConditionInstance;
-    
-    private static final int DEFAULT_AVERAGING_TIME=60 * 1000;
-    
-    private int averagingTime;
-    
-    private AveragingThread averagingThread;
-    
-    private Hashtable<String, Averager> averagesByNumeric=new Hashtable<>();
     
     public Subscriber getSubscriber() {
         return subscriber;
@@ -357,29 +334,6 @@ public abstract class AbstractDevice {
         holder.data.presentation_time.nanosec = (int)(t.nanosec);
         
         numericDataWriter.write(holder.data, holder.handle);
-/*
-        if(numericStatement!=null) {
-	        try {
-				numericStatement.setInt(1, t.sec);
-				numericStatement.setInt(2, t.nanosec);
-				numericStatement.setString(3, deviceIdentity.unique_device_identifier);
-				numericStatement.setString(4, holder.data.metric_id);
-				numericStatement.setFloat(5, newValue);
-				boolean resType=numericStatement.execute();
-			} catch (SQLException e) {
-				//Because this is executing once per second, including the stack trace would
-				//cause a very large log file.
-				log.warn("Failed to execute numeric statement - "+e.getMessage());
-			}
-        }
-*/
-        if(averagesByNumeric.containsKey(holder.data.metric_id)) {
-        	averagesByNumeric.get(holder.data.metric_id).add(newValue);
-        } else {
-        	Averager averager=new Averager();
-        	averager.add(newValue);
-        	averagesByNumeric.put(holder.data.metric_id, averager);
-        }
     }
 
     protected void alarmLimitSample(InstanceHolder<ice.AlarmLimit> holder, String unit_id, Float newValue) {
@@ -655,34 +609,6 @@ public abstract class AbstractDevice {
 
         sampleArrayDataWriter.write(holder.data,
                                                 holder.handle==null?InstanceHandle_t.HANDLE_NIL:holder.handle);
-        //If we look at fill() we can see that it adds floats to the array.
-        float[] floatsForDb=holder.data.values.userData.toArrayFloat(new float[0]);
-        if(sampleStatement!=null) {
-	        try {
-				sampleStatement.setInt(1, holder.data.presentation_time.sec);
-				sampleStatement.setInt(2, holder.data.presentation_time.nanosec);
-				sampleStatement.setString(3, deviceIdentity.unique_device_identifier);
-				sampleStatement.setString(4, holder.data.metric_id);
-				/*
-				 * This is not necessarily the best way of serialising floats - if it turns out to be too big of
-				 * a performance hit, we can check out alternatives like 
-				 * https://www.factual.com/blog/the-flotsam-project-insanely-fast-floating-point-number-serialization-for-java-and-javascript/
-				 * and
-				 * https://github.com/RuedigerMoeller/fast-serialization
-				 */
-				JsonArrayBuilder builder=Json.createArrayBuilder();
-				for(int i=0;i<floatsForDb.length;i++) {
-					builder.add(floatsForDb[i]);
-				}
-				JsonArray jsonArray=builder.build();
-				sampleStatement.setString(5, jsonArray.toString());
-				boolean resType=sampleStatement.execute();
-			} catch (SQLException e) {
-				//Because this is executing once per second, including the stack trace would
-				//cause a very large log file.
-				log.warn("Failed to execute sample statement - "+e.getMessage());
-			}
-        }
     }
 
     private InstanceHolder<SampleArray> ensureHolderConsistency(InstanceHolder<SampleArray> holder,
@@ -759,8 +685,6 @@ public abstract class AbstractDevice {
         // TODO Where a participant is shared it is not safe to unregister types
 //        ice.AlertTypeSupport.unregister_type(domainParticipant, ice.AlertTypeSupport.get_type_name());
         
-        averagingThread.interrupt();
-
         log.info("AbstractDevice shutdown complete");
     }
 
@@ -830,21 +754,6 @@ public abstract class AbstractDevice {
                 QosProfiles.state, null, StatusKind.STATUS_MASK_NONE);
 
         this.eventLoop = eventLoop;
-        try {
-        	dbconn = SQLLogging.getConnection();
-			numericStatement=dbconn.prepareStatement("INSERT INTO allnumerics(t_sec, t_nanosec, udi, metric_id, val) VALUES (?,?,?,?,?)");
-			sampleStatement=dbconn.prepareStatement("INSERT INTO allsamples(t_sec, t_nanosec, udi, metric_id, floats) VALUES (?,?,?,?,?)");
-			numericExportStatement=dbconn.prepareStatement("INSERT INTO numerics_for_export(t_sec, t_nanosec, udi, metric_id, val) VALUES (?,?,?,?,?)");
-		} catch (SQLException e) {
-			log.warn("Could not connect to database - server probably not running",e);
-		}
-        
-        /*
-         * Later on, add a constructor with a param for this...
-         */
-        averagingTime=DEFAULT_AVERAGING_TIME;
-        averagingThread=new AveragingThread(averagingTime);
-        averagingThread.start();
         
     }
 
@@ -931,7 +840,6 @@ public abstract class AbstractDevice {
                                         if (si.valid_data) {
                                         	String msg="Limit " + obj.metric_id + " "+obj.limit_type+" limit changed to [ " + obj.value + "  " + obj.unit_identifier + "]";
                                             log.warn(msg);
-                                            SQLLogging.log("AbstractDevice", msg);
                                             setAlarmLimit(obj);
                                         }
                                     } else {
@@ -1061,86 +969,6 @@ public abstract class AbstractDevice {
         public void forEachRemaining(Consumer<? super T> action) {
             throw new UnsupportedOperationException();
         }
-    }
-    
-    /**
-     * A class for keeping a rolling array to derive an average from.
-     * It uses an ArrayList to keep the values, rather than a fixed size
-     * array, to cater for variable frequency of data.  Calling the get()
-     * method empties the array.  Adding via the add() method or calculating
-     * the average are synchronized on the ArrayList, as it's expected that the
-     * average will be requested from a different thread to one populating the
-     * values.
-
-     * @author simon
-     *
-     */
-    class Averager {
-    	
-    	private ArrayList<Float> values;
-    	
-    	public Averager() {
-    		values=new ArrayList<>();
-    	}
-    	
-    	public void add(float f) {
-    		synchronized (values) {
-    			values.add(f);
-			}
-    	}
-    	
-    	/**
-    	 * Derive the average
-    	 * @return the average of all the floats in the values array
-    	 */
-    	public float get() {
-    		synchronized (values) {
-    			float avg=0;
-    			int i=0;
-				for(;i<values.size();i++) {
-					avg+=values.get(i);
-				}
-				avg=avg/i;
-				values.clear();
-				return avg;
-			}
-    	}
-    }
-    
-    class AveragingThread extends Thread {
-    	
-    	private int interval;
-    	
-    	public AveragingThread(int interval) {
-    		this.interval=interval;
-    	}
-
-		@Override
-		public void run() {
-			while(true) {
-				try {
-					sleep(interval);
-					for(Enumeration<String> e=averagesByNumeric.keys();e.hasMoreElements();) {
-						String key=e.nextElement();
-						float val=averagesByNumeric.get(key).get();
-						int second=(int)(System.currentTimeMillis()/1000);
-						//INSERT INTO numerics_for_export(t_sec, t_nanosec, udi, metric_id, val);
-						numericExportStatement.setInt(1, second);
-						numericExportStatement.setInt(2, 0);	//For now.
-						numericExportStatement.setString(3, deviceIdentity.unique_device_identifier);
-						numericExportStatement.setString(4, key);
-						numericExportStatement.setFloat(5, val);
-						numericExportStatement.execute();
-					}
-				} catch (InterruptedException e) {
-					log.info("Averaging Thread was interrupted");
-					return;
-				} catch (SQLException sqle) {
-					log.error("Could not add average value for numerics", sqle);
-				}
-			}
-		}
-    	
     }
 
 }

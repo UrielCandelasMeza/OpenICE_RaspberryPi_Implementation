@@ -118,7 +118,7 @@ public class Hl7Service {
         if (context != null) {
             try {
                 context.close();
-            } catch (java.io.IOException e) {
+            } catch (Exception e) {
                 log.warn("Error closing HapiContext", e);
             }
             log.info("Hl7Service shut down");

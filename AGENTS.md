@@ -212,9 +212,9 @@ mdpnp.fhir.patient.identifier.system=urn:oid:2.16.840.1.113883.3.1974  # OID for
 
 ## Headless Database
 
-PostgreSQL/TimescaleDB at `localhost:5432`, user `openice`, db `openice_local`. HikariCP pool. Setup via `./gradlew setupLocalDb` or `setup_local_timescale.sql`.
+No database. The headless-adapter, the Supervisor GUI, and all device drivers have **zero** PostgreSQL/TimescaleDB connectivity (no JDBC pipeline, no HikariCP, no psql logging). Removed: `org.mdpnp.headless.db` (`ConnectionPool`, `DeviceRegistry`, `TimescalePersister`), `-dbhost/-dbport/-dbname/-dbuser/-dbpassword` CLI options, and all `SQLLogging` usage from `AbstractDevice`, `DemoPanel`, and `PatientInfoController`. Patient–device association goes through the EMR (HSQLDB `EmbeddedDB`), not psql.
 
-The **headless-adapter** connects to this DB at startup (`ConnectionPool` + `DeviceRegistry` persist device identities and connection types) — TimescaleDB must be running when you launch it. The JavaFX Supervisor does not require it.
+`SQLLogging` (in `devices/common`) still exists only for the optional test applications (OpenEMRTestApplication, pump/BP/closed-loop timing apps). No PostgreSQL driver is on any classpath; postgres must not be reintroduced without approval.
 
 ## Documentation Format (docs/*.md)
 

@@ -39,12 +39,6 @@ dependencies {
     // Spring context (used by RtConfig.xml / DriverContext.xml)
     implementation group: 'org.springframework', name: 'spring-context', version: '6.0.2'
     implementation group: 'com.google.guava',    name: 'guava',          version: '31.1-jre'
-
-    // PostgreSQL JDBC Driver for TimescaleDB connection
-    implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.2'
-
-    // HikariCP connection pool for TimescaleDB
-    implementation group: 'com.zaxxer', name: 'HikariCP', version: '5.1.0'
 }
 
 // ── run task ───────────────────────────────────────────────────────────────────

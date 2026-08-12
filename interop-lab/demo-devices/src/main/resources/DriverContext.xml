@@ -14,6 +14,10 @@
 
   <context:annotation-config />
 
+  <!-- Reusable HL7 v2.4 / MLLP service (HAPI). Injected into drivers that need
+       HL7 communication (e.g. Philips Efficia). One instance per driver context. -->
+  <bean class="org.mdpnp.devices.hl7.Hl7Service"/>
+
   <bean id="taskExecutor"
         class="org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean">
     <property name="poolSize" value="1" />

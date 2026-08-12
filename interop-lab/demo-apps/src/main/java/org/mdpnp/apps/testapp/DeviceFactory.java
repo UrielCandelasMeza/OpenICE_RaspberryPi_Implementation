@@ -15,6 +15,7 @@ package org.mdpnp.apps.testapp;
 import org.mdpnp.devices.AbstractDevice;
 import org.mdpnp.devices.DeviceDriverProvider;
 import org.mdpnp.devices.DeviceDriverProvider.SpringLoadedDriver;
+import org.mdpnp.devices.DeviceDriverProvider.DeviceType;
 import org.mdpnp.devices.coleparmer.TB800Balance;
 import org.mdpnp.devices.cpc.bernoulli.DemoBernoulli;
 import org.mdpnp.devices.denver.mseries.MSeriesScale;
@@ -68,7 +69,13 @@ public class DeviceFactory {
         Collection<DeviceDriverProvider> all = new TreeSet<DeviceDriverProvider>(new Comparator<DeviceDriverProvider>() {
             @Override
             public int compare(DeviceDriverProvider o1, DeviceDriverProvider o2) {
-                return o1.getDeviceType().toString().compareTo(o2.getDeviceType().toString());
+                DeviceType t1 = o1.getDeviceType();
+                DeviceType t2 = o2.getDeviceType();
+                int cmp = Integer.compare(t1.getConnectionType().value(), t2.getConnectionType().value());
+                if (cmp != 0) return cmp;
+                cmp = t1.getManufacturer().compareTo(t2.getManufacturer());
+                if (cmp != 0) return cmp;
+                return t1.getModel().compareTo(t2.getModel());
             }
         });
 

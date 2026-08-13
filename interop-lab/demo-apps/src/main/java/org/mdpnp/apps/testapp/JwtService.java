@@ -1,6 +1,5 @@
 package org.mdpnp.apps.testapp;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import com.fasterxml.jackson.databind.JsonNode;

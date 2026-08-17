@@ -11,7 +11,7 @@ import time
 import serial
 
 PORT = '/dev/ttyUSB0'         # Adjust to match your system's port assignment
-BAUDRATE = 921600       # Match the baud rate of your transmitting hardware
+BAUDRATE = 9600       # Match the baud rate of your transmitting hardware
 TIMEOUT = 20           # Seconds to wait for data before moving on (prevents blocking)
 
 try:
@@ -33,7 +33,7 @@ try:
                 decoded_text = raw_data.decode('utf-8').strip()
 
                 try:
-                    with open("datos_massimo.txt", "ab") as file:
+                    with open("datos_efficiaSerial.txt", "ab") as file:
                         file.write(b"--- Nuevo Mensaje ---")
                         file.write(decoded_text.encode('utf-8'))
                         file.write(b"\n")

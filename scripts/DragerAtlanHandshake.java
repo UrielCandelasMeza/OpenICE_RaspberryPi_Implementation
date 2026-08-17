@@ -1,123 +1,103 @@
 import java.io.*;
-import java.net.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * Script de prueba (standalone) para realizar el Handshaking MEDIBUS.X 
- * con un Drager Atlan A-350XL.
- * 
- * Modos soportados:
- * 1. Red (TCP/IP) - Si el monitor usa LAN o un conversor Serial-Ethernet.
- * 2. Serial (RS232 en Linux) - Usando descriptores de archivo directos (/dev/ttyUSB0).
- */
-public class DragerAtlanHandshake {
+public class DragerAtlanRealtime {
 
-    public static void main(String[] args) {
-        // --- CONFIGURACIÓN ---
-        boolean useSerial = true; // Cambiar a false para usar RED (TCP)
-        
-        // Configuración de RED (TCP/IP)
-        String host = "192.168.1.100";
-        int port = 2001; 
-        
-        // Configuración Serial (Linux)
-        // IMPORTANTE: Antes de correr esto, configura los baudios en tu terminal:
-        // stty -F /dev/ttyUSB0 9600 cs8 -cstopb -parenb raw
-        String serialPort = "/dev/ttyUSB0"; 
+  /* 
+   * Comando para ajuste de baudios y paridad para el Atlan
+   * stty -F /dev/ttyUSB0 9600 cs8 -cstopb parenb -parodd raw
+   *
+   */
 
-        String outputFile = "drager_atlan_logs.txt";
-        // ---------------------
+  private static final String PORT = "/dev/ttyUSB0";
+  private static final String LOG_FILE = "atlan_realtime.log";
 
-        InputStream in = null;
-        OutputStream out = null;
-        Socket socket = null;
+  // Comandos útiles de MEDIBUS
+  private static final String CMD_INIT = "Q";   // Handshake
+  private static final String CMD_INFO = "V";   // Device ID
+  private static final String CMD_DATA = "R1";  // Datos de medición actuales (CP1)
+  private static final String CMD_ALRM = "R2";  // Límites inferiores
+  private static final String CMD_TEXT = "T1";  // Textos y mensajes de alarma
 
-        try {
-            if (useSerial) {
-                System.out.println("Intentando conectar con Drager Atlan por RS232 en " + serialPort + "...");
-                File file = new File(serialPort);
-                if (!file.exists()) {
-                    System.err.println("¡El puerto " + serialPort + " no existe! ¿Conectaste el cable USB/Serie?");
-                    return;
-                }
-                in = new FileInputStream(file);
-                out = new FileOutputStream(file);
-                System.out.println("¡Puerto Serie abierto correctamente!");
-            } else {
-                System.out.println("Intentando conectar con Drager Atlan por RED en " + host + ":" + port + "...");
-                socket = new Socket();
-                socket.connect(new InetSocketAddress(host, port), 5000);
-                in = socket.getInputStream();
-                out = socket.getOutputStream();
-                socket.setSoTimeout(5000); 
-                System.out.println("¡Conexión TCP establecida!");
-            }
-
-            try (FileWriter fw = new FileWriter(outputFile, true);
-                 PrintWriter pw = new PrintWriter(fw)) {
-                 
-                logToFile(pw, "Conectado. Modo Serial: " + useSerial);
-
-                // 1. Comando de Handshake (InitializeComm) en protocolo MEDIBUS
-                // [ESC] [0x51] [0x36] [0x43] [CR]
-                byte[] initCommand = { 0x1B, 0x51, 0x36, 0x43, 0x0D };
-                
-                System.out.println("Enviando petición de Inicialización (InitializeComm)...");
-                out.write(initCommand);
-                out.flush();
-                logToFile(pw, "Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)");
-
-                // 2. Leer la respuesta
-                byte[] buffer = new byte[1024];
-                System.out.println("Esperando respuesta del Atlan...");
-                
-                int bytesRead;
-                try {
-                    while ((bytesRead = in.read(buffer)) != -1) {
-                        StringBuilder hexString = new StringBuilder();
-                        StringBuilder asciiString = new StringBuilder();
-                        
-                        for (int i = 0; i < bytesRead; i++) {
-                            String hex = Integer.toHexString(0xFF & buffer[i]);
-                            if (hex.length() == 1) hexString.append('0');
-                            hexString.append(hex).append(" ");
-                            
-                            if (buffer[i] >= 32 && buffer[i] <= 126) {
-                                asciiString.append((char) buffer[i]);
-                            } else {
-                                asciiString.append(".");
-                            }
-                            
-                            if (buffer[i] == 0x0D) {
-                                String logLine = "\nTrama Recibida!\nHEX: " + hexString.toString() + "\nASCII: " + asciiString.toString();
-                                System.out.println(logLine);
-                                logToFile(pw, logLine);
-                                
-                                hexString.setLength(0);
-                                asciiString.setLength(0);
-                            }
-                        }
-                    }
-                } catch (SocketTimeoutException e) {
-                    System.out.println("Tiempo de espera agotado (red). No se recibieron más datos.");
-                }
-
-            }
-        } catch (IOException e) {
-            System.err.println("Error de conexión: " + e.getMessage());
-        } finally {
-            try {
-                if (in != null) in.close();
-                if (out != null) out.close();
-                if (socket != null) socket.close();
-            } catch (IOException e) {}
-        }
+  public static void main(String[] args) throws Exception {
+    File file = new File(PORT);
+    if (!file.exists()) {
+      System.err.println("Puerto no encontrado: " + PORT);
+      return;
     }
 
-    private static void logToFile(PrintWriter pw, String message) {
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-        pw.println("[" + timestamp + "] " + message);
-        pw.flush();
+    InputStream in = new FileInputStream(file);
+    OutputStream out = new FileOutputStream(file);
+    PrintWriter log = new PrintWriter(new FileWriter(LOG_FILE, true), true);
+
+    logToFile(log, "Iniciando comunicación con Atlan A350 XL (8E1)...");
+
+    // 1. Handshake
+    sendCommand(out, CMD_INIT, log);
+    readResponse(in, log);
+
+    // 2. Loop de Polling (Reemplaza el Keep-Alive NOP)
+    while (true) {
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+      sendCommand(out, CMD_DATA, log);
+      readResponse(in, log);
     }
+  }
+
+  private static void sendCommand(OutputStream out, String payload, PrintWriter log) throws Exception {
+    byte[] pBytes = payload.getBytes("ASCII");
+    int sum = 0x1B; // <ESC>
+    for (byte b : pBytes) sum += b;
+
+    String hexCs = String.format("%02X", sum & 0xFF);
+    byte[] csBytes = hexCs.getBytes("ASCII");
+
+    byte[] frame = new byte[1 + pBytes.length + 2 + 1];
+    frame[0] = 0x1B; // ESC
+    System.arraycopy(pBytes, 0, frame, 1, pBytes.length);
+    System.arraycopy(csBytes, 0, frame, 1 + pBytes.length, 2);
+    frame[frame.length - 1] = 0x0D; // CR
+
+    out.write(frame);
+    out.flush();
+    logToFile(log, "Enviado: " + payload + " | HEX: " + bytesToHex(frame));
+  }
+
+  private static void readResponse(InputStream in, PrintWriter log) throws Exception {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    int b;
+    // Lectura bloqueante hasta encontrar el <CR> (0x0D)
+    while ((b = in.read()) != -1) {
+      buffer.write(b);
+      if (b == 0x0D) break;
+    }
+
+    if (buffer.size() > 0) {
+      byte[] data = buffer.toByteArray();
+      String asciiStr = new String(data)
+          .replaceAll("\r", "<CR>")
+          .replaceAll("\u0001", "<SOH>")
+          .replaceAll("\u001B", "<ESC>")
+          .replaceAll("\\p{C}", "."); // Limpia otros caracteres de control en ASCII
+
+      logToFile(log, "Recibido ASCII: " + asciiStr);
+      logToFile(log, "Recibido HEX: " + bytesToHex(data));
+    }
+  }
+
+  private static void logToFile(PrintWriter pw, String msg) {
+    String ts = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+    System.out.println("[" + ts + "] " + msg);
+    pw.println("[" + ts + "] " + msg);
+    pw.flush();
+  }
+
+  private static String bytesToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte b : bytes) {
+      sb.append(String.format("%02X ", b));
+    }
+    return sb.toString().trim();
+  }
 }

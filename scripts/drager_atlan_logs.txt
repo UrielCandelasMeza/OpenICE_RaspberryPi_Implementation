@@ -1,0 +1,112 @@
+[2026-08-14 16:27:14.411] Conectado. Modo Serial: true
+[2026-08-14 16:27:14.414] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 16:32:29.602] Conectado. Modo Serial: true
+[2026-08-14 16:32:29.605] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 16:35:29.371] Conectado. Modo Serial: true
+[2026-08-14 16:35:29.374] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 16:35:32.970] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:36:18.540] Conectado. Modo Serial: true
+[2026-08-14 16:36:18.544] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 16:37:10.094] Conectado. Modo Serial: true
+[2026-08-14 16:37:10.098] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 16:37:13.775] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:37:46.176] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:38:32.125] Conectado. Modo Serial: true
+[2026-08-14 16:38:32.129] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 16:38:42.580] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:39:14.982] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:39:47.384] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:39:58.183] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:40:23.385] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:41:17.387] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:41:35.388] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:41:49.789] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:42:14.990] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:44:38.999] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:46:05.402] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:46:09.002] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:48:29.410] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:49:59.415] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:51:51.020] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:53:10.225] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:53:17.425] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:54:25.829] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 16:54:43.828] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.
+[2026-08-14 17:23:42.846] Conectado. Modo Serial: true
+[2026-08-14 17:23:42.850] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 17:23:46.505] Conectado. Modo Serial: true
+[2026-08-14 17:23:46.509] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 17:23:58.989] Conectado. Modo Serial: true
+[2026-08-14 17:23:58.993] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 17:25:18.721] Conectado. Modo Serial: true
+[2026-08-14 17:25:18.726] Enviado: InitializeComm (0x1B 0x51 0x36 0x43 0x0D)
+[2026-08-14 17:28:04.359] 
+Trama Recibida!
+HEX: 51 36 0d 
+ASCII: Q6.

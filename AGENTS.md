@@ -8,7 +8,8 @@ Project `1.5.0-SNAPSHOT`. Gradle 9.0.0, Java source/target 25, JavaFX 25 (demo-a
 - **`RTI_LICENSE_FILE`** must point to a valid license (e.g. `interop-lab/demo-apps/src/main/resources/OpenICE_license.dat`).
 - **`LD_LIBRARY_PATH`** must include `native/libs/linux` (or `aarch`, `macosx`, `windows`) — already configured in `build.gradle` `test` and `run` blocks.
 - Tests need `SEC_ARTIFACT_DIR` env var; `RTI_LICENSE_FILE` and `LD_LIBRARY_PATH` are set automatically in the `test`/`run` blocks of `demo-apps/build.gradle`. `DOCBOX_RTPS_HOST_ID`/`DOCBOX_RTPS_APP_ID` are set **only on Windows**.
-- The `:setupLocalDb` task runs `sudo -u postgres psql` — requires postgres superuser.
+- The `:setupLocalDb` task runs `sudo -u postgres psql` — requires postgres superuser. The SQL it runs (`setup_local_timescale.sql`) is legacy/reference-only; the file itself warns "NO USEN ESTO COMO REFERENCIA". No runtime code uses this schema.
+- **`flat/`** directory under `demo-apps/` is the Docker build artifact (all JARs + native `.so` files). Created by `makeFlatRuntime`; `build.sh --skip-gradle` skips regeneration if it already exists.
 
 ## CI / Stale Config
 
@@ -127,6 +128,8 @@ When adding a struct to `ice.idl`, annotate primary keys with `@key`. RTI auto-g
 
 Note: the **root** `ice.properties` holds only commented-out defaults and is **not** on the classpath — effective defaults live in `interop-lab/demo-apps/src/main/resources/ice.properties` (`mdpnp.domain=0`, etc.). Edit the classpath copy to change defaults.
 
+**Security:** The classpath `ice.properties` currently contains live FHIR token credentials (`mdpnp.fhir.token.user`, `mdpnp.fhir.token.password`). These are environment-specific — never commit real credentials. The values shown in `CLAUDE.md` and below are examples only.
+
 ## DDS Discovery
 
 - Multicast: `239.255.0.1`, UDPv4 only (shared memory disabled).
@@ -143,8 +146,6 @@ OAuth2 bearer tokens (`TokenProvider`, props `mdpnp.fhir.token.*` in `ice.proper
 
 ### FHIR Gateway Architecture
 
-OpenICE sends FHIR R4 observations through a **Google FHIR Info Gateway** with Keycloak + ListAccessChecker:
-
 ```
 OpenICE HL7 Emitter → FHIR Gateway (localhost:8080) → HAPI FHIR Backend (localhost:8099)
                                     ↑
@@ -160,18 +161,8 @@ OpenICE HL7 Emitter → FHIR Gateway (localhost:8080) → HAPI FHIR Backend (loc
 The gateway's `ListAccessChecker` validates that every Observation's `subject` reference points to a Patient that exists in the `patient-list-example` List resource. If the Patient is not in the list, the gateway returns 403 "User is not authorized".
 
 - `patient-list-example` is a FHIR `ListResource` in HAPI (8099) containing authorized Patient references (e.g., `Patient/3177`, `Patient/2835`).
-- The `HL7Emitter.addToAuthorizedList()` method automatically adds newly created Patients to this List via `backendClient` (8099, no auth).
-- `Device` resources are written directly to the backend (8099) because Device is NOT in the patient compartment (`CompartmentDefinition-patient.json` has Device with no params, and `patient_paths.json` has no Device entry).
-
-### HL7 Emitter Patient Selection
-
-The HL7 Exporter app has a **ComboBox** (`patientCombo`) that lists patients from the local EMR database (HSQLDB via `EMRFacade`). When a patient is selected:
-
-1. `HL7Application.patientCombo.setOnAction()` calls `model.setSelectedPatientMRN(mrn)`
-2. `HL7Emitter.fhirObservation()` uses `selectedPatientMRN` as the primary MRN source
-3. `getPatientResource(mrn)` searches HAPI via `backendClient` (8099) by `patientIdentifierSystem` + MRN
-4. If not found, creates the Patient in HAPI via conditional PUT, then adds it to `patient-list-example` via `addToAuthorizedList()`
-5. Observations are sent as a transaction bundle to the gateway (8080) with `Authorization: Bearer` header
+- `HL7Emitter.addToAuthorizedList()` automatically adds newly created Patients to this List via `backendClient` (8099, no auth).
+- `Device` resources are written directly to the backend (8099) because Device is NOT in the patient compartment.
 
 ### HL7 Emitter Data Flow
 
@@ -198,17 +189,7 @@ DDS Numeric events → ValidationOracle → recentUpdates → sendFHIR()
 | `FhirEMRImpl.java` | FHIR-based EMR: creates patients in HAPI with OID system `urn:oid:2.16.840.1.113883.3.1974` |
 | `EMRFacade.java` | Abstract EMR facade, `fetchAllPatients()` returns patients from HSQLDB |
 
-### ice.properties (FHIR-related)
-
-```properties
-mdpnp.fhir.url=                              # EMR FHIR URL (empty = JDBC-only EMR)
-mdpnp.fhir.backend.url=http://localhost:8099/fhir   # HAPI backend (no auth)
-mdpnp.fhir.token.url=http://localhost:9080/auth/realms/test/protocol/openid-connect/token
-mdpnp.fhir.token.user=testuser
-mdpnp.fhir.token.password=testpass
-mdpnp.fhir.token.clientId=my-fhir-client
-mdpnp.fhir.patient.identifier.system=urn:oid:2.16.840.1.113883.3.1974  # OID for patient MRN lookup
-```
+Full FHIR walkthrough (patient selection, gateway config, Keycloak setup) in `CLAUDE.md`.
 
 ## Headless Database
 
@@ -216,36 +197,28 @@ No database. The headless-adapter, the Supervisor GUI, and all device drivers ha
 
 `SQLLogging` (in `devices/common`) still exists only for the optional test applications (OpenEMRTestApplication, pump/BP/closed-loop timing apps). No PostgreSQL driver is on any classpath; postgres must not be reintroduced without approval.
 
+`devices/common/src/main/java/org/mdpnp/sql/` also contains `PlaceboConnection` and `PlaceboPreparedStatement` — stub/no-op JDBC implementations, not real database drivers.
+
 ## Documentation Format (docs/*.md)
 
-Every new or edited document under `docs/` (guides, reports, architecture, use cases) **must** use the same skeleton. Header order is fixed; the closing "origin" line is mandatory. Only the middle body sections vary by document type.
+Every new or edited document under `docs/` **must** use this skeleton (header order fixed, closing origin line mandatory):
 
 ```markdown
-# <Título del documento>  ← si es Propuesta, el título DEBE marcarlo (ej. "Propuesta de Arquitectura ...")
+# <Título>
 
-**Fecha:** <fecha, ej. 12 de agosto de 2026>
+**Fecha:** <date>  **Proyecto:** OpenICE / MD PnP (`1.5.0-SNAPSHOT`)  **Sistema:** <component>  **Alcance:** <scope>
 
-**Proyecto:** OpenICE / MD PnP (`1.5.0-SNAPSHOT`)
-
-**Sistema:** <sistema/componente analizado>
-
-**Alcance:** <qué cubre el documento>
-
-**Versión:** <x.y.z>  ← SOLO en propuestas; en reportes/investigaciones/guías NO va
+**Versión:** <x.y.z>  ← ONLY in proposals (title must say "Propuesta"); omit in reports/guides
 
 ---
 
-<contenido del documento>
+<content>
 
 ---
 
-*<Guía|Reporte|Caso de Uso> generado a partir de <origen del documento>.*
+*<Tipo> generado a partir de <source>.*
 ```
 
-Rules:
-
-- **Header order is fixed**: Fecha → Proyecto → Sistema → Alcance → Versión. Do not reorder or omit fields.
-- **`Versión` solo va en propuestas** (documentos marcados como "Propuesta" en el título). En reportes, investigaciones, guías y arquitectura sin carácter de propuesta, **omitir** `**Versión:**`. En los casos de uso la versión ya está incluida en su variante de cabecera.
-- **Reports** (`docs/reports/*`) follow the section structure of `Diagnóstico de Comunicación DDS en LAN sin Internet.md`: Contexto → Problema reportado → Hipótesis → Proceso de diagnóstico → Resultado → Conclusión → Recomendaciones.
-- **Use cases** (`docs/usecases/*`) keep their existing ID/Actor header variant (`**ID:**`, `**Versión:**`, `**Fecha:**`, `**Actor Principal:**`, `**Sistema:**`) — the title + origin-line rules still apply.
-- Documents are written in **Spanish**.
+- Documents in **Spanish**.
+- **Reports** (`docs/reports/*`): Contexto → Problema → Hipótesis → Proceso → Resultado → Conclusión → Recomendaciones.
+- **Use cases** (`docs/usecases/*`): use their existing `**ID:**`/`**Versión:**`/`**Fecha:**`/`**Actor Principal:**`/`**Sistema:**` variant; title + origin-line rules still apply.

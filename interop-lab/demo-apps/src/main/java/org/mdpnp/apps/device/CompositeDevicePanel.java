@@ -20,12 +20,18 @@ import java.util.Set;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.stage.Stage;
 
 import org.mdpnp.apps.fxbeans.InfusionStatusFx;
 import org.mdpnp.apps.fxbeans.NumericFx;
@@ -48,7 +54,7 @@ public class CompositeDevicePanel extends BorderPane {
 
     protected final Label connectionState = new Label(" ");
     protected final Label unique_device_identifier = new Label(" ");
-    protected final Label icon = new Label(" ");
+    protected final ImageView icon = new ImageView();
 
     private static final Logger log = LoggerFactory.getLogger(CompositeDevicePanel.class);
 
@@ -59,6 +65,9 @@ public class CompositeDevicePanel extends BorderPane {
     private final Set<String> knownIdentifiers = new HashSet<String>();
     private final Set<String> knownPumps = new HashSet<String>();
     
+    private Stage chartWindow;
+    private NumericTimeSeriesPanel chartPanel;
+
     /**
      * A FlowPane that occupies the top of the BorderPane.  This will be created in the constructor
      * for CompositeDevicePanel, after which its only child will be the device information.  Subclasses
@@ -99,6 +108,8 @@ public class CompositeDevicePanel extends BorderPane {
         header.add(host_name, 1, 7);        
 
         header.add(icon, 2, 0, 1, 8);
+        icon.setPreserveRatio(true);
+        icon.setFitHeight(80);
         
         /*
          * In order to keep "header" as it was in this code, but to make use of the space
@@ -109,6 +120,11 @@ public class CompositeDevicePanel extends BorderPane {
         
         topFlowPane=new FlowPane(Orientation.HORIZONTAL);
         topFlowPane.getChildren().add(header);
+        
+        Button chartsButton = new Button("Charts");
+        chartsButton.setOnAction(e -> openChartWindow());
+        chartsButton.setPadding(new Insets(2, 8, 2, 8));
+        topFlowPane.getChildren().add(chartsButton);
         
         setTop(topFlowPane);
         data.setCenter(WAITING);
@@ -232,7 +248,7 @@ public class CompositeDevicePanel extends BorderPane {
     private DeviceDataMonitor deviceMonitor;
 
     public void setModel(DeviceDataMonitor deviceMonitor) {
-        icon.setText("");
+        icon.imageProperty().unbind();
         if (null != this.deviceMonitor) {
             manufacturer.textProperty().unbind();
             model.textProperty().unbind();
@@ -261,6 +277,7 @@ public class CompositeDevicePanel extends BorderPane {
             operating_system.textProperty().bind(d.operating_systemProperty());
             build.textProperty().bind(d.buildProperty());
             host_name.textProperty().bind(d.hostnameProperty());
+            icon.imageProperty().bind(d.imageProperty());
 
             deviceMonitor.getNumericModel().addListener(numericListener);
             deviceMonitor.getNumericModel().forEach((fx)->numeric(fx));
@@ -279,5 +296,31 @@ public class CompositeDevicePanel extends BorderPane {
     
     public FlowPane getTopFlowPane() {
     	return topFlowPane;
+    }
+    
+    private void openChartWindow() {
+        if (deviceMonitor == null) {
+            return;
+        }
+        if (chartWindow != null && chartWindow.isShowing()) {
+            chartWindow.toFront();
+            return;
+        }
+        chartPanel = new NumericTimeSeriesPanel();
+        chartPanel.set(deviceMonitor);
+
+        ScrollPane scrollPane = new ScrollPane(chartPanel);
+        scrollPane.setFitToWidth(true);
+
+        chartWindow = new Stage();
+        chartWindow.setTitle("Time Series Charts");
+        chartWindow.setScene(new Scene(scrollPane, 900, 600));
+        chartWindow.setOnHidden(e -> {
+            if (chartPanel != null) {
+                chartPanel.destroy();
+                chartPanel = null;
+            }
+        });
+        chartWindow.show();
     }
 }

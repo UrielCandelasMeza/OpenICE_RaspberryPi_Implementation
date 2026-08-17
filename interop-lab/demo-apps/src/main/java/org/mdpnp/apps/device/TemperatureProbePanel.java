@@ -78,6 +78,9 @@ public class TemperatureProbePanel extends AbstractWaveAndParamsPanel {
     }
 
     public static boolean supported(Set<String> identifiers) {
+        if (identifiers.contains("Efficia_PVC") || identifiers.contains("Efficia_ST_I")) {
+            return false;
+        }
         for (String[] w : PARAMS) {
             for(String n : w) {
                 if (identifiers.contains(n)) {

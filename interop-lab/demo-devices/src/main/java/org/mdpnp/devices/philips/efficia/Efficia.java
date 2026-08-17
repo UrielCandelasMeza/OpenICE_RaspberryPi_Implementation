@@ -6,6 +6,11 @@ import ca.uhn.hl7v2.app.SimpleServer;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.ORU_R01;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.mdpnp.devices.connected.AbstractConnectedDevice;
 import org.mdpnp.devices.hl7.Hl7Service;
 import org.mdpnp.devices.simulation.AbstractSimulatedDevice;
@@ -56,12 +61,30 @@ public class Efficia extends AbstractConnectedDevice {
     private SimpleServer hl7Server;
     private final EfficiaHL7Parser parser = new EfficiaHL7Parser();
 
+    private volatile boolean deviceConnected = false;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "Efficia-Timeout");
+        t.setDaemon(true);
+        return t;
+    });
+    private ScheduledFuture<?> timeoutFuture;
+    private static final long TIMEOUT_SECONDS = 10;
+
     // DDS InstanceHolders
     private InstanceHolder<ice.Numeric> heartRate;
     private InstanceHolder<ice.Numeric> spo2;
     private InstanceHolder<ice.Numeric> respRate;
     private InstanceHolder<ice.Numeric> pulse;
     private InstanceHolder<ice.Numeric> perfusionIndex;
+    private InstanceHolder<ice.Numeric> pvc;
+    private InstanceHolder<ice.Numeric> stI;
+    private InstanceHolder<ice.Numeric> stII;
+    private InstanceHolder<ice.Numeric> stIII;
+    private InstanceHolder<ice.Numeric> stAVR;
+    private InstanceHolder<ice.Numeric> stAVL;
+    private InstanceHolder<ice.Numeric> stAVF;
+    private InstanceHolder<ice.Numeric> stV;
+    private InstanceHolder<ice.Numeric> stMCL;
 
     /**
      * Constructor del driver real Efficia.
@@ -90,7 +113,20 @@ public class Efficia extends AbstractConnectedDevice {
         respRate = createNumericInstance(rosetta.MDC_CO2_RESP_RATE.VALUE, "rpm");
         pulse = createNumericInstance(rosetta.MDC_PULS_OXIM_PULS_RATE.VALUE, "bpm");
         perfusionIndex = createNumericInstance(rosetta.MDC_PULS_OXIM_PERF_REL.VALUE, "");
-        // TODO: more metrics
+        pvc = createNumericInstance("Efficia_PVC", "/min");
+        stI = createNumericInstance("Efficia_ST_I", "mm");
+        stII = createNumericInstance("Efficia_ST_II", "mm");
+        stIII = createNumericInstance("Efficia_ST_III", "mm");
+        stAVR = createNumericInstance("Efficia_ST_aVR", "mm");
+        stAVL = createNumericInstance("Efficia_ST_aVL", "mm");
+        stAVF = createNumericInstance("Efficia_ST_aVF", "mm");
+        stV = createNumericInstance("Efficia_ST_V", "mm");
+        stMCL = createNumericInstance("Efficia_ST_MCL", "mm");
+    }
+
+    @Override
+    protected String iconResourceName() {
+        return "efficia.png";
     }
 
     @Override
@@ -138,11 +174,9 @@ public class Efficia extends AbstractConnectedDevice {
             hl7Server.start();
 
             stateMachine.transitionWhenLegal(ice.ConnectionState.Negotiating, 5000,
-                    "Servidor HL7 escuchando en puerto " + port);
-            stateMachine.transitionWhenLegal(ice.ConnectionState.Connected, 5000,
-                    "Servidor HL7 escuchando en puerto " + port);
+                    "Servidor HL7 escuchando en puerto " + port + " — Esperando Efficia...");
 
-            log.info("Efficia driver started — MLLP server on port {}", port);
+            log.info("Efficia driver started — MLLP server on port {}, waiting for device", port);
             return true;
         } catch (Exception e) {
             log.error("Failed to start HL7 server", e);
@@ -158,6 +192,11 @@ public class Efficia extends AbstractConnectedDevice {
 
     @Override
     public void disconnect() {
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+            timeoutFuture = null;
+        }
+        deviceConnected = false;
         if (hl7Server != null) {
             hl7Server.stop();
             hl7Server = null;
@@ -169,6 +208,22 @@ public class Efficia extends AbstractConnectedDevice {
         log.info("Efficia driver stopped");
     }
 
+    private void resetTimeout() {
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+        }
+        timeoutFuture = scheduler.schedule(this::onTimeout, TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    private void onTimeout() {
+        if (deviceConnected) {
+            deviceConnected = false;
+            stateMachine.transitionWhenLegal(ice.ConnectionState.Negotiating, 5000,
+                    "Efficia desconectado — esperando dispositivo...");
+            log.info("Efficia device timed out — no messages for {}s", TIMEOUT_SECONDS);
+        }
+    }
+
     /**
      * Procesa un mensaje HL7 ORU^R01 recibido del Efficia.
      * Extrae los datos de observación y los publica como DDS Numeric.
@@ -177,33 +232,38 @@ public class Efficia extends AbstractConnectedDevice {
      */
     private void handleHL7Message(Message msg) {
         try {
+            if (!deviceConnected) {
+                deviceConnected = true;
+                stateMachine.transitionWhenLegal(ice.ConnectionState.Connected, 5000,
+                        "Efficia conectado — recibiendo datos");
+                log.info("Efficia device connected — first HL7 message received");
+            }
+            resetTimeout();
+
             ORU_R01 oru = hl7Service.castToORU(msg);
             EfficiaData data = parser.parse(oru);
 
             DeviceClock.Reading now = getClockProvider().instant();
 
-            // Publicar solo si el status es Final (F)
+            // Publicar solo si el status es Final (F) — métricos con datos
             if (EfficiaData.ObservationStatus.FINAL == data.getStatus()) {
-                if (data.getHeartRate() != null) {
-                    numericSample(heartRate, data.getHeartRate(), now);
-                }
-                if (data.getSpo2() != null) {
-                    numericSample(spo2, data.getSpo2(), now);
-                }
-                if (data.getRespRate() != null) {
-                    numericSample(respRate, data.getRespRate(), now);
-                }
-                if (data.getPulse() != null) {
-                    numericSample(pulse, data.getPulse(), now);
-                }
-                // TODO: perfusionIndex
+                publishOrFallback(heartRate, data.getHeartRate(), now);
+                publishOrFallback(spo2, data.getSpo2(), now);
+                publishOrFallback(respRate, data.getRespRate(), now);
+                publishOrFallback(pulse, data.getPulse(), now);
+                publishOrFallback(perfusionIndex, data.getPerfusionIndex(), now);
+                publishOrFallback(pvc, data.getPvc() != null ? (float) data.getPvc() : null, now);
+                publishOrFallback(stI, data.getStI(), now);
+                publishOrFallback(stII, data.getStII(), now);
+                publishOrFallback(stIII, data.getStIII(), now);
+                publishOrFallback(stAVR, data.getStAVR(), now);
+                publishOrFallback(stAVL, data.getStAVL(), now);
+                publishOrFallback(stAVF, data.getStAVF(), now);
             }
 
-            // TODO: Alarmas — implementar cuando se requiera
-            // if (data.getAlarmType() != EfficiaData.AlarmType.NONE
-            // && data.getAlarmType() != EfficiaData.AlarmType.ALARM_CLEAR) {
-            // writePatientAlert("Efficia", data.getAlarmText());
-            // }
+            // Métricos desconectados (status X) — publicar con -?-
+            publishDisconnected(stV, data, "0002-0343", now);
+            publishDisconnected(stMCL, data, "0002-034b", now);
 
             log.debug("Processed ORU: HR={}, SpO2={}, Resp={}, Pulse={}, Status={}",
                     data.getHeartRate(), data.getSpo2(), data.getRespRate(),
@@ -211,6 +271,24 @@ public class Efficia extends AbstractConnectedDevice {
 
         } catch (Exception e) {
             log.error("Error processing HL7 message", e);
+        }
+    }
+
+    /**
+     * Publishes a numeric sample. If the value is null, publishes Float.NaN (GUI shows "-?").
+     */
+    private void publishOrFallback(InstanceHolder<ice.Numeric> holder, Float value, DeviceClock.Reading now) {
+        numericSample(holder, value != null ? value : Float.NaN, now);
+    }
+
+    /**
+     * Publishes a disconnected metric. If the metric was reported as disconnected (status X),
+     * publishes Float.NEGATIVE_INFINITY (GUI shows "-?-"). If the metric has a value, publishes it.
+     */
+    private void publishDisconnected(InstanceHolder<ice.Numeric> holder, EfficiaData data,
+                                     String mdilCode, DeviceClock.Reading now) {
+        if (data.isDisconnected(mdilCode)) {
+            numericSample(holder, Float.NEGATIVE_INFINITY, now);
         }
     }
 }

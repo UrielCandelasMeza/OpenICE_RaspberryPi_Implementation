@@ -137,6 +137,9 @@ public class PulseOximeterPanel extends AbstractWaveAndParamsPanel {
     }
 
     public static boolean supported(Set<String> identifiers) {
+        if (identifiers.contains("Efficia_PVC") || identifiers.contains("Efficia_ST_I")) {
+            return false;
+        }
         for (String w : PLETH_WAVEFORMS) {
             if (identifiers.contains(w)) {
                 return true;

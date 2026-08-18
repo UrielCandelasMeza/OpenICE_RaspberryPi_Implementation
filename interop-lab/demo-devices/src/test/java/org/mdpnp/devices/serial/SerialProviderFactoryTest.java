@@ -25,6 +25,12 @@ public class SerialProviderFactoryTest {
   }
 
   // This could fail. The provider is optional and the jar could be missing in the default configuration
+  //@Test
+  public void testJSerialCommSerialProvider() throws Exception {
+    testDefaultProviderPortNames(new String[] { "org.mdpnp.data.serial.JSerialCommSerialProvider" }, 4);
+  }
+
+  // This could fail. The provider is optional and the jar could be missing in the default configuration
   @Test
   public void testDummyProvider() throws Exception {
     testDefaultProviderPortNames(new String[]

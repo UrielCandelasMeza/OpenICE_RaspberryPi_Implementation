@@ -17,6 +17,7 @@ include 'devices:simulated'
 
 include 'interop-lab:purejavacomm'
 include 'interop-lab:demo-purejavacomm'
+include 'interop-lab:demo-jserialcomm'
 
 include 'interop-lab:demo-guis'
 include 'interop-lab:demo-guis-swing'

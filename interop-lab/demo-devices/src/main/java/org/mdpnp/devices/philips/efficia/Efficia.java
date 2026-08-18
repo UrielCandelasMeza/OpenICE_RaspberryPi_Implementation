@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import org.mdpnp.devices.connected.AbstractConnectedDevice;
 import org.mdpnp.devices.hl7.Hl7Service;
 import org.mdpnp.devices.simulation.AbstractSimulatedDevice;
-import org.mdpnp.devices.AbstractDevice.InstanceHolder;
+// import org.mdpnp.devices.AbstractDevice.InstanceHolder;
 import org.mdpnp.rtiapi.data.EventLoop;
 import org.mdpnp.devices.DeviceClock;
 
@@ -135,7 +135,8 @@ public class Efficia extends AbstractConnectedDevice {
     }
 
     /**
-     * @param address The IP address or connection string (not explicitly used here since
+     * @param address The IP address or connection string (not explicitly used here
+     *                since
      *                the MLLP server port is configured via properties).
      * @return true if the MLLP server started successfully, false otherwise.
      */
@@ -275,18 +276,21 @@ public class Efficia extends AbstractConnectedDevice {
     }
 
     /**
-     * Publishes a numeric sample. If the value is null, publishes Float.NaN (GUI shows "-?").
+     * Publishes a numeric sample. If the value is null, publishes Float.NaN (GUI
+     * shows "-?").
      */
     private void publishOrFallback(InstanceHolder<ice.Numeric> holder, Float value, DeviceClock.Reading now) {
         numericSample(holder, value != null ? value : Float.NaN, now);
     }
 
     /**
-     * Publishes a disconnected metric. If the metric was reported as disconnected (status X),
-     * publishes Float.NEGATIVE_INFINITY (GUI shows "-?-"). If the metric has a value, publishes it.
+     * Publishes a disconnected metric. If the metric was reported as disconnected
+     * (status X),
+     * publishes Float.NEGATIVE_INFINITY (GUI shows "-?-"). If the metric has a
+     * value, publishes it.
      */
     private void publishDisconnected(InstanceHolder<ice.Numeric> holder, EfficiaData data,
-                                     String mdilCode, DeviceClock.Reading now) {
+            String mdilCode, DeviceClock.Reading now) {
         if (data.isDisconnected(mdilCode)) {
             numericSample(holder, Float.NEGATIVE_INFINITY, now);
         }

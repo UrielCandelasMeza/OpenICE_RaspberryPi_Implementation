@@ -1,0 +1,141 @@
+@startuml Masimo Radical 7 — Data Flow
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBorderColor #2C3E50
+skinparam sequenceLifeLineBorderColor #7F8C8D
+
+title Masimo Radical 7 — Flujo de datos: hardware → DDS
+
+participant "UART Kernel\n/dev/ttyUSB0" as UART
+participant "PureJavaComm\nJNA → libc" as PJC
+participant "SocketImpl\nPureJavaCommSerialProvider" as Socket
+participant "AbstractSerialDevice\n.SerialDevice (thread)" as ASD
+participant "TimeAwareInputStream" as TAI
+participant "ASCIIFieldDelegate" as AFD
+participant "MasimoRadical7\n(DemoRadical7)" as Masimo
+participant "DDS DataWriter\nRTI Connext" as DDS
+
+== 1. Apertura del puerto ==
+
+[-> Masimo: connect("USB0")
+activate Masimo
+
+Masimo -> Masimo: resolveBaudRate()\nSystem.getProperty("mdpnp.serial.baudrate")
+
+Masimo -> Socket: serialProvider.connect("USB0", 1000L)
+activate Socket
+
+Socket -> PJC: CommPortIdentifier.getPortIdentifiers()
+activate PJC
+PJC -> UART: scan /dev/tty*
+UART --> PJC: Enumeration
+PJC --> Socket: CommPortIdentifier
+deactivate PJC
+
+Socket -> PJC: cpi.open("", timeout)
+activate PJC
+PJC -> UART: open(fd, O_RDWR | O_NOCTTY)
+UART --> PJC: fd
+PJC -> PJC: fcntl(F_SETFL, ~O_NONBLOCK)
+PJC -> PJC: tcgetattr → cfmakeraw
+PJC -> PJC: c_cflag |= CLOCAL | CREAD
+PJC -> UART: tcsetattr(TCSANOW)
+UART --> PJC: OK
+PJC --> Socket: SerialPort
+deactivate PJC
+
+== 2. Configuración del baud rate ==
+
+Socket -> Socket: doConfigurePort(socket)\ndefaultSettings = (19200, 8, N, 1)
+Socket -> PJC: setSerialPortParams(19200, 8, 1, 0)
+activate PJC
+PJC -> PJC: setspeed(fd, termios, 19200)
+PJC -> UART: ioctl(TIOCGSERIAL) → get serial_struct
+UART --> PJC: serial_struct
+PJC -> PJC: ss.flags &= ~ASYNC_SPD_MASK
+PJC -> UART: ioctl(TIOCSSERIAL) → clear custom divisor
+UART --> PJC: OK
+PJC -> PJC: cfsetispeed(termios, B19200)\ncfsetospeed(termios, B19200)
+PJC -> UART: tcsetattr(fd, TCSANOW, termios)
+UART --> PJC: OK
+deactivate PJC
+
+Socket --> Masimo: SerialSocket (fd abierto y configurado)
+deactivate Socket
+
+== 3. Lectura de datos ==
+
+Masimo -> ASD: getSerialProvider().connect()
+activate ASD
+ASD -> ASD: socket = serialProvider.connect(address)
+ASD -> ASD: socket.getInputStream()
+note right: InputStream que lee\ndirectamente del fd
+
+ASD -> TAI: new TimeAwareInputStream(is)
+activate TAI
+note right: Agrega timestamps\nde última lectura
+
+ASD -> AFD: process(idx, tais, os)
+activate AFD
+AFD -> AFD: BufferedReader(new InputStreamReader(tais))
+
+loop while (line = reader.readLine()) != null
+    AFD -> UART: read(fd, buf, len)
+    activate UART
+    UART -> UART: ← bytes del Masimo Radical 7
+    note right
+      SpO2, Heart Rate, PI,
+      SpHb, SpOC, PVI, DESAT,
+      EEG PSI/EMG/SEF
+    end note
+    UART --> AFD: "MMSI 73 75" + "\\r"
+    deactivate UART
+
+    AFD -> AFD: parseLine(line)\nregex contra masimo-radical-7.spec\nreflexión Java → setea fields
+    AFD -> Masimo: firePulseOximeter()
+    activate Masimo
+
+    Masimo -> Masimo: heartRate = getHeartRate()\nspo2 = getSpO2()\npi = getPerfusionIndex()
+
+    Masimo -> DDS: numericSample(hr, MDC_PULS_OXIM_PULS_RATE)
+    activate DDS
+    DDS -> DDS: DataWriter.write(numeric_t)
+    note right: DDS Topic\nNUMERIC
+
+    Masimo -> DDS: numericSample(spo2, MDC_PULS_OXIM_SAT_O2)
+    DDS -> DDS: DataWriter.write(numeric_t)
+
+    Masimo -> DDS: numericSample(pi, Masimo_PVI)
+    DDS -> DDS: DataWriter.write(numeric_t)
+
+    Masimo -> DDS: writeDeviceIdentity()
+    note right: DDS Topic\nDEVICE_IDENTITY
+
+    Masimo -> DDS: writeDeviceAlert(alarm)
+    note right: DDS Topic\nDEVICE_ALERT
+
+    deactivate DDS
+    deactivate Masimo
+end
+
+== 4. Watchdog (silencio) ==
+
+[-> Masimo: watchdog()  [timer cada 500ms]
+activate Masimo
+Masimo -> TAI: getLastReadTime()
+TAI --> Masimo: quietTime
+alt quietTime > 1100ms
+    Masimo -> Masimo: transitionIfLegal(Negotiating)
+    Masimo -> ASD: doInitCommands(idx)
+    note right: Reintentar\nnegociación
+else quietTime <= 1100ms
+    Masimo -> Masimo: OK, continuar
+end
+deactivate Masimo
+
+deactivate AFD
+deactivate TAI
+deactivate ASD
+deactivate Masimo
+
+@enduml

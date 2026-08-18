@@ -1,11 +1,12 @@
 package org.mdpnp.rtiapi.qos;
 
 import java.io.File;
-import java.io.FileInputStream;
+// import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -29,9 +30,12 @@ public class IceQos {
 
     private static final Logger log = LoggerFactory.getLogger(IceQos.class);
 
-    private IceQos() {}
+    private IceQos() {
+    }
 
-    public enum LoadStatus { NONE, USER, SYSTEM }
+    public enum LoadStatus {
+        NONE, USER, SYSTEM
+    }
 
     public static LoadStatus loadAndSetIceQos() {
 
@@ -42,15 +46,16 @@ public class IceQos {
         try {
 
             File userProfiles = new File("USER_QOS_PROFILES.xml");
-            LoadStatus statusCode = hasUserDefinedQoS(userProfiles)?LoadStatus.USER:LoadStatus.NONE;
+            LoadStatus statusCode = hasUserDefinedQoS(userProfiles) ? LoadStatus.USER : LoadStatus.NONE;
 
             DomainParticipantFactory factory = DomainParticipantFactory.get_instance();
             DomainParticipantFactoryQos qos = new DomainParticipantFactoryQos();
             factory.get_qos(qos);
 
-            if (statusCode==LoadStatus.NONE) {
-                statusCode = loadIceQosLibrary(qos)?LoadStatus.SYSTEM:LoadStatus.NONE;
-                log.info((statusCode==LoadStatus.SYSTEM?"Loaded":"Failed to load") + " default ice_library QoS from classpath");
+            if (statusCode == LoadStatus.NONE) {
+                statusCode = loadIceQosLibrary(qos) ? LoadStatus.SYSTEM : LoadStatus.NONE;
+                log.info((statusCode == LoadStatus.SYSTEM ? "Loaded" : "Failed to load")
+                        + " default ice_library QoS from classpath");
             }
 
             qos.resource_limits.max_objects_per_thread = 8192;
@@ -64,7 +69,8 @@ public class IceQos {
         }
     }
 
-    public static boolean hasUserDefinedQoS(File userProfiles) throws ParserConfigurationException, SAXException, IOException {
+    public static boolean hasUserDefinedQoS(File userProfiles)
+            throws ParserConfigurationException, SAXException, IOException {
 
         boolean userIceLibrary = false;
 
@@ -87,27 +93,25 @@ public class IceQos {
         return userIceLibrary;
     }
 
+    public static boolean loadIceQosLibrary(DomainParticipantFactoryQos qos) throws IOException, Exception {
 
-    public static boolean loadIceQosLibrary(DomainParticipantFactoryQos qos) throws IOException {
-
-		URL url;
+        URL url;
         //
         // handle the -Dmdpnp.dds.qos=file:///some/path/to/ice_library.xml
         //
-		if(QOS_DEFINITION.indexOf(":") > 0) {
-			try {
-				url = new URL(QOS_DEFINITION);
-			}
-			catch(MalformedURLException ex) {
-				url = null;
-			}
-		}
-		else
-			url = IceQos.class.getResource(QOS_DEFINITION);
+        if (QOS_DEFINITION.indexOf(":") > 0) {
+            try {
+                URI uri = new URI(QOS_DEFINITION);
+                url = uri.toURL();
+            } catch (MalformedURLException ex) {
+                url = null;
+            }
+        } else
+            url = IceQos.class.getResource(QOS_DEFINITION);
 
-		if (url != null) {
-			log.info("Loading ice_library.xml from " + url.toExternalForm());
-			InputStream is = url.openStream();
+        if (url != null) {
+            log.info("Loading ice_library.xml from " + url.toExternalForm());
+            InputStream is = url.openStream();
 
             java.util.Scanner scanner = new java.util.Scanner(is);
             try {
@@ -123,12 +127,11 @@ public class IceQos {
                     log.error("", e);
                 }
             }
-        }
-        else {
-			log.error("Could not locate '" + QOS_DEFINITION +"'");
+        } else {
+            log.error("Could not locate '" + QOS_DEFINITION + "'");
             return false;
         }
     }
 
-	private static final String QOS_DEFINITION = System.getProperty("mdpnp.dds.qos", "/META-INF/ice_library.xml");
+    private static final String QOS_DEFINITION = System.getProperty("mdpnp.dds.qos", "/META-INF/ice_library.xml");
 }

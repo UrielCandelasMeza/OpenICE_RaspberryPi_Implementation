@@ -22,6 +22,7 @@ application {
 dependencies {
     // Core device drivers (ALL drivers, including simulated) – NO JavaFX
     implementation project(':interop-lab:demo-devices')
+    implementation project(':interop-lab:demo-jserialcomm')
     implementation project(':data-types:x73-idl-rti-dds')
 
     // RTI Connext DDS runtime
@@ -45,6 +46,8 @@ dependencies {
 run {
     // Propagate command-line system properties (e.g. -Dproperty=value) to the application JVM
     systemProperties = System.getProperties()
+
+    jvmArgs = ['--enable-native-access=ALL-UNNAMED']
 
     if (localOsName.contains('linux')) {
         // Resolve absolute path to the native libraries
@@ -103,7 +106,7 @@ case "$ARCH" in
         ;;
 esac
 export RTI_LICENSE_FILE=$APP_HOME/config/OpenICE_license.dat
-DEFAULT_JVM_OPTS=""'''
+DEFAULT_JVM_OPTS="--enable-native-access=ALL-UNNAMED"'''
         )
     }
 }

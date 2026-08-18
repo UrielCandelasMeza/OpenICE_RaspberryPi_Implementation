@@ -33,6 +33,7 @@ public class SerialProviderFactory {
     private static SerialProvider defaultProvider;
 
     private static final String[] DEFAULT_PROVIDERS = new String[] {
+            "org.mdpnp.data.serial.JSerialCommSerialProvider",
             "org.mdpnp.data.serial.PureJavaCommSerialProvider",
             "org.mdpnp.devices.serial.TCPSerialProvider"
     };

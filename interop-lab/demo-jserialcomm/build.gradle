@@ -1,0 +1,13 @@
+plugins { id 'java' }
+
+defaultTasks 'build'
+
+java {
+    sourceCompatibility = JAVA_VERSION_SOURCE
+    targetCompatibility = JAVA_VERSION_CLASSES
+}
+
+dependencies {
+    implementation project(':interop-lab:demo-devices')
+    implementation 'com.fazecast:jSerialComm:2.11.4'
+}

@@ -291,21 +291,6 @@ public class HeadlessDeviceFactory {
         }
     }
 
-    public static class EfficiaProvider extends SpringLoadedDriver {
-        @Override
-        public DeviceType getDeviceType() {
-            return new DeviceType(ice.ConnectionType.Network, "Philips", "Efficia CM Series", "Efficia", 1);
-        }
-
-        @Override
-        public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
-            return new Efficia(ctx.getBean("subscriber", Subscriber.class),
-                    ctx.getBean("publisher", Publisher.class),
-                    ctx.getBean("eventLoop", EventLoop.class),
-                    ctx.getBean(Hl7Service.class));
-        }
-    }
-
     public static class SymbiqProvider extends SpringLoadedDriver {
         @Override
         public DeviceType getDeviceType() {
@@ -601,6 +586,21 @@ public class HeadlessDeviceFactory {
             return new DemoEthernetIntellivue(ctx.getBean("subscriber", Subscriber.class),
                     ctx.getBean("publisher", Publisher.class),
                     ctx.getBean("eventLoop", EventLoop.class));
+        }
+    }
+
+    public static class EfficiaProvider extends SpringLoadedDriver {
+        @Override
+        public DeviceType getDeviceType() {
+            return new DeviceType(ice.ConnectionType.Network, "Philips", "Efficia CM Series", "Efficia", 1);
+        }
+
+        @Override
+        public AbstractDevice newInstance(AbstractApplicationContext ctx) throws Exception {
+            return new Efficia(ctx.getBean("subscriber", Subscriber.class),
+                    ctx.getBean("publisher", Publisher.class),
+                    ctx.getBean("eventLoop", EventLoop.class),
+                    ctx.getBean(Hl7Service.class));
         }
     }
 

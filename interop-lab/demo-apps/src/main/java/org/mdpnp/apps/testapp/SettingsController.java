@@ -37,7 +37,7 @@ import javafx.util.Callback;
 
 import org.mdpnp.apps.testapp.Configuration.Application;
 import org.mdpnp.apps.testapp.ConfigurationDialog.DeviceDriverProviderCell;
-import org.mdpnp.data.serial.PureJavaCommSerialProvider;
+import org.mdpnp.data.serial.JSerialCommSerialProvider;
 import org.mdpnp.devices.DeviceDriverProvider;
 import org.mdpnp.devices.serial.SerialProviderFactory;
 import org.mdpnp.devices.serial.TCPSerialProvider;
@@ -50,7 +50,7 @@ public class SettingsController {
     @FXML
     ComboBox<DeviceDriverProvider> deviceType;
     @FXML
-    Label applicationsLabel, domainIdLabel, deviceTypeLabel, serialPortsLabel, addressLabel, fhirServerLabel, emrServerLabel;
+    Label applicationsLabel, domainIdLabel, deviceTypeLabel, serialPortsLabel, addressLabel, fhirServerLabel, emrServerLabel, baudRateLabel;
     @FXML
     GridPane gridPane;
     @FXML
@@ -63,6 +63,9 @@ public class SettingsController {
 
     @FXML
     TextField addressField;
+
+    @FXML
+    ComboBox<String> baudRate;
     
     private Stage currentStage;
     
@@ -71,6 +74,7 @@ public class SettingsController {
     private final ObjectProperty<Application> selectedApp = new SimpleObjectProperty<>(this, "selectedApp", null);
     private final ObjectProperty<DeviceDriverProvider> selectedDevice = new SimpleObjectProperty<>(this, "selectedDevice", null);
     private final StringProperty address = new SimpleStringProperty(this, "address", "");
+    private final StringProperty baudRateValue = new SimpleStringProperty(this, "baudRateValue", "9600");
     private final StringProperty domain = new SimpleStringProperty(this, "domain", "");
     private final StringProperty fhirServerName = new SimpleStringProperty(this, "fhirServerName", "");
     private final StringProperty openEMRServerName = new SimpleStringProperty(this, "openEMRServerName", "");
@@ -105,6 +109,10 @@ public class SettingsController {
     public ReadOnlyStringProperty addressProperty() {
         return address;
     }
+
+    public ReadOnlyStringProperty baudRateProperty() {
+        return baudRateValue;
+    }
     
     public ReadOnlyStringProperty domainProperty() {
         return domain;
@@ -137,11 +145,15 @@ public class SettingsController {
                     if(!gridPane.getChildren().contains(addressField)) { gridPane.getChildren().add(addressField); }
                     gridPane.getChildren().remove(serialPortsLabel);
                     gridPane.getChildren().remove(serialPortsContainer);
+                    gridPane.getChildren().remove(baudRateLabel);
+                    gridPane.getChildren().remove(baudRate);
                 } else {
                     gridPane.getChildren().remove(addressLabel);
                     gridPane.getChildren().remove(addressField);
                     if(!gridPane.getChildren().contains(serialPortsLabel)) { gridPane.getChildren().add(serialPortsLabel); }
                     if(!gridPane.getChildren().contains(serialPortsContainer)) { gridPane.getChildren().add(serialPortsContainer); }
+                    if(!gridPane.getChildren().contains(baudRateLabel)) { gridPane.getChildren().add(baudRateLabel); }
+                    if(!gridPane.getChildren().contains(baudRate)) { gridPane.getChildren().add(baudRate); }
                 }
 
             } else if (ice.ConnectionType.Network.equals(selected)) {
@@ -149,11 +161,15 @@ public class SettingsController {
                 if(!gridPane.getChildren().contains(addressField)) { gridPane.getChildren().add(addressField); }
                 gridPane.getChildren().remove(serialPortsLabel);
                 gridPane.getChildren().remove(serialPortsContainer);
+                gridPane.getChildren().remove(baudRateLabel);
+                gridPane.getChildren().remove(baudRate);
             } else {
                 gridPane.getChildren().remove(addressLabel);
                 gridPane.getChildren().remove(addressField);
                 gridPane.getChildren().remove(serialPortsLabel);
                 gridPane.getChildren().remove(serialPortsContainer);
+                gridPane.getChildren().remove(baudRateLabel);
+                gridPane.getChildren().remove(baudRate);
             }
             break;
         case ICE_Supervisor:
@@ -165,6 +181,8 @@ public class SettingsController {
             gridPane.getChildren().remove(addressField);
             gridPane.getChildren().remove(serialPortsLabel);
             gridPane.getChildren().remove(serialPortsContainer);
+            gridPane.getChildren().remove(baudRateLabel);
+            gridPane.getChildren().remove(baudRate);
             if(!gridPane.getChildren().contains(fhirServerLabel)) { gridPane.getChildren().add(fhirServerLabel); }
             if(!gridPane.getChildren().contains(fhirServer)) { gridPane.getChildren().add(fhirServer); }
             ready.set(true);
@@ -220,7 +238,7 @@ public class SettingsController {
                 		 * for a network device, but it breaks the selection of a serial port for serial devices
                 		 * selected later.  Reset here
                 		 */
-                		SerialProviderFactory.setDefaultProvider(new PureJavaCommSerialProvider());
+                		SerialProviderFactory.setDefaultProvider(new JSerialCommSerialProvider());
                 		
                 	}
                     deviceType.setItems(deviceTypesByCategory.get(newValue));
@@ -290,6 +308,17 @@ public class SettingsController {
         fhirServerName.bind(fhirServer.textProperty());
         openEMRServerName.bind(emrServer.textProperty());
 
+        // Baud rate ComboBox initialization
+        baudRate.getItems().addAll(
+            "4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"
+        );
+        baudRate.getSelectionModel().select("9600");
+        baudRateValue.bind(baudRate.getSelectionModel().selectedItemProperty());
+        baudRateLabel.setVisible(false);
+        baudRateLabel.setManaged(false);
+        baudRate.setVisible(false);
+        baudRate.setManaged(false);
+
         selectedDevice.addListener(new ChangeListener<DeviceDriverProvider>() {
 
             @Override
@@ -311,9 +340,17 @@ public class SettingsController {
                         elements.add(serialPorts[i].valueProperty());
                     }
                     address.bind(Bindings.concat(elements.toArray(new Object[0])));
+                    baudRateLabel.setVisible(true);
+                    baudRateLabel.setManaged(true);
+                    baudRate.setVisible(true);
+                    baudRate.setManaged(true);
                 } else {
                     address.unbind();
                     address.bind(addressField.textProperty());
+                    baudRateLabel.setVisible(false);
+                    baudRateLabel.setManaged(false);
+                    baudRate.setVisible(false);
+                    baudRate.setManaged(false);
                 }
             }
         });

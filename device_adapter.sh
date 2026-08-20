@@ -5,6 +5,9 @@
 ACTION=$1
 DEVICE=$2
 DOMAIN=${3:-0}
+ADDRESS=${4:-}
+BAUD=${5:-}
+PEERS=${6:-}
 
 # Rutas de instalación dinámicas (soporta 'pi', 'openice', etc.)
 ACTUAL_USER=${SUDO_USER:-$USER}
@@ -42,7 +45,12 @@ case "$ACTION" in
         echo "=== 1. Guardando configuración en $DEVICE_THIS ==="
         # Crear directorio padre si no existe por si acaso
         mkdir -p "$PI_HOME"
-        echo "-domain $DOMAIN -device $DEVICE" > "$DEVICE_THIS"
+        # Construir la cadena de argumentos para HeadlessMain
+        DEVICE_ARGS="-domain $DOMAIN -device $DEVICE"
+        [ -n "$ADDRESS" ] && DEVICE_ARGS="$DEVICE_ARGS -address $ADDRESS"
+        [ -n "$BAUD" ]    && DEVICE_ARGS="$DEVICE_ARGS -baud $BAUD"
+        [ -n "$PEERS" ]   && DEVICE_ARGS="$DEVICE_ARGS -peers $PEERS"
+        echo "$DEVICE_ARGS" > "$DEVICE_THIS"
         cat "$DEVICE_THIS"
         
         echo "=== 2. Compilando el empaquetado headless (distZip) ==="
@@ -119,15 +127,23 @@ case "$ACTION" in
         echo "Uso: ./device_adapter.sh [comando] [argumentos...]"
         echo ""
         echo "Comandos:"
-        echo "  list                      Muestra la lista de todos los devices soportados."
-        echo "  install DEVICE [DOMAIN]   Compila, instala y levanta el servicio para el device indicado."
-        echo "                            (El dominio por defecto es 0 si no se provee)."
-        echo "  device                    Muestra el device que se encuentra corriendo actualmente."
+        echo "  list                                      Muestra la lista de todos los devices soportados."
+        echo "  install DEVICE [DOMAIN] [ADDR] [BAUD] ... Compila, instala y levanta el servicio."
+        echo "  device                                    Muestra el device configurado actualmente."
+        echo ""
+        echo "Argumentos opcionales de install:"
+        echo "  DOMAIN     DDS domain ID (default: 0)"
+        echo "  ADDR       Puerto serial (/dev/ttyUSB0) o IP (192.168.1.100)"
+        echo "  BAUD       Baud rate serial (default: 9600)"
+        echo "  PEERS      IPs de descubrimiento DDS, separadas por coma"
         echo ""
         echo "Ejemplos:"
         echo "  ./device_adapter.sh list"
         echo "  ./device_adapter.sh install Pump_Simulator"
-        echo "  ./device_adapter.sh install DraegerV500 15"
+        echo "  ./device_adapter.sh install DraegerV500 10"
+        echo "  ./device_adapter.sh install DraegerV500 10 /dev/ttyUSB0"
+        echo "  ./device_adapter.sh install DraegerV500 10 /dev/ttyUSB0 19200"
+        echo "  ./device_adapter.sh install IntellivueEthernet 10 192.168.1.100"
         exit 1
         ;;
 esac

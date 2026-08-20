@@ -109,6 +109,16 @@ public class SimulatedEfficia extends AbstractSimulatedConnectedDevice {
     final InstanceHolder<ice.Numeric> nibpSystolic;
     final InstanceHolder<ice.Numeric> nibpDiastolic;
     final InstanceHolder<ice.Numeric> temperature;
+    final InstanceHolder<ice.Numeric> pvc;
+    final InstanceHolder<ice.Numeric> perfusionIndex;
+    final InstanceHolder<ice.Numeric> stI;
+    final InstanceHolder<ice.Numeric> stII;
+    final InstanceHolder<ice.Numeric> stIII;
+    final InstanceHolder<ice.Numeric> stAVR;
+    final InstanceHolder<ice.Numeric> stAVL;
+    final InstanceHolder<ice.Numeric> stAVF;
+    final InstanceHolder<ice.Numeric> stV;
+    final InstanceHolder<ice.Numeric> stMCL;
 
     // ── Internal engine ───────────────────────────────────────────────────────
 
@@ -135,6 +145,16 @@ public class SimulatedEfficia extends AbstractSimulatedConnectedDevice {
         nibpSystolic  = createNumericInstance(rosetta.MDC_PRESS_BLD_NONINV_SYS.VALUE, "");
         nibpDiastolic = createNumericInstance(rosetta.MDC_PRESS_BLD_NONINV_DIA.VALUE, "");
         temperature   = createNumericInstance(rosetta.MDC_TEMP_BLD.VALUE,             "");
+        pvc           = createNumericInstance("Efficia_PVC",                           "/min");
+        perfusionIndex = createNumericInstance(rosetta.MDC_PULS_OXIM_PERF_REL.VALUE,  "");
+        stI           = createNumericInstance("Efficia_ST_I",                          "mm");
+        stII          = createNumericInstance("Efficia_ST_II",                         "mm");
+        stIII         = createNumericInstance("Efficia_ST_III",                        "mm");
+        stAVR         = createNumericInstance("Efficia_ST_aVR",                        "mm");
+        stAVL         = createNumericInstance("Efficia_ST_aVL",                        "mm");
+        stAVF         = createNumericInstance("Efficia_ST_aVF",                        "mm");
+        stV           = createNumericInstance("Efficia_ST_V",                          "mm");
+        stMCL         = createNumericInstance("Efficia_ST_MCL",                        "mm");
 
         deviceIdentity.manufacturer = "Philips";
         deviceIdentity.model        = "Efficia CM Series (Simulated)";
@@ -247,6 +267,6 @@ public class SimulatedEfficia extends AbstractSimulatedConnectedDevice {
 
     @Override
     protected String iconResourceName() {
-        return "patient_monitor.png";
+        return "efficia.png";
     }
 }

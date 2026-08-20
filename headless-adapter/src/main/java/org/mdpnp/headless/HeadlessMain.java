@@ -2,6 +2,7 @@ package org.mdpnp.headless;
 
 import org.apache.commons.cli.*;
 import org.mdpnp.devices.DeviceDriverProvider;
+import org.mdpnp.devices.serial.SerialProviderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
@@ -28,6 +29,7 @@ import java.util.concurrent.CountDownLatch;
  * <pre>
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device Pump_Simulator"
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device DraegerV500 -address /dev/ttyUSB0"
+ *   ./gradlew :headless-adapter:run --args="-domain 0 -device MasimoRadical7 -address /dev/ttyUSB0 -baud 19200"
  *   ./gradlew :headless-adapter:run --args="-domain 0 -device IntellivueEthernet -address 192.168.1.100"
  * </pre>
  * 
@@ -50,6 +52,12 @@ public class HeadlessMain {
         String deviceAlias = line.getOptionValue("device");
         String address = line.hasOption("address") ? line.getOptionValue("address") : null;
         String discoveryPeers = line.hasOption("peers") ? line.getOptionValue("peers") : "";
+        String baudRate = line.hasOption("baud") ? line.getOptionValue("baud") : null;
+
+        if (baudRate != null) {
+            System.setProperty("mdpnp.serial.baudrate", baudRate);
+            log.info("Serial baud rate set to: {}", baudRate);
+        }
 
         // ── 2. Resolve the device driver ──────────────────────────────────────
         DeviceDriverProvider ddp = resolveDriver(deviceAlias);
@@ -132,6 +140,10 @@ public class HeadlessMain {
                 .hasArg().isRequired(false)
                 .withDescription("Comma-separated DDS discovery peer IPs. Empty = local multicast.")
                 .create("peers"));
+        opts.addOption(OptionBuilder.withArgName("baud")
+                .hasArg().isRequired(false)
+                .withDescription("Serial port baud rate (default: 9600). E.g. 19200, 38400.")
+                .create("baud"));
         opts.addOption("help", false, "Display this help message");
         return opts;
     }
@@ -144,6 +156,7 @@ public class HeadlessMain {
         if (helpLine.hasOption("help")) {
             new HelpFormatter().printHelp("OpenICE-headless", options);
             printAvailableDevices();
+            printAvailablePorts();
             return null;
         }
         return parser.parse(options, args);
@@ -219,6 +232,22 @@ public class HeadlessMain {
                     dt.getConnectionType(),
                     dt.getManufacturer(),
                     dt.getModel());
+        }
+    }
+
+    private static void printAvailablePorts() {
+        System.out.println("\nAvailable serial ports:");
+        try {
+            java.util.List<String> ports = SerialProviderFactory.getDefaultProvider().getPortNames();
+            if (ports.isEmpty()) {
+                System.out.println("  (none found)");
+            } else {
+                for (String port : ports) {
+                    System.out.printf("  %s%n", port);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("  (could not enumerate ports: " + e.getMessage() + ")");
         }
     }
 }

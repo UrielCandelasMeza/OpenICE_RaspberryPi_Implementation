@@ -41,7 +41,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 
 import org.mdpnp.apps.testapp.patient.PatientInfo;
-import org.mdpnp.data.serial.PureJavaCommSerialProvider;
+import org.mdpnp.data.serial.JSerialCommSerialProvider;
 import org.mdpnp.devices.AbstractDevice;
 import org.mdpnp.devices.serial.SerialProviderFactory;
 import org.mdpnp.devices.serial.TCPSerialProvider;
@@ -173,7 +173,7 @@ public class DemoPanel {
                 if (null != c) {
                     if(c.getDeviceFactory().getDeviceType().getConnectionType()==ConnectionType.Serial && SerialProviderFactory.getDefaultProvider() instanceof TCPSerialProvider) {
 						//Adding serial device after network device.  Reset default provider
-                        SerialProviderFactory.setDefaultProvider(new PureJavaCommSerialProvider());
+                        SerialProviderFactory.setDefaultProvider(new JSerialCommSerialProvider());
                     }
                     SubscriberQos qos = new SubscriberQos();
                     subscriber.get_qos(qos);

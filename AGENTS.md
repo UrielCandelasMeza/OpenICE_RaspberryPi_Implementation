@@ -7,7 +7,7 @@ Project `1.5.0-SNAPSHOT`. Gradle 9.0.0, Java source/target 25, JavaFX 25 (demo-a
 - **7 non-Maven JARs must exist in `artifacts/`**: `nddsjava.jar`, `pixelmed.jar`, `Utility-0.0.1.jar`, `mdpnp-sounds-0.1.0.jar`, `rtiddsgen2.jar`, `rtiusagemetrics-api.jar`, `cpp-bin-1.2.8-SNAPSHOT.zip`. Build fails without them.
 - **`RTI_LICENSE_FILE`** must point to a valid license (e.g. `interop-lab/demo-apps/src/main/resources/OpenICE_license.dat`).
 - **`LD_LIBRARY_PATH`** must include `native/libs/linux` (or `aarch`, `macosx`, `windows`) — already configured in `build.gradle` `test` and `run` blocks.
-- Tests need `SEC_ARTIFACT_DIR` env var; `RTI_LICENSE_FILE` and `LD_LIBRARY_PATH` are set automatically in the `test`/`run` blocks of `demo-apps/build.gradle`. `DOCBOX_RTPS_HOST_ID`/`DOCBOX_RTPS_APP_ID` are set **only on Windows**.
+- Tests need `SEC_ARTIFACT_DIR` env var; `RTI_LICENSE_FILE` and `LD_LIBRARY_PATH` are set automatically in the `test`/`run` blocks of `demo-apps/build.gradle`. `DOCBOX_RTPS_HOST_ID`/`DOCBOX_RTPS_APP_ID` are set **only on Windows** (`run` block, not `test`).
 - The `:setupLocalDb` task runs `sudo -u postgres psql` — requires postgres superuser. The SQL it runs (`setup_local_timescale.sql`) is legacy/reference-only; the file itself warns "NO USEN ESTO COMO REFERENCIA". No runtime code uses this schema.
 - **`flat/`** directory under `demo-apps/` is the Docker build artifact (all JARs + native `.so` files). Created by `makeFlatRuntime`; `build.sh --skip-gradle` skips regeneration if it already exists.
 
@@ -87,7 +87,7 @@ ICE applications (charting, PCA, EMR, etc.) register at:
 
 - JavaFX `--add-exports` JVM args required (6 exports, see the `run`, `runDevice`, and `startScripts` blocks of `demo-apps/build.gradle`).
 - `--enable-native-access=ALL-UNNAMED` required in Docker.
-- Spring XML context chain: `RtConfig.xml` (DDS infra) → `DeviceAdapterContext.xml` / `IceAppContainerContext.xml` → `DriverContext.xml`.
+- Spring XML context: `DeviceAdapterContext.xml` or `IceAppContainerContext.xml` import `RtConfig.xml` (DDS infra); `DriverContext.xml` loaded by device adapters. `DeviceAdapterContext.xml` also loads `ice.properties` from classpath + `${user.dir}/ice.properties` override.
 - `${mdpnp.domain}` placeholder defaults to `0` via `ice.properties`; override with `-Dmdpnp.domain=N`.
 - Settings persist to `.JumpStartSettings` in cwd or `$HOME`.
 - `ice.system.properties` (classpath + cwd override) sets `java.net.preferIPv4Stack=true`.
@@ -126,9 +126,9 @@ When adding a struct to `ice.idl`, annotate primary keys with `@key`. RTI auto-g
 | `interop-lab/demo-devices/src/main/resources/RtConfig.xml` | DDS participant, publisher, subscriber, event loop |
 | `data-types/x73-idl/src/main/idl/ice/samples/ice_library.xml` | DDS QoS profiles |
 
-Note: the **root** `ice.properties` holds only commented-out defaults and is **not** on the classpath — effective defaults live in `interop-lab/demo-apps/src/main/resources/ice.properties` (`mdpnp.domain=0`, etc.). Edit the classpath copy to change defaults.
+Three `ice.properties` files exist: root (comments only, NOT on classpath), `demo-apps/src/main/resources/ice.properties` (effective defaults, includes FHIR tokens), `headless-adapter/src/main/resources/ice.properties` (minimal). Edit the classpath copies to change defaults.
 
-**Security:** The classpath `ice.properties` currently contains live FHIR token credentials (`mdpnp.fhir.token.user`, `mdpnp.fhir.token.password`). These are environment-specific — never commit real credentials. The values shown in `CLAUDE.md` and below are examples only.
+**Security:** The classpath `ice.properties` currently contains live FHIR token credentials (`mdpnp.fhir.token.user`, `mdpnp.fhir.token.password`). These are environment-specific — never commit real credentials.
 
 ## DDS Discovery
 

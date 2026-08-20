@@ -123,6 +123,16 @@ class SimulatedEfficiaClinicalEngine {
         volatile int   nibpSystolic = 120;
         volatile int   nibpDiastolic = 80;
         volatile float temperature  = 36.8f;
+        volatile int   pvc          = 0;
+        volatile float perfusionIndex = 1.5f;
+        volatile float stI          = 0.2f;
+        volatile float stII         = 0.3f;
+        volatile float stIII        = 0.1f;
+        volatile float stAVR        = -0.3f;
+        volatile float stAVL        = 0.1f;
+        volatile float stAVF        = 0.2f;
+        volatile float stV          = 0.1f;
+        volatile float stMCL        = 0.0f;
         volatile String alarmType;    // null = no active alarm
         volatile int    alarmPriority; // 1=High/Red, 2=Medium/Yellow, 6=Low/Soft Inop
     }
@@ -204,6 +214,16 @@ class SimulatedEfficiaClinicalEngine {
             device.publishNumericSample(device.nibpSystolic,  sys, now);
             device.publishNumericSample(device.nibpDiastolic, dia, now);
             device.publishNumericSample(device.temperature,   t,   now);
+            device.publishNumericSample(device.pvc,           state.pvc, now);
+            device.publishNumericSample(device.perfusionIndex, state.perfusionIndex, now);
+            device.publishNumericSample(device.stI,           jitterFloat(state.stI, 0.1f), now);
+            device.publishNumericSample(device.stII,          jitterFloat(state.stII, 0.1f), now);
+            device.publishNumericSample(device.stIII,         jitterFloat(state.stIII, 0.1f), now);
+            device.publishNumericSample(device.stAVR,         jitterFloat(state.stAVR, 0.1f), now);
+            device.publishNumericSample(device.stAVL,         jitterFloat(state.stAVL, 0.1f), now);
+            device.publishNumericSample(device.stAVF,         jitterFloat(state.stAVF, 0.1f), now);
+            device.publishNumericSample(device.stV,           Float.NaN, now);
+            device.publishNumericSample(device.stMCL,         Float.NaN, now);
 
             // Publish alert if active
             if (state.alarmType != null) {
@@ -256,11 +276,19 @@ class SimulatedEfficiaClinicalEngine {
         // OBX rows — MDIL format: <partition>-<termcode>^<label>^MDIL
         int obx = 1;
         sb.append(obxRow(obx++, "NM", "0002-4182", "HR",   hr,  "0004-0aa0", "bpm"));
-        sb.append(obxRow(obx++, "NM", "0002-4190", "SpO2", sp,  "0004-0aa0", "%"));
-        sb.append(obxRow(obx++, "NM", "0002-4184", "RR",   rr,  "0004-0aa0", "rpm"));
+        sb.append(obxRow(obx++, "NM", "0002-4190", "SpO2", sp,  "0004-0220", "%"));
+        sb.append(obxRow(obx++, "NM", "0002-4184", "RR",   rr,  "0004-0ae0", "rpm"));
         sb.append(obxRow(obx++, "NM", "0002-4186", "NBPs", sys, "0004-0aa0", "mmHg"));
         sb.append(obxRow(obx++, "NM", "0002-4187", "NBPd", dia, "0004-0aa0", "mmHg"));
         sb.append(obxRow(obx++, "NM", "0002-4188", "Temp", t,   "0004-0aa0", "Cel"));
+        sb.append(obxRow(obx++, "NM", "0002-4261", "PVC",  state.pvc, "0004-09e0", "/min"));
+        sb.append(obxRow(obx++, "NM", "0002-4bb0", "Perf", state.perfusionIndex, "0004-0000", ""));
+        sb.append(obxRow(obx++, "NM", "0002-0301", "ST-I",   jitterFloat(state.stI, 0.1f),   "0004-0512", "mm"));
+        sb.append(obxRow(obx++, "NM", "0002-0302", "ST-II",  jitterFloat(state.stII, 0.1f),  "0004-0512", "mm"));
+        sb.append(obxRow(obx++, "NM", "0002-033d", "ST-III", jitterFloat(state.stIII, 0.1f), "0004-0512", "mm"));
+        sb.append(obxRow(obx++, "NM", "0002-033e", "ST-aVR", jitterFloat(state.stAVR, 0.1f), "0004-0512", "mm"));
+        sb.append(obxRow(obx++, "NM", "0002-033f", "ST-aVL", jitterFloat(state.stAVL, 0.1f), "0004-0512", "mm"));
+        sb.append(obxRow(obx++, "NM", "0002-0340", "ST-aVF", jitterFloat(state.stAVF, 0.1f), "0004-0512", "mm"));
 
         // Optional alarm OBX
         if (state.alarmType != null) {
@@ -508,6 +536,38 @@ class SimulatedEfficiaClinicalEngine {
                 state.temperature = Float.parseFloat(cmd.substring(5));
                 log.info("CMD: Temp set to {}", state.temperature);
 
+            } else if (cmd.startsWith("PVC=")) {
+                state.pvc = Integer.parseInt(cmd.substring(4));
+                log.info("CMD: PVC set to {}", state.pvc);
+
+            } else if (cmd.startsWith("PERF=")) {
+                state.perfusionIndex = Float.parseFloat(cmd.substring(5));
+                log.info("CMD: PerfIndex set to {}", state.perfusionIndex);
+
+            } else if (cmd.startsWith("ST_I=")) {
+                state.stI = Float.parseFloat(cmd.substring(5));
+                log.info("CMD: ST-I set to {}", state.stI);
+
+            } else if (cmd.startsWith("ST_II=")) {
+                state.stII = Float.parseFloat(cmd.substring(6));
+                log.info("CMD: ST-II set to {}", state.stII);
+
+            } else if (cmd.startsWith("ST_III=")) {
+                state.stIII = Float.parseFloat(cmd.substring(7));
+                log.info("CMD: ST-III set to {}", state.stIII);
+
+            } else if (cmd.startsWith("ST_AVR=")) {
+                state.stAVR = Float.parseFloat(cmd.substring(7));
+                log.info("CMD: ST-aVR set to {}", state.stAVR);
+
+            } else if (cmd.startsWith("ST_AVL=")) {
+                state.stAVL = Float.parseFloat(cmd.substring(7));
+                log.info("CMD: ST-aVL set to {}", state.stAVL);
+
+            } else if (cmd.startsWith("ST_AVF=")) {
+                state.stAVF = Float.parseFloat(cmd.substring(7));
+                log.info("CMD: ST-aVF set to {}", state.stAVF);
+
             } else if (cmd.startsWith("NIBP=")) {
                 String[] parts = cmd.substring(5).split("/");
                 state.nibpSystolic  = Integer.parseInt(parts[0].trim());
@@ -535,10 +595,14 @@ class SimulatedEfficiaClinicalEngine {
 
             } else if (cmd.equals("STATUS")) {
                 return String.format(Locale.ROOT,
-                        "HR=%d SpO2=%d RR=%d NIBP=%d/%d Temp=%.1f Alarm=%s/%d",
+                        "HR=%d SpO2=%d RR=%d NIBP=%d/%d Temp=%.1f PVC=%d Perf=%.1f " +
+                        "ST-I=%.2f ST-II=%.2f ST-III=%.2f ST-aVR=%.2f ST-aVL=%.2f ST-aVF=%.2f Alarm=%s/%d",
                         state.heartRate, state.spo2, state.respRate,
                         state.nibpSystolic, state.nibpDiastolic,
                         state.temperature,
+                        state.pvc, state.perfusionIndex,
+                        state.stI, state.stII, state.stIII,
+                        state.stAVR, state.stAVL, state.stAVF,
                         state.alarmType != null ? state.alarmType : "NONE",
                         state.alarmPriority);
 

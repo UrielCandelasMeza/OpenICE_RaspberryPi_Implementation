@@ -204,7 +204,7 @@ dependencies {
     implementation project(':interop-lab:demo-devices')
     implementation project(':interop-lab:demo-guis')
     implementation project(':interop-lab:demo-guis-javafx')
-    implementation project(':interop-lab:demo-purejavacomm')
+    implementation project(':interop-lab:demo-jserialcomm')
     implementation project(':data-types:x73-idl-rti-dds')
 
     implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.19.0'
@@ -326,6 +326,7 @@ run {
                '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
                '--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED',
                '--add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED',
+               '--enable-native-access=ALL-UNNAMED',
     ]
 
 }
@@ -360,6 +361,7 @@ task 'runDevice'(type: JavaExec) {
                '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
                '--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED',
                '--add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED',
+               '--enable-native-access=ALL-UNNAMED',
     ]
 
 }
@@ -417,7 +419,7 @@ startScripts {
     )
     unixScript.text = unixScript.text.replace(
       'DEFAULT_JVM_OPTS=""',
-      '''DEFAULT_JVM_OPTS="--add-exports=javafx.graphics/com.sun.javafx.iio=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.javafx.iio.common=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED --add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED"'''
+      '''DEFAULT_JVM_OPTS="--add-exports=javafx.graphics/com.sun.javafx.iio=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.javafx.iio.common=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED --add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED --add-exports=javafx.controls/com.sun.javafx.charts=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"'''
     )
     unixScript.text = unixScript.text.replace(
       'exec "$JAVACMD" "$@"',

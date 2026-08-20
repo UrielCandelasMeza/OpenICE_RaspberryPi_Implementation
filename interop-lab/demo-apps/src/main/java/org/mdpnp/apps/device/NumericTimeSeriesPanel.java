@@ -3,6 +3,7 @@ package org.mdpnp.apps.device;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,8 +43,39 @@ public class NumericTimeSeriesPanel extends DevicePanel {
         "Masimo_eegPSI",
         "Masimo_eegEMG",
         "Masimo_eegSEFL",
-        "Masimo_eegSEFR"
+        "Masimo_eegSEFR",
+        "Efficia_PVC",
+        "Efficia_ST_I",
+        "Efficia_ST_II",
+        "Efficia_ST_III",
+        "Efficia_ST_aVR",
+        "Efficia_ST_aVL",
+        "Efficia_ST_aVF",
+        "Efficia_ST_V",
+        "Efficia_ST_MCL"
     };
+
+    /**
+     * Metrics whose charts advance the x-axis only when data arrives (not every second).
+     * Efficia data arrives at ~1 Hz in discrete ORU messages, so the chart should
+     * advance with each data point rather than scrolling on a fixed timer.
+     */
+    private static final Set<String> DATA_DRIVEN_METRICS = Set.of(
+        rosetta.MDC_ECG_HEART_RATE.VALUE,
+        rosetta.MDC_PULS_OXIM_SAT_O2.VALUE,
+        rosetta.MDC_CO2_RESP_RATE.VALUE,
+        rosetta.MDC_PULS_OXIM_PULS_RATE.VALUE,
+        rosetta.MDC_PULS_OXIM_PERF_REL.VALUE,
+        "Efficia_PVC",
+        "Efficia_ST_I",
+        "Efficia_ST_II",
+        "Efficia_ST_III",
+        "Efficia_ST_aVR",
+        "Efficia_ST_aVL",
+        "Efficia_ST_aVF",
+        "Efficia_ST_V",
+        "Efficia_ST_MCL"
+    );
 
     private final TilePane chartPane;
     private final ScrollPane scrollPane;
@@ -58,6 +90,7 @@ public class NumericTimeSeriesPanel extends DevicePanel {
         DateAxis xAxis;
         XYChart.Series<Date, Number> series;
         ChangeListener<Date> timestampListener;
+        boolean dataDriven;
     }
 
     public NumericTimeSeriesPanel() {
@@ -138,6 +171,7 @@ public class NumericTimeSeriesPanel extends DevicePanel {
         info.chart = chart;
         info.xAxis = xAxis;
         info.series = series;
+        info.dataDriven = DATA_DRIVEN_METRICS.contains(metricId);
         info.timestampListener = (obs, oldVal, newVal) -> {
             if (newVal != null) {
                 ObservableList<XYChart.Data<Date, Number>> data = series.getData();
@@ -145,6 +179,13 @@ public class NumericTimeSeriesPanel extends DevicePanel {
                     data.remove(0);
                 }
                 data.add(new XYChart.Data<>(newVal, fx.getValue()));
+
+                // Data-driven charts: advance x-axis with each data point
+                if (info.dataDriven) {
+                    long t = newVal.getTime();
+                    info.xAxis.setLowerBound(new Date(t - WINDOW_SECONDS * 1000L));
+                    info.xAxis.setUpperBound(new Date(t + 5000));
+                }
             }
         };
         fx.source_timestampProperty().addListener(info.timestampListener);
@@ -176,8 +217,11 @@ public class NumericTimeSeriesPanel extends DevicePanel {
         Date upper = new Date(now);
         for (List<ChartInfo> charts : metricCharts.values()) {
             for (ChartInfo info : charts) {
-                info.xAxis.setLowerBound(lower);
-                info.xAxis.setUpperBound(upper);
+                // Data-driven charts advance x-axis on data arrival, not on timer
+                if (!info.dataDriven) {
+                    info.xAxis.setLowerBound(lower);
+                    info.xAxis.setUpperBound(upper);
+                }
             }
         }
     }

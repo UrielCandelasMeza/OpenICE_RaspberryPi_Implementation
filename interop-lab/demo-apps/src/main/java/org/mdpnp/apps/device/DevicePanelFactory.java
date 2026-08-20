@@ -32,6 +32,7 @@ public class DevicePanelFactory {
     }
 
     public static final Class<?>[] PANELS = new Class[] { 
+        EfficiaWaveAndParamsPanel.class,
         PulseOximeterPanel.class,
         ElectroCardioGramPanel.class,
         BloodPressurePanel.class, 
@@ -41,8 +42,7 @@ public class DevicePanelFactory {
         TemperatureProbePanel.class,
         RespRatePanel.class,
         WeightPanel.class,
-        PumpPanel.class,
-        NumericTimeSeriesPanel.class
+        PumpPanel.class
     };
     private final static Logger log = LoggerFactory.getLogger(DevicePanelFactory.class);
     public static final Method[] PANEL_SUPPORTED = new Method[PANELS.length];

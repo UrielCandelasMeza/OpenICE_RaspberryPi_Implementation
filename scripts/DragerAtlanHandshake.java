@@ -2,7 +2,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class DragerAtlanRealtime {
+public class DragerAtlanHandshake {
 
   /* 
    * Comando para ajuste de baudios y paridad para el Atlan
@@ -16,7 +16,7 @@ public class DragerAtlanRealtime {
   // Comandos útiles de MEDIBUS
   private static final String CMD_INIT = "Q";   // Handshake
   private static final String CMD_INFO = "V";   // Device ID
-  private static final String CMD_DATA = "R1";  // Datos de medición actuales (CP1)
+  private static final String CMD_DATA = "$";  // Datos de medición actuales (CP1)
   private static final String CMD_ALRM = "R2";  // Límites inferiores
   private static final String CMD_TEXT = "T1";  // Textos y mensajes de alarma
 

@@ -77,10 +77,16 @@ public class CreateAdapter {
             return null;
         }
         address = d.settingsController.addressProperty().get();
+        String baudRate = d.settingsController.baudRateProperty().get();
         String fhirServerName = d.settingsController.getFhirServerName();
         String emrServerName = d.settingsController.getEMRServerName();
         if(d.closePressed) {
         	return null;
+        }
+
+        // Set baud rate as system property so device drivers can read it
+        if (baudRate != null && !baudRate.isEmpty()) {
+            System.setProperty("mdpnp.serial.baudrate", baudRate);
         }
         
         /*

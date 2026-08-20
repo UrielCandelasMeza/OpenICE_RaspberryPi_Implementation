@@ -94,13 +94,14 @@ public class EfficiaHL7Parser {
                 // Mapear status
                 data.setStatus(EfficiaData.ObservationStatus.fromHl7Code(statusCode));
 
-                // Si status es X (Disconnected), los valores vienen vacíos
-                if (EfficiaData.ObservationStatus.DISCONNECTED == data.getStatus()) {
-                    continue;
-                }
-
                 // Extraer código MDIL del identifier (formato: "0002-4182^HR^MDIL")
                 String mdilCode = identifier.split("\\^")[0];
+
+                // Si status es X (Disconnected), marcar el métrico como desconectado
+                if (EfficiaData.ObservationStatus.DISCONNECTED == data.getStatus()) {
+                    data.addDisconnectedMetric(mdilCode);
+                    continue;
+                }
 
                 // Obtener valor
                 String value = obx.getObservationValue(0).getData().toString();
@@ -127,11 +128,32 @@ public class EfficiaHL7Parser {
                     case "0002-480a":
                         data.setPulse(numValue);
                         break;
+                    case "0002-4261":
+                        data.setPvc((int) numValue);
+                        break;
+                    case "0002-0301":
+                        data.setStI(numValue);
+                        break;
                     case "0002-0302":
                         data.setStII(numValue);
                         break;
-                    case "0002-4261":
-                        data.setPvc((int) numValue);
+                    case "0002-033d":
+                        data.setStIII(numValue);
+                        break;
+                    case "0002-033e":
+                        data.setStAVR(numValue);
+                        break;
+                    case "0002-033f":
+                        data.setStAVL(numValue);
+                        break;
+                    case "0002-0340":
+                        data.setStAVF(numValue);
+                        break;
+                    case "0002-0343":
+                        data.setStV(numValue);
+                        break;
+                    case "0002-034b":
+                        data.setStMCL(numValue);
                         break;
                     default:
                         log.debug("Unrecognized MDIL code: {}", mdilCode);

@@ -33,7 +33,7 @@ try:
                 decoded_text = raw_data.decode('utf-8').strip()
 
                 try:
-                    with open("datos_efficiaSerial.txt", "ab") as file:
+                    with open("test.txt", "ab") as file:
                         file.write(b"--- Nuevo Mensaje ---")
                         file.write(decoded_text.encode('utf-8'))
                         file.write(b"\n")

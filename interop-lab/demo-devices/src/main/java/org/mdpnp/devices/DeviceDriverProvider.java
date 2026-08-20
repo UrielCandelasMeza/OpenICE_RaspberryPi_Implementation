@@ -41,42 +41,51 @@ public interface DeviceDriverProvider {
 
     /**
      * @return metadate for the device suitable for building user
-     * interfaces and wiring subcomponents based on the subtype
-     * requirements.
+     *         interfaces and wiring subcomponents based on the subtype
+     *         requirements.
      */
-    DeviceType     getDeviceType();
+    DeviceType getDeviceType();
 
     /**
      * @param context
      * @return an actual device driver. There should be a lot of different
-     * implementations of this API.
+     *         implementations of this API.
      * @throws Exception
      */
     AbstractDevice newInstance(AbstractApplicationContext context) throws Exception;
 
     /**
      * @param context
-     * @return a wrapper for the driver that encapsulates lifecycle. The line between
-     * AbstractDevice vs DeviceAdapter is muddy - in purity of OOP there should be a more
-     * well-defined boundaries.
+     * @return a wrapper for the driver that encapsulates lifecycle. The line
+     *         between
+     *         AbstractDevice vs DeviceAdapter is muddy - in purity of OOP there
+     *         should be a more
+     *         well-defined boundaries.
      *
      * @throws Exception
      */
-    DeviceAdapter  create(AbstractApplicationContext context) throws Exception;
+    DeviceAdapter create(AbstractApplicationContext context) throws Exception;
 
     /**
-     * An interface for the device driver that is presented to the rest of the system. The base AbstractDevice object
-     * became too overloaded with being a responsible for both device interactions and assembly of infrastructure that
-     * a higher-level entity evolved. Though we moved all drivers to be assembled via spring ioc container, any
-     * alternative implementation will be supported as long as the interface is implemented.
+     * An interface for the device driver that is presented to the rest of the
+     * system. The base AbstractDevice object
+     * became too overloaded with being a responsible for both device interactions
+     * and assembly of infrastructure that
+     * a higher-level entity evolved. Though we moved all drivers to be assembled
+     * via spring ioc container, any
+     * alternative implementation will be supported as long as the interface is
+     * implemented.
      *
      * @see SpringDecorator
      */
-    interface DeviceAdapter  {
+    interface DeviceAdapter {
 
-        enum AdapterState { init, connected, stopped };
+        enum AdapterState {
+            init, connected, stopped
+        };
 
         <T> T getComponent(String name, Class<T> requiredType) throws Exception;
+
         <T> T getComponent(Class<T> requiredType) throws Exception;
 
         AbstractDevice getDevice();
@@ -84,12 +93,15 @@ public interface DeviceDriverProvider {
         void stop();
 
         void setPartition(String[] v);
+
         void setAddress(String address);
 
         boolean connect();
+
         void disconnect();
 
         void addObserver(Observer v);
+
         void deleteObserver(Observer v);
     }
 
@@ -99,11 +111,13 @@ public interface DeviceDriverProvider {
         private final String manufacturer, model, aliases[];
         private final int connectionCount;
 
-        public DeviceType(ice.ConnectionType connectionType, String manufacturer, String model, String alias, int connectionCount) {
+        public DeviceType(ice.ConnectionType connectionType, String manufacturer, String model, String alias,
+                int connectionCount) {
             this(connectionType, manufacturer, model, new String[] { alias }, connectionCount);
         }
-        
-        public DeviceType(ice.ConnectionType connectionType, String manufacturer, String model, String[] alias, int connectionCount) {
+
+        public DeviceType(ice.ConnectionType connectionType, String manufacturer, String model, String[] alias,
+                int connectionCount) {
             this.connectionType = connectionType;
             this.manufacturer = manufacturer;
             this.model = model;
@@ -130,7 +144,7 @@ public interface DeviceDriverProvider {
         public String getAlias() {
             return aliases[0];
         }
-        
+
         public int getConnectionCount() {
             return connectionCount;
         }
@@ -142,14 +156,19 @@ public interface DeviceDriverProvider {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             DeviceType that = (DeviceType) o;
 
-            if (!connectionType.equals(that.connectionType)) return false;
-            if (!manufacturer.equals(that.manufacturer)) return false;
-            if (!model.equals(that.model)) return false;
+            if (!connectionType.equals(that.connectionType))
+                return false;
+            if (!manufacturer.equals(that.manufacturer))
+                return false;
+            if (!model.equals(that.model))
+                return false;
 
             return true;
         }
@@ -163,14 +182,17 @@ public interface DeviceDriverProvider {
         }
     }
 
-
     /**
      * An implementation of DeviceDriverProvider that is using spring container for
      * the assembly of the component. String configuration could be very different
-     * depending on sophistication of the driver, but for a some of them beans provided
-     * in the basic DriverContext.xml should be sufficient. The purpose of this wrapper is
-     * to initialize the context in such a way that driverFactoryProcessor bean produces a
-     * driver of a desired type. This is still abstract as it does not deal with actual
+     * depending on sophistication of the driver, but for a some of them beans
+     * provided
+     * in the basic DriverContext.xml should be sufficient. The purpose of this
+     * wrapper is
+     * to initialize the context in such a way that driverFactoryProcessor bean
+     * produces a
+     * driver of a desired type. This is still abstract as it does not deal with
+     * actual
      * devices.
      */
     abstract class SpringLoadedDriver implements DeviceDriverProvider {
@@ -184,8 +206,8 @@ public interface DeviceDriverProvider {
 
             String contextPath = getContextPath();
 
-            AbstractApplicationContext context =
-                    new ClassPathXmlApplicationContext(new String[] { contextPath }, false, parentContext);
+            AbstractApplicationContext context = new ClassPathXmlApplicationContext(new String[] { contextPath }, false,
+                    parentContext);
 
             // set the context name to something readable and unique. this name will be used
             // to create jmx names for the beans that are to be exposed for management.
@@ -193,14 +215,15 @@ public interface DeviceDriverProvider {
             context.setDisplayName(getDeviceType().toString());
             context.setId(getDeviceType().getAlias() + hashCode());
 
-            // create a post processor to inject a device factory with the appropriate device
+            // create a post processor to inject a device factory with the appropriate
+            // device
             // implementation.
             //
             BeanPostProcessor bpp = new BeanPostProcessor() {
                 @Override
                 public Object postProcessBeforeInitialization(Object o, String s) throws BeansException {
-                    if(o instanceof AbstractDeviceFactory) {
-                        ((AbstractDeviceFactory)o).setDriverProvider(SpringLoadedDriver.this);
+                    if (o instanceof AbstractDeviceFactory) {
+                        ((AbstractDeviceFactory) o).setDriverProvider(SpringLoadedDriver.this);
                     }
                     return o;
                 }
@@ -211,35 +234,36 @@ public interface DeviceDriverProvider {
                 }
             };
 
-            // Register the bean post processor with the context. This will wire it up and it will be
+            // Register the bean post processor with the context. This will wire it up and
+            // it will be
             // able to assign the specified driver provider.
             //
-            context.addBeanFactoryPostProcessor(new BeanFactoryPostProcessor()
-            {
+            context.addBeanFactoryPostProcessor(new BeanFactoryPostProcessor() {
                 @Override
-                public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory) throws BeansException {
+                public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory)
+                        throws BeansException {
                     configurableListableBeanFactory.registerSingleton("driverFactoryProcessor", bpp);
                 }
             });
 
             // parent context will have a property resolver installed. We waht to make sure
-            // it is propagated down to child context so that we variable expantion works there
+            // it is propagated down to child context so that we variable expantion works
+            // there
             // as well.
             //
             PropertyPlaceholderConfigurer ppc = parentContext.getBean("propertyResolver",
-                                                                      PropertyPlaceholderConfigurer.class);
+                    PropertyPlaceholderConfigurer.class);
 
             context.addBeanFactoryPostProcessor(ppc);
 
             // now create them all.
             context.refresh();
 
-            parentContext.addApplicationListener(new ApplicationListener<ContextClosedEvent>()
-            {
+            parentContext.addApplicationListener(new ApplicationListener<ContextClosedEvent>() {
                 @Override
                 public void onApplicationEvent(ContextClosedEvent contextClosedEvent) {
                     // only care to trap parent close events to kill the child context
-                    if(parentContext == contextClosedEvent.getApplicationContext()) {
+                    if (parentContext == contextClosedEvent.getApplicationContext()) {
                         log.info("Handle parent context shutdown event");
                         context.close();
                     }
@@ -251,17 +275,20 @@ public interface DeviceDriverProvider {
     }
 
     /**
-     * factory to create an instance of the device adapter for a particular device driver. It is used
-     * in the generic DriverContext.xml spring configuration file. Not an ideal thing as we do a few
-     * autowiring things here that the container should be doing for us, but the alternative is for
+     * factory to create an instance of the device adapter for a particular device
+     * driver. It is used
+     * in the generic DriverContext.xml spring configuration file. Not an ideal
+     * thing as we do a few
+     * autowiring things here that the container should be doing for us, but the
+     * alternative is for
      * force each driver to have its own spring configuration. Dunno.
      */
     class AbstractDeviceFactory implements FactoryBean<AbstractDevice>, ApplicationContextAware {
 
         @Override
         public AbstractDevice getObject() throws Exception {
-            if(instance == null) {
-                if(driverProvider == null)
+            if (instance == null) {
+                if (driverProvider == null)
                     throw new IllegalStateException("Device factory had not been setup properly." +
                             SpringLoadedDriver.class.getName() +
                             " failed to wire AbstractDeviceFactory::setDriverProvider");
@@ -274,7 +301,7 @@ public interface DeviceDriverProvider {
                     log.info("Using the TCPSerialProvider, be sure you provided a host:port target");
                 }
 
-                instance = driverProvider.newInstance((AbstractApplicationContext)context);
+                instance = driverProvider.newInstance((AbstractApplicationContext) context);
                 instance.setExecutor(executor);
                 instance.init();
             }
@@ -297,7 +324,7 @@ public interface DeviceDriverProvider {
         }
 
         public void shutdown() {
-            if(instance != null)
+            if (instance != null)
                 instance.shutdown();
         }
 
@@ -316,14 +343,17 @@ public interface DeviceDriverProvider {
     }
 
     /**
-     * When device drivers are created as children of supervisor app, there will be multiple instances of the
-     * same beans. To differentiate between them, we need to assigned them different names based on the device id
+     * When device drivers are created as children of supervisor app, there will be
+     * multiple instances of the
+     * same beans. To differentiate between them, we need to assigned them different
+     * names based on the device id
      * they are assigned to.
      *
-     * Utility to pick unique names for jmx beans - jmx namespace is flat so we need to suffix all
+     * Utility to pick unique names for jmx beans - jmx namespace is flat so we need
+     * to suffix all
      * managed beans with the id of the context they came from.
      */
-    class DeviceFactoryNamingStrategy implements ObjectNamingStrategy,ApplicationContextAware {
+    class DeviceFactoryNamingStrategy implements ObjectNamingStrategy, ApplicationContextAware {
 
         @Override
         public ObjectName getObjectName(Object o, String s) throws MalformedObjectNameException {
@@ -338,13 +368,14 @@ public interface DeviceDriverProvider {
         public void setApplicationContext(ApplicationContext ac) throws BeansException {
             context = ac;
         }
+
         protected ApplicationContext context;
     }
 
     class SpringDecorator extends Observable implements DeviceAdapter {
 
         private final AbstractApplicationContext context;
-        private  String address=null;
+        private String address = null;
 
         public SpringDecorator(AbstractApplicationContext context) {
             this.context = context;
@@ -398,24 +429,22 @@ public interface DeviceDriverProvider {
         @Override
         public boolean connect() {
             AbstractDevice device = getDevice();
-            if(device == null)
+            if (device == null)
                 throw new IllegalStateException("Cannot connect - null device");
             if (device instanceof AbstractConnectedDevice) {
                 log.info("Connecting device to address: >" + address + "<");
                 boolean b = ((AbstractConnectedDevice) device).connect(address);
-                if(b) {
+                if (b) {
                     setChanged();
                     notifyObservers(AdapterState.connected);
                 }
                 return b;
-            }
-            else
+            } else
                 return true;
         }
 
         @Override
-        public void disconnect()
-        {
+        public void disconnect() {
             AbstractDevice device = getDevice();
             if (null != device && device instanceof AbstractConnectedDevice) {
                 AbstractConnectedDevice cDevice = (AbstractConnectedDevice) device;

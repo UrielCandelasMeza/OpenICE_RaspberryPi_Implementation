@@ -19,7 +19,6 @@ org.mdpnp.headless.HeadlessDeviceFactory$ControllablePump_SimulatorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$ControllableBPMonitor_SimulatorProvider
 org.mdpnp.headless.HeadlessDeviceFactory$MultiparameterProvider
 org.mdpnp.headless.HeadlessDeviceFactory$SimulatedEfficiaProvider
-org.mdpnp.headless.HeadlessDeviceFactory$EfficiaProvider
 org.mdpnp.headless.HeadlessDeviceFactory$SymbiqProvider
 org.mdpnp.headless.HeadlessDeviceFactory$DraegerAtlanProvider
 
@@ -49,3 +48,5 @@ org.mdpnp.headless.HeadlessDeviceFactory$PB980HeadlessProvider
 org.mdpnp.headless.HeadlessDeviceFactory$IntellivueEthernetProvider
 org.mdpnp.headless.HeadlessDeviceFactory$BernoulliProvider
 org.mdpnp.headless.HeadlessDeviceFactory$NKV550Provider
+org.mdpnp.headless.HeadlessDeviceFactory$EfficiaProvider
+

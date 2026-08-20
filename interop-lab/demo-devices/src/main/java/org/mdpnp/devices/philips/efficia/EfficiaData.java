@@ -1,5 +1,8 @@
 package org.mdpnp.devices.philips.efficia;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Data holder for Philips Efficia CM Series device driver.
  * Contains the following patient telemetry and alarm parameters:
@@ -100,7 +103,14 @@ public class EfficiaData {
     private Float respRate;
     private Float perfusionIndex;
     private Float pulse;
+    private Float stI;
     private Float stII;
+    private Float stIII;
+    private Float stAVR;
+    private Float stAVL;
+    private Float stAVF;
+    private Float stV;
+    private Float stMCL;
     private Integer pvc;
     private AlarmType alarmType = AlarmType.NONE;
     private AlarmPriority alarmPriority;
@@ -108,6 +118,7 @@ public class EfficiaData {
     private ObservationStatus status = ObservationStatus.UNKNOWN;
     private String timestamp;
     private String patientId;
+    private final Set<String> disconnectedMetrics = new HashSet<>();
 
     public Float getHeartRate() {
         return heartRate;
@@ -164,6 +175,17 @@ public class EfficiaData {
         this.pulse = pulse;
     }
 
+    public Float getStI() {
+        return stI;
+    }
+
+    /**
+     * @param stI The ST segment elevation/depression value for lead I in millimeters.
+     */
+    public void setStI(Float stI) {
+        this.stI = stI;
+    }
+
     public Float getStII() {
         return stII;
     }
@@ -173,6 +195,72 @@ public class EfficiaData {
      */
     public void setStII(Float stII) {
         this.stII = stII;
+    }
+
+    public Float getStIII() {
+        return stIII;
+    }
+
+    /**
+     * @param stIII The ST segment elevation/depression value for lead III in millimeters.
+     */
+    public void setStIII(Float stIII) {
+        this.stIII = stIII;
+    }
+
+    public Float getStAVR() {
+        return stAVR;
+    }
+
+    /**
+     * @param stAVR The ST segment elevation/depression value for lead aVR in millimeters.
+     */
+    public void setStAVR(Float stAVR) {
+        this.stAVR = stAVR;
+    }
+
+    public Float getStAVL() {
+        return stAVL;
+    }
+
+    /**
+     * @param stAVL The ST segment elevation/depression value for lead aVL in millimeters.
+     */
+    public void setStAVL(Float stAVL) {
+        this.stAVL = stAVL;
+    }
+
+    public Float getStAVF() {
+        return stAVF;
+    }
+
+    /**
+     * @param stAVF The ST segment elevation/depression value for lead aVF in millimeters.
+     */
+    public void setStAVF(Float stAVF) {
+        this.stAVF = stAVF;
+    }
+
+    public Float getStV() {
+        return stV;
+    }
+
+    /**
+     * @param stV The ST segment elevation/depression value for lead V in millimeters.
+     */
+    public void setStV(Float stV) {
+        this.stV = stV;
+    }
+
+    public Float getStMCL() {
+        return stMCL;
+    }
+
+    /**
+     * @param stMCL The ST segment elevation/depression value for lead MCL in millimeters.
+     */
+    public void setStMCL(Float stMCL) {
+        this.stMCL = stMCL;
     }
 
     public Integer getPvc() {
@@ -250,5 +338,22 @@ public class EfficiaData {
      */
     public void setPatientId(String patientId) {
         this.patientId = patientId;
+    }
+
+    /**
+     * Marks a metric as disconnected (status X in HL7 OBX).
+     *
+     * @param mdilCode The MDIL code of the disconnected metric.
+     */
+    public void addDisconnectedMetric(String mdilCode) {
+        disconnectedMetrics.add(mdilCode);
+    }
+
+    /**
+     * @param mdilCode The MDIL code to check.
+     * @return true if the metric was reported as disconnected (status X).
+     */
+    public boolean isDisconnected(String mdilCode) {
+        return disconnectedMetrics.contains(mdilCode);
     }
 }

@@ -19,7 +19,7 @@ public class EfficiaHL7Listener {
         // raw
         String serialPort = "/dev/ttyUSB0";
 
-        String outputFile = "datos_atlan.txt";
+        String outputFile = "datos_efficia4.txt";
         // ---------------------
 
         if (useSerial) {

@@ -124,6 +124,16 @@ public enum VitalSign {
     MasimoEEGSEFL("EEG SEF Left", "Hz", new String[] { "Masimo_eegSEFL" }, 10.0, 30.0, 5.0, 40.0, 0.0, 60.0, 5000L, 5000L, Color.yellow),
     MasimoEEGSEFR("EEG SEF Right", "Hz", new String[] { "Masimo_eegSEFR" }, 10.0, 30.0, 5.0, 40.0, 0.0, 60.0, 5000L, 5000L, Color.yellow),
 
+    EfficiaPVC("PVC", "/min", new String[] { "Efficia_PVC" }, 0.0, 10.0, 0.0, 30.0, 0.0, 100.0, 5000L, 5000L, Color.orange),
+    EfficiaSTI("ST I", "mm", new String[] { "Efficia_ST_I" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTII("ST II", "mm", new String[] { "Efficia_ST_II" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTIII("ST III", "mm", new String[] { "Efficia_ST_III" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTaVR("ST aVR", "mm", new String[] { "Efficia_ST_aVR" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTaVL("ST aVL", "mm", new String[] { "Efficia_ST_aVL" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTaVF("ST aVF", "mm", new String[] { "Efficia_ST_aVF" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTV("ST V", "mm", new String[] { "Efficia_ST_V" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+    EfficiaSTMCL("ST MCL", "mm", new String[] { "Efficia_ST_MCL" }, -0.5, 0.5, -2.0, 2.0, -5.0, 5.0, 5000L, 5000L, Color.cyan),
+
     Test("Test", "", new String[] {}, 60.0, 100.0, 40.0, 120.0, 10.0, 200.0, 5000L, 5000L, Color.red),
     ;
 

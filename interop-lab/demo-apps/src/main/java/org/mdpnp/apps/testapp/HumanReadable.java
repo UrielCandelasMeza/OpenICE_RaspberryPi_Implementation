@@ -35,6 +35,16 @@ public class HumanReadable {
 		MetricLabels.put("Masimo_eegEMG", "EEG EMG");
 		MetricLabels.put("Masimo_eegSEFL", "EEG SEF L");
 		MetricLabels.put("Masimo_eegSEFR", "EEG SEF R");
+
+		MetricLabels.put("Efficia_PVC", "PVC");
+		MetricLabels.put("Efficia_ST_I", "ST I");
+		MetricLabels.put("Efficia_ST_II", "ST II");
+		MetricLabels.put("Efficia_ST_III", "ST III");
+		MetricLabels.put("Efficia_ST_aVR", "ST aVR");
+		MetricLabels.put("Efficia_ST_aVL", "ST aVL");
+		MetricLabels.put("Efficia_ST_aVF", "ST aVF");
+		MetricLabels.put("Efficia_ST_V", "ST V");
+		MetricLabels.put("Efficia_ST_MCL", "ST MCL");
 		
 		/*
 		 * Some new values for ventilator application.  Note that not all of these keys are using rosetta or ice

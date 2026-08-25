@@ -15,10 +15,16 @@ public class DragerAtlanHandshake {
 
   // Comandos útiles de MEDIBUS
   private static final String CMD_INIT = "Q";   // Handshake
-  private static final String CMD_INFO = "V";   // Device ID
-  private static final String CMD_DATA = "$";  // Datos de medición actuales (CP1)
+  private static final String CMD_INFO = "R";   // Device ID
+  private static final String CMD_DATA = "*";  // Datos de medición actuales (CP1)
   private static final String CMD_ALRM = "R2";  // Límites inferiores
   private static final String CMD_TEXT = "T1";  // Textos y mensajes de alarma
+  
+  private static final String IDNO = "6666";
+  private static final String ID = "MBUS (C)F. TOEMBOEL";
+  private static final String REV = "00.20:04.01";
+
+  private static final String BYTES = "6666'Hola'00.20:04.01";
 
   public static void main(String[] args) throws Exception {
     File file = new File(PORT);
@@ -33,15 +39,53 @@ public class DragerAtlanHandshake {
 
     logToFile(log, "Iniciando comunicación con Atlan A350 XL (8E1)...");
 
+    String response = "";
     // 1. Handshake
     sendCommand(out, CMD_INIT, log);
-    readResponse(in, log);
+    response = readResponse(in, log);
+
+    // 2. Request device Identification
+    String id = sendID(IDNO, ID, REV);
+    sendCommand(out, CMD_INFO, log);
+    response = readResponse(in, log);
+    sendCommand(out, BYTES, log);
+    response = readResponse(in, log);
+
 
     // 2. Loop de Polling (Reemplaza el Keep-Alive NOP)
     while (true) {
       Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-      sendCommand(out, CMD_DATA, log);
-      readResponse(in, log);
+      if(response.equals("51")) sendCommand(out, CMD_INIT, log);
+      if(response.equals("52")) sendCommand(out, BYTES, log);
+      if(response.equals("15")) sendCommand(out, CMD_INIT, log);
+
+      sendCommand(out, "$", log);
+      response = readResponse(in, log);
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+
+
+      sendCommand(out, "%", log);
+      response = readResponse(in, log);
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+
+
+      sendCommand(out, "&", log);
+      response = readResponse(in, log);
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+
+
+      sendCommand(out, "+", log);
+      response = readResponse(in, log);
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+
+      sendCommand(out, ",", log);
+      response = readResponse(in, log);
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+
+      sendCommand(out, "-", log);
+      response = readResponse(in, log);
+      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
+
     }
   }
 
@@ -64,7 +108,7 @@ public class DragerAtlanHandshake {
     logToFile(log, "Enviado: " + payload + " | HEX: " + bytesToHex(frame));
   }
 
-  private static void readResponse(InputStream in, PrintWriter log) throws Exception {
+  private static String readResponse(InputStream in, PrintWriter log) throws Exception {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     int b;
     // Lectura bloqueante hasta encontrar el <CR> (0x0D)
@@ -83,7 +127,10 @@ public class DragerAtlanHandshake {
 
       logToFile(log, "Recibido ASCII: " + asciiStr);
       logToFile(log, "Recibido HEX: " + bytesToHex(data));
+      //return "";
+      return Integer.toHexString((int) data[1]);
     }
+    return "";
   }
 
   private static void logToFile(PrintWriter pw, String msg) {
@@ -100,4 +147,28 @@ public class DragerAtlanHandshake {
     }
     return sb.toString().trim();
   }
+
+  private static String sendID(String IDNO, String ID, String REV) {
+    int checksum = 0;
+
+    // checksum += 1;
+    // checksum += 82;
+    checksum += checksumStringToInt(IDNO);
+    checksum += checksumStringToInt(ID);
+    checksum += checksumStringToInt(REV);
+
+    String checksumString;
+    char cr = 14;
+
+    checksumString = Integer.toHexString(checksum);
+    checksumString = checksumString.toUpperCase();
+    return "" + checksumString.charAt(checksumString.length() - 2) + checksumString.charAt(checksumString.length() - 1) + cr;
+  }
+
+  private static int checksumStringToInt(String str) {
+    int checksumInt = 0;
+    for (int x = 0; x < str.length(); x++) checksumInt += (int) str.charAt(x);
+    return checksumInt;
+  }
 }
+

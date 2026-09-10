@@ -14,17 +14,17 @@ public class DragerAtlanHandshake {
   private static final String LOG_FILE = "atlan_realtime.log";
 
   // Comandos útiles de MEDIBUS
-  private static final String CMD_INIT = "Q";   // Handshake
-  private static final String CMD_INFO = "R";   // Device ID
-  private static final String CMD_DATA = "*";  // Datos de medición actuales (CP1)
-  private static final String CMD_ALRM = "R2";  // Límites inferiores
-  private static final String CMD_TEXT = "T1";  // Textos y mensajes de alarma
+  private static final String CMD_INIT = "Q";   // Handshake <51H>
+  private static final String CMD_INFO = "R";   // Device ID <52H>
+  private static final String CMD_DATA = "*";  // Datos de prueba aver si da algo
+  private static final String CMD_ALRM = "R2";  // Límites inferiores (No se usa aun)
+  private static final String CMD_TEXT = "T1";  // Textos y mensajes de alarma (No se usa aun)
   
   private static final String IDNO = "6666";
   private static final String ID = "MBUS (C)F. TOEMBOEL";
   private static final String REV = "00.20:04.01";
 
-  private static final String BYTES = "6666'Hola'00.20:04.01";
+  private static final String ID_BYTES = "6666'Hola'00.20:04.01";
 
   public static void main(String[] args) throws Exception {
     File file = new File(PORT);
@@ -40,58 +40,57 @@ public class DragerAtlanHandshake {
     logToFile(log, "Iniciando comunicación con Atlan A350 XL (8E1)...");
 
     String response = "";
-    // 1. Handshake
-    sendCommand(out, CMD_INIT, log);
-    response = readResponse(in, log);
 
-    // 2. Request device Identification
-    String id = sendID(IDNO, ID, REV);
-    sendCommand(out, CMD_INFO, log);
+    // 1. ICC
+    sendCommand(false, out, CMD_INIT, log);
     response = readResponse(in, log);
-    sendCommand(out, BYTES, log);
-    response = readResponse(in, log);
-
 
     // 2. Loop de Polling (Reemplaza el Keep-Alive NOP)
     while (true) {
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-      if(response.equals("51")) sendCommand(out, CMD_INIT, log);
-      if(response.equals("52")) sendCommand(out, BYTES, log);
-      if(response.equals("15")) sendCommand(out, CMD_INIT, log);
 
-      sendCommand(out, "$", log);
+      Thread.sleep(2000); // 2 segundos de delay segun medibus
+      
+      if(response.equals("51")) { 
+        sendCommand(true, out, CMD_INIT, log);
+        Thread.sleep(2000);
+
+      }
+      if(response.equals("52")) {
+        // Pide un 
+        sendCommand(true, out, ID_BYTES, log);
+        Thread.sleep(2000);
+      }
+      if(response.equals("15")) {
+        // Recibio un mal acknowledgment gracias a que la checsum estaba mal
+        sendCommand(true, out, CMD_INIT, log);
+        Thread.sleep(2000);
+      }
+
+      sendCommand(false, out, "-", log);
       response = readResponse(in, log);
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-
-
-      sendCommand(out, "%", log);
-      response = readResponse(in, log);
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-
-
-      sendCommand(out, "&", log);
-      response = readResponse(in, log);
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-
-
-      sendCommand(out, "+", log);
-      response = readResponse(in, log);
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-
-      sendCommand(out, ",", log);
-      response = readResponse(in, log);
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
-
-      sendCommand(out, "-", log);
-      response = readResponse(in, log);
-      Thread.sleep(1000); // 1 segundo para no saturar y mantener vivo el puerto
 
     }
   }
 
-  private static void sendCommand(OutputStream out, String payload, PrintWriter log) throws Exception {
+  private static void sendCommand(
+    boolean isRespond, 
+    OutputStream out, 
+    String payload, 
+    PrintWriter log
+  ) throws Exception {
+
     byte[] pBytes = payload.getBytes("ASCII");
-    int sum = 0x1B; // <ESC>
+    int sumSend = 0x1B; // <ESC>
+    int sumRespond = 0x01 // <SOH>
+    int sum;
+
+    // Validamos si tenemos que responder
+    if(isRespond) {
+      sum = sumRespond;
+    } else {
+      sum = sumSend;
+    }
+    
     for (byte b : pBytes) sum += b;
 
     String hexCs = String.format("%02X", sum & 0xFF);

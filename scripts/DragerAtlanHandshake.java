@@ -3,6 +3,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.ArrayList;
 
 class Response {
@@ -105,8 +106,8 @@ public class DragerAtlanHandshake {
   private static final String CMD_REQ_REALTIME_CONF = "S"; // Realtime Configuration <53H>
   private static final String CMD_CONFIGURE_REALTIME_TRANS = "T"; // Configure realtime transmission <54H>
   private static final String CMD_REALTIME_CONF_CHANGED = "V"; // Realtime configuration changed <56H>
-  // private static final String CMD_ENABLE_DISABLE_DATASTREAM = "Q";
-  // private static final String CMD_ENABLE_DISABLE_DATASTREAM = "Q";
+  private static final String CMD_SYNC_BYTE = "Ð"; // Es una D medio rara
+  private static final String CMD_END_OF_SYNC = "À";
 
   private static final String CMD_INFO = "R"; // Device ID <52H>
   private static final String CMD_DATA = "$"; // <24H>
@@ -180,7 +181,15 @@ public class DragerAtlanHandshake {
           break;
         default:
           // Aqui van todos los pasos para poder conectarse con el resto
-          sendCommand(false, out, CMD_DATA, log);
+          List<RealtimeConfiguration> config = sendConfig(response, out, in, log);
+
+          int[] rawBytes = readBytes(in, log);
+
+          double[] data = parsePacketData(rawBytes, config);
+
+          for(var d : data) {
+            logToFile(log, "Recibido: " + d );
+          }
       }
 
       checkResponse(response, out, in, log);
@@ -198,7 +207,7 @@ public class DragerAtlanHandshake {
     }
   }
 
-  private static void sendConfig(Optional<Response> response, OutputStream out, InputStream in, PrintWriter log)
+  private static List<RealtimeConfiguration> sendConfig(Optional<Response> response, OutputStream out, InputStream in, PrintWriter log)
       throws Exception {
 
     // Primero solicitamos la realtime configuration <53H>
@@ -272,6 +281,37 @@ public class DragerAtlanHandshake {
     response = readResponse(in, log);
     checkResponse(response, out, in, log);
 
+    int[] table = { 0xC1, 0xC2, 0xC3 };
+
+    int[] masks = { 0xC0, 0xC1, 0xC3, 0xC7, 0xCF }; 
+
+    StringBuilder toSendBuilder = new StringBuilder(CMD_SYNC_BYTE);
+    int numConfigs = config.size();
+
+    for (int i = 0; i < table.length; i++) {
+      
+      int startIndex = i * 4;
+      
+      if (startIndex >= numConfigs) break; 
+      
+      int elementsInGroup = Math.min(4, numConfigs - startIndex);
+      
+      String commandString = String.format("%02X", table[i]);
+      String argumentString = String.format("%02X", masks[elementsInGroup]);
+      
+      toSendBuilder.append(commandString);
+      toSendBuilder.append(argumentString);
+    }
+
+    // doble end of sync para avisar
+    toSendBuilder.append(CMD_END_OF_SYNC);
+    toSendBuilder.append(CMD_END_OF_SYNC);
+
+    String toSend = toSendBuilder.toString();
+    sendBytes(out, toSend, log);
+
+    return config;
+
   }
 
   private static int nBytesToString(List<Integer> array, int bytes, int base, int i) {
@@ -323,25 +363,61 @@ public class DragerAtlanHandshake {
     logToFile(log, "Enviado: " + payload + " | HEX: " + bytesToHex(frame));
   }
 
-  private static void sendBytes(
-      OutputStream out,
-      String payload,
-      PrintWriter log) throws Exception {
+ private static void sendBytes(
+  OutputStream out, 
+  String payload, 
+  PrintWriter log) 
+  throws Exception {
+    
+    byte[] pBytes = new byte[payload.length() / 2];
+    for (int i = 0; i < pBytes.length; i++) {
+        pBytes[i] = (byte) Integer.parseInt(payload.substring(2 * i, 2 * i + 2), 16);
+    }
 
-    byte[] pBytes = payload.getBytes("ASCII");
-
-    String hexCs = String.format("%02X", sum & 0xFF);
-    byte[] csBytes = hexCs.getBytes("ASCII");
-
-    byte[] frame = new byte[1 + pBytes.length + 2 + 1];
-    System.arraycopy(pBytes, 0, frame, 1, pBytes.length);
-    System.arraycopy(csBytes, 0, frame, 1 + pBytes.length, 2);
-    frame[frame.length - 1] = 0x0D; // CR
-
-    out.write(frame);
+    out.write(pBytes);
     out.flush();
-    logToFile(log, "Enviado: " + payload + " | HEX: " + bytesToHex(frame));
+    logToFile(log, "Enviado: " + payload + " | HEX: " + payload);
   }
+
+  private static int[] readBytes(InputStream in, PrintWriter log) throws Exception {
+
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+    int b;
+
+    while ((b = in.read()) != -1) {
+      buffer.write(b);
+    }
+
+    byte[] data = buffer.toByteArray();
+
+    int[] dataInt = new int[data.length];
+
+    for (int i = 0; i < data.length ; i++) {
+      Byte by = new Byte(data[i]);
+      dataInt[i] = by.intValue();
+    }
+
+    return dataInt;
+
+  }
+
+  public static double[] parsePacketData(int[] rawBytes, List<RealtimeConfiguration> activeConfigs) {
+    double[] values = new double[activeConfigs.size()];
+
+    for (int i = 0; i < activeConfigs.size(); i++) {
+        int byte1 = rawBytes[i * 2];
+        int byte2 = rawBytes[i * 2 + 1];
+        
+        int xbin = ((byte2 & 0x3F) << 6) | (byte1 & 0x3F);
+        RealtimeConfiguration c = activeConfigs.get(i);
+        
+        values[i] = c.min + (xbin * (c.max - c.min) / (double) c.maxBin);
+    }
+
+    return values;
+  }
+
 
   private static Optional<Response> readResponse(InputStream in, PrintWriter log) throws Exception {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();

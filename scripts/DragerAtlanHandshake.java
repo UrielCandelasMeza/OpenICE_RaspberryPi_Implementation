@@ -3,14 +3,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.ArrayList;
 
 class Response {
 
   public List<Integer> dataBytes;
   public boolean isCommand;
-  public boolean isValid;
+  public boolean validFrame;
   public String asciiString;
 
   public Response() {
@@ -21,17 +20,31 @@ class Response {
     this.dataBytes = new ArrayList<>();
 
     toDataBytes(bytes);
-    if (isValid(bytes[0])) {
+
+    if (bytes.length > 0 && isValidFirstByte(bytes[0])) {
+      this.validFrame = true;
       setIsCommand(bytes[0]);
     }
 
   }
 
   public int getOpByte() {
+    if (dataBytes.size() < 2) {
+      return -1;
+    }
+
     return dataBytes.get(1);
   }
 
-  private boolean isValid(int firstByte) {
+  public boolean hasOpByte() {
+    return dataBytes.size() >= 2;
+  }
+
+  public boolean isUsable() {
+    return validFrame && hasOpByte();
+  }
+
+  private boolean isValidFirstByte(int firstByte) {
 
     int[] allowed = new int[] { 0x01, 0x1B };
 
@@ -45,7 +58,7 @@ class Response {
 
   private void toDataBytes(byte[] bytes) {
     for (var b : bytes) {
-      dataBytes.add((int) b);
+      dataBytes.add(0xFF & (int) b);
     }
   }
 
@@ -93,7 +106,14 @@ public class DragerAtlanHandshake {
    */
 
   private static final String PORT = "/dev/ttyUSB0";
-  private static final String LOG_FILE = "atlan_realtime.log";
+  private static final String LOG_FILE_PREFIX = "atlan_realtime_";
+
+  private static final int READ_TIMEOUT_MS = 2000;
+  private static final int FAST_READ_MAX_MS = 3000;
+  private static final int READ_POLL_MS = 20;
+  private static final int MAX_NAK_RETRIES = 5;
+  private static final int NAK_BACKOFF_MS = 200;
+  private static final long POLL_INTERVAL_MS = 2000;
 
   // Comandos útiles de MEDIBUS
 
@@ -105,19 +125,22 @@ public class DragerAtlanHandshake {
   // private static final String CMD_REQUEST_TREND_DATA = "Q";
   private static final String CMD_REQ_REALTIME_CONF = "S"; // Realtime Configuration <53H>
   private static final String CMD_CONFIGURE_REALTIME_TRANS = "T"; // Configure realtime transmission <54H>
-  private static final String CMD_REALTIME_CONF_CHANGED = "V"; // Realtime configuration changed <56H>
+  // private static final String CMD_REALTIME_CONF_CHANGED = "V"; // Realtime
+  // configuration changed <56H>
   private static final String CMD_SYNC_BYTE = "Ð"; // Es una D medio rara
   private static final String CMD_END_OF_SYNC = "À";
 
   private static final String CMD_INFO = "R"; // Device ID <52H>
-  private static final String CMD_DATA = "$"; // <24H>
-  private static final String CMD_ALRM = "R2"; // Límites inferiores (No se usa aun)
-  private static final String CMD_TEXT = "T1"; // Textos y mensajes de alarma (No se usa aun)
+  // private static final String CMD_DATA = "$"; // <24H>
+  // private static final String CMD_ALRM = "R2"; // Límites inferiores (No se usa
+  // aun)
+  // private static final String CMD_TEXT = "T1"; // Textos y mensajes de alarma
+  // (No se usa aun)
   private static final String CMD_NAK = "\u0015";
 
-  private static final String IDNO = "0161";
-  private static final String ID = "OpenICE";
-  private static final String REV = "00.20:04.01";
+  // private static final String IDNO = "0161";
+  // private static final String ID = "OpenICE";
+  // private static final String REV = "00.20:04.01";
 
   private static final String ID_BYTES = "0161'OpenICE'02.10:06.00";
 
@@ -139,83 +162,151 @@ public class DragerAtlanHandshake {
       return;
     }
 
-    InputStream in = new FileInputStream(file);
-    OutputStream out = new FileOutputStream(file);
-    PrintWriter log = new PrintWriter(new FileWriter(LOG_FILE, true), true);
+    PrintWriter log = new PrintWriter(new FileWriter(logFileName(), true), true);
 
-    logToFile(log, "Iniciando comunicación con Atlan A350 XL (8E1)...");
+    InputStream in = null;
+    OutputStream out = null;
 
-    Optional<Response> response;
+    try {
+      in = new FileInputStream(file);
+      out = new FileOutputStream(file);
 
-    // 1. ICC
-    sendCommand(false, out, CMD_INIT, log);
+      final InputStream hookIn = in;
+      final OutputStream hookOut = out;
 
-    response = readResponse(in, log);
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        closeQuietly(hookIn);
+        closeQuietly(hookOut);
+        log.flush();
+      }));
 
-    // 2. Loop de Polling (Reemplaza el Keep-Alive NOP)
-    while (true) {
+      logToFile(log, "Iniciando comunicación con Atlan A350 XL (8E1)...");
 
-      // var lastResponse = response;
+      Optional<Response> response;
 
-      // Mientras no esta presente ni es valido envia acknowledgment negativo
-      checkResponse(response, out, in, log);
+      // 1. ICC
+      sendCommand(false, out, CMD_INIT, log);
 
-      var res = response.get();
+      response = readResponse(in, log);
 
-      boolean isCommand = res.isCommand;
+      // 2. Loop de Polling (Reemplaza el Keep-Alive NOP)
+      while (true) {
 
-      int val = res.getOpByte();
+        // var lastResponse = response;
 
-      switch (val) {
-        case 51:
-          if (isCommand) {
-            sendCommand(true, out, CMD_INIT, log);
-            response = readResponse(in, log);
+        try {
+
+          // Mientras no esta presente ni es valido envia acknowledgment negativo
+          response = checkResponse(response, out, in, log);
+
+          if (!isUsable(response)) {
+            logToFile(log, "Respuesta ausente o incompleta, se reintenta en el siguiente ciclo");
+            Thread.sleep(POLL_INTERVAL_MS);
+            continue;
           }
-          break;
-        case 52:
-          if (isCommand) {
-            sendCommand(true, out, ID_BYTES, log);
-            response = readResponse(in, log);
+
+          var res = response.get();
+
+          boolean isCommand = res.isCommand;
+
+          int val = res.getOpByte();
+
+          switch (val) {
+            case 51:
+              if (isCommand) {
+                sendCommand(true, out, CMD_INIT, log);
+                response = readResponse(in, log);
+              }
+              break;
+            case 52:
+              if (isCommand) {
+                sendCommand(true, out, ID_BYTES, log);
+                response = readResponse(in, log);
+              }
+              break;
+            default:
+              // Aqui van todos los pasos para poder conectarse con el resto
+              List<RealtimeConfiguration> config = sendConfig(response, out, in, log);
+
+              int[] rawBytes = readBytes(in, log);
+
+              double[] data = parsePacketData(rawBytes, config);
+
+              for (var d : data) {
+                logToFile(log, "Recibido: " + d);
+              }
           }
-          break;
-        default:
-          // Aqui van todos los pasos para poder conectarse con el resto
-          List<RealtimeConfiguration> config = sendConfig(response, out, in, log);
 
-          int[] rawBytes = readBytes(in, log);
+          response = checkResponse(response, out, in, log);
 
-          double[] data = parsePacketData(rawBytes, config);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          logToFile(log, "Interrumpido, cerrando comunicacion");
+          return;
+        } catch (Exception e) {
+          logToFile(log, "Error en el ciclo de polling: " + e);
+        }
 
-          for(var d : data) {
-            logToFile(log, "Recibido: " + d );
-          }
+        Thread.sleep(POLL_INTERVAL_MS); // 2 segundos de delay segun medibus
       }
 
-      checkResponse(response, out, in, log);
-
-      Thread.sleep(2000); // 2 segundos de delay segun medibus
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+      logToFile(log, "Interrumpido, cerrando comunicacion");
+    } finally {
+      closeQuietly(in);
+      closeQuietly(out);
+      log.flush();
+      log.close();
     }
 
   }
 
-  private static void checkResponse(Optional<Response> response, OutputStream out, InputStream in, PrintWriter log)
+  private static boolean isUsable(Optional<Response> response) {
+    return response != null && response.isPresent() && response.get().isUsable();
+  }
+
+  private static Optional<Response> checkResponse(Optional<Response> response, OutputStream out, InputStream in,
+      PrintWriter log)
       throws Exception {
-    while (!(response.isPresent() && response.get().isValid)) {
+
+    int attempts = 0;
+    Optional<Response> current = response;
+
+    while (!isUsable(current)) {
+
+      if (attempts >= MAX_NAK_RETRIES) {
+        logToFile(log, "Sin trama valida tras " + MAX_NAK_RETRIES + " NAK, se abandona la espera");
+        return current;
+      }
+
+      attempts++;
       sendCommand(true, out, CMD_NAK, log);
-      response = readResponse(in, log);
+      current = readResponse(in, log);
+
+      if (attempts > 1) {
+        Thread.sleep(NAK_BACKOFF_MS);
+      }
     }
+
+    return current;
   }
 
-  private static List<RealtimeConfiguration> sendConfig(Optional<Response> response, OutputStream out, InputStream in, PrintWriter log)
+  private static List<RealtimeConfiguration> sendConfig(Optional<Response> response, OutputStream out, InputStream in,
+      PrintWriter log)
       throws Exception {
 
     // Primero solicitamos la realtime configuration <53H>
     sendCommand(false, out, CMD_REQ_REALTIME_CONF, log);
     response = readResponse(in, log);
-    checkResponse(response, out, in, log);
+    response = checkResponse(response, out, in, log);
 
     // Despues enviamos la configuracion por cada byte <54H>
+
+    if (!isUsable(response)) {
+      logToFile(log, "Realtime configuration <53H> no valida, se omite el paso <54H>");
+      return new ArrayList<>();
+    }
 
     var res = response.get();
 
@@ -269,6 +360,11 @@ public class DragerAtlanHandshake {
       config.add(tempConfig);
     }
 
+    if (config.isEmpty()) {
+      logToFile(log, "Sin registros de realtime configuration, se omite el paso <54H>");
+      return config;
+    }
+
     StringBuilder payloadBuilder = new StringBuilder(CMD_CONFIGURE_REALTIME_TRANS);
     for (var c : config) {
       String value = String.format("%02X", c.dataCode) + "01";
@@ -279,26 +375,27 @@ public class DragerAtlanHandshake {
 
     sendCommand(false, out, payload, log);
     response = readResponse(in, log);
-    checkResponse(response, out, in, log);
+    response = checkResponse(response, out, in, log);
 
     int[] table = { 0xC1, 0xC2, 0xC3 };
 
-    int[] masks = { 0xC0, 0xC1, 0xC3, 0xC7, 0xCF }; 
+    int[] masks = { 0xC0, 0xC1, 0xC3, 0xC7, 0xCF };
 
     StringBuilder toSendBuilder = new StringBuilder(CMD_SYNC_BYTE);
     int numConfigs = config.size();
 
     for (int i = 0; i < table.length; i++) {
-      
+
       int startIndex = i * 4;
-      
-      if (startIndex >= numConfigs) break; 
-      
+
+      if (startIndex >= numConfigs)
+        break;
+
       int elementsInGroup = Math.min(4, numConfigs - startIndex);
-      
+
       String commandString = String.format("%02X", table[i]);
       String argumentString = String.format("%02X", masks[elementsInGroup]);
-      
+
       toSendBuilder.append(commandString);
       toSendBuilder.append(argumentString);
     }
@@ -317,12 +414,19 @@ public class DragerAtlanHandshake {
   private static int nBytesToString(List<Integer> array, int bytes, int base, int i) {
     StringBuilder sb = new StringBuilder();
     for (int j = 0; j < bytes; j++) {
+      if (i + j >= array.size()) {
+        return 0;
+      }
       sb.append((char) array.get(i + j).byteValue());
     }
 
     String str = sb.toString();
 
-    return Integer.parseInt(str.replace(" ", ""), base);
+    try {
+      return Integer.parseInt(str.replace(" ", ""), base);
+    } catch (NumberFormatException nfe) {
+      return 0;
+    }
   }
 
   private static void sendCommand(
@@ -363,15 +467,15 @@ public class DragerAtlanHandshake {
     logToFile(log, "Enviado: " + payload + " | HEX: " + bytesToHex(frame));
   }
 
- private static void sendBytes(
-  OutputStream out, 
-  String payload, 
-  PrintWriter log) 
-  throws Exception {
-    
+  private static void sendBytes(
+      OutputStream out,
+      String payload,
+      PrintWriter log)
+      throws Exception {
+
     byte[] pBytes = new byte[payload.length() / 2];
     for (int i = 0; i < pBytes.length; i++) {
-        pBytes[i] = (byte) Integer.parseInt(payload.substring(2 * i, 2 * i + 2), 16);
+      pBytes[i] = (byte) Integer.parseInt(payload.substring(2 * i, 2 * i + 2), 16);
     }
 
     out.write(pBytes);
@@ -385,17 +489,39 @@ public class DragerAtlanHandshake {
 
     int b;
 
-    while ((b = in.read()) != -1) {
+    long deadline = System.currentTimeMillis() + FAST_READ_MAX_MS;
+
+    while (System.currentTimeMillis() < deadline) {
+
+      if (in.available() <= 0) {
+        if (buffer.size() > 0) {
+          break;
+        }
+        Thread.sleep(READ_POLL_MS);
+        continue;
+      }
+
+      b = in.read();
+
+      if (b == -1) {
+        break;
+      }
+
       buffer.write(b);
     }
 
     byte[] data = buffer.toByteArray();
 
+    if (data.length > 0) {
+      logToFile(log, "Datos recibidos (" + data.length + " bytes): " + bytesToHex(data));
+    } else {
+      logToFile(log, "Sin datos recibidos en " + FAST_READ_MAX_MS + " ms");
+    }
+
     int[] dataInt = new int[data.length];
 
-    for (int i = 0; i < data.length ; i++) {
-      Byte by = new Byte(data[i]);
-      dataInt[i] = by.intValue();
+    for (int i = 0; i < data.length; i++) {
+      dataInt[i] = 0xFF & data[i];
     }
 
     return dataInt;
@@ -403,28 +529,55 @@ public class DragerAtlanHandshake {
   }
 
   public static double[] parsePacketData(int[] rawBytes, List<RealtimeConfiguration> activeConfigs) {
+
+    if (rawBytes == null || activeConfigs == null || activeConfigs.isEmpty()) {
+      return new double[0];
+    }
+
+    if (rawBytes.length < activeConfigs.size() * 2) {
+      return new double[0];
+    }
+
     double[] values = new double[activeConfigs.size()];
 
     for (int i = 0; i < activeConfigs.size(); i++) {
-        int byte1 = rawBytes[i * 2];
-        int byte2 = rawBytes[i * 2 + 1];
-        
-        int xbin = ((byte2 & 0x3F) << 6) | (byte1 & 0x3F);
-        RealtimeConfiguration c = activeConfigs.get(i);
-        
-        values[i] = c.min + (xbin * (c.max - c.min) / (double) c.maxBin);
+      int byte1 = rawBytes[i * 2];
+      int byte2 = rawBytes[i * 2 + 1];
+
+      int xbin = ((byte2 & 0x3F) << 6) | (byte1 & 0x3F);
+      RealtimeConfiguration c = activeConfigs.get(i);
+
+      if (c.maxBin == 0) {
+        values[i] = Double.NaN;
+        continue;
+      }
+
+      values[i] = c.min + (xbin * (c.max - c.min) / (double) c.maxBin);
     }
 
     return values;
   }
 
-
   private static Optional<Response> readResponse(InputStream in, PrintWriter log) throws Exception {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     int b;
 
+    long deadline = System.currentTimeMillis() + READ_TIMEOUT_MS;
+
     // Lectura bloqueante hasta encontrar el <CR> (0x0D)
-    while ((b = in.read()) != -1) {
+    while (System.currentTimeMillis() < deadline) {
+
+      if (in.available() <= 0) {
+        Thread.sleep(READ_POLL_MS);
+        continue;
+      }
+
+      b = in.read();
+
+      if (b == -1) {
+        break;
+      }
+
       buffer.write(b);
       if (b == 0x0D)
         break;
@@ -456,6 +609,19 @@ public class DragerAtlanHandshake {
     pw.flush();
   }
 
+  private static String logFileName() {
+    return LOG_FILE_PREFIX + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".log";
+  }
+
+  private static void closeQuietly(Closeable c) {
+    if (c != null) {
+      try {
+        c.close();
+      } catch (Exception ignored) {
+      }
+    }
+  }
+
   private static String bytesToHex(byte[] bytes) {
     StringBuilder sb = new StringBuilder();
     for (byte b : bytes) {
@@ -464,28 +630,33 @@ public class DragerAtlanHandshake {
     return sb.toString().trim();
   }
 
-  private static String sendID(String IDNO, String ID, String REV) {
-    int checksum = 0;
+  /*
+   * private static String sendID(String IDNO, String ID, String REV) {
+   * int checksum = 0;
+   * 
+   * // checksum += 1;
+   * // checksum += 82;
+   * checksum += checksumStringToInt(IDNO);
+   * checksum += checksumStringToInt(ID);
+   * checksum += checksumStringToInt(REV);
+   * 
+   * String checksumString;
+   * char cr = 14;
+   * 
+   * checksumString = Integer.toHexString(checksum);
+   * checksumString = checksumString.toUpperCase();
+   * return "" + checksumString.charAt(checksumString.length() - 2) +
+   * checksumString.charAt(checksumString.length() - 1)
+   * + cr;
+   * }
+   * 
+   * private static int checksumStringToInt(String str) {
+   * int checksumInt = 0;
+   * for (int x = 0; x < str.length(); x++)
+   * checksumInt += (int) str.charAt(x);
+   * return checksumInt;
+   * }
+   * 
+   */
 
-    // checksum += 1;
-    // checksum += 82;
-    checksum += checksumStringToInt(IDNO);
-    checksum += checksumStringToInt(ID);
-    checksum += checksumStringToInt(REV);
-
-    String checksumString;
-    char cr = 14;
-
-    checksumString = Integer.toHexString(checksum);
-    checksumString = checksumString.toUpperCase();
-    return "" + checksumString.charAt(checksumString.length() - 2) + checksumString.charAt(checksumString.length() - 1)
-        + cr;
-  }
-
-  private static int checksumStringToInt(String str) {
-    int checksumInt = 0;
-    for (int x = 0; x < str.length(); x++)
-      checksumInt += (int) str.charAt(x);
-    return checksumInt;
-  }
 }

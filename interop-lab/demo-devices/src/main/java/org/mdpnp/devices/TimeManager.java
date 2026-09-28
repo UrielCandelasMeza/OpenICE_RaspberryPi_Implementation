@@ -156,7 +156,16 @@ public class TimeManager {
                 eventLoop.addHandler(tsReadCond, tsReadHandler);
                 tsReader.enable();
                 
-                heartbeatTask = executor.scheduleAtFixedRate(() -> hbWriter.write(hbData, hbHandle), 
+                // A single uncaught exception here would permanently suppress every
+                // future execution of this task, and nothing ever restarts it, so the
+                // device would silently never come back. Never let that happen.
+                heartbeatTask = executor.scheduleAtFixedRate(() -> {
+                    try {
+                        hbWriter.write(hbData, hbHandle);
+                    } catch (Throwable t) {
+                        log.error("Failed to write heartbeat for " + uniqueDeviceIdentifier, t);
+                    }
+                },
                         0L, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
             }
             
@@ -280,7 +289,13 @@ public class TimeManager {
     
     private final List<TimeManagerListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     
-    private static final long HEARTBEAT_INTERVAL = 2000L;
+    // The supervisor removes a device from its list once it goes 5s without a
+    // heartbeat, so keep well inside that. 1s gives five missed beats of margin
+    // over the reader lease_duration in the "heartbeat" profile.
+    // The supervisor drops a device from its list once it goes 5s without a
+    // heartbeat, so stay well inside that. 1s leaves five missed beats of margin
+    // over the reader lease_duration in the "heartbeat" QoS profile.
+    private static final long HEARTBEAT_INTERVAL = 1000L;
     
     protected void processAliveHeartbeat(final String unique_device_identifier, final String type, String host_name) {
         

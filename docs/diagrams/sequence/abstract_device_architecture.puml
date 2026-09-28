@@ -1,0 +1,489 @@
+@startuml
+' ============================================================================
+' OpenICE / MD PnP — Arquitectura de AbstractDevice
+' Mapa de módulos, ciclo de vida, anatomía interna y guía de uso para drivers.
+' Nivel: componentes y flujos (NO lógica de protocolo).
+' ============================================================================
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam componentStyle rectangle
+
+title 1. Módulos principales y dependencias (v1.5.1-SNAPSHOT)
+
+package "data-types" as DT {
+  component "x73-idl\n\nIEEE 11073 IDL\n+ perfiles QoS\n(ice_library.xml)" as IDL
+  component "x73-idl-rti-dds\n\nBUILD: tipos Java generados\npor RTI (iceddsgenJava)" as GEN
+  component "org.mdpnp.rtiapi.data\n\nEventLoop · QosProfiles\nTopicUtil · InstanceModel*" as RTIAPI
+}
+
+package "devices/*" as DEV {
+  component "Protocolos puros (sin UI)\n\nMedibus · Intellivue\nStateMachine · NetworkConnection\nDeviceClock" as PROT
+}
+
+package "interop-lab" as IL {
+  component "demo-devices\n\nFRAMEWORK DE DRIVERS\nAbstractDevice y su jerarquía\nContextos Spring · JMX\nTimeManager · Partition" as DD
+  component "demo-guis*\n\nComponentes visuales\n(javafx=17.0.11)" as GUIS
+  component "demo-apps\n\nSUPERVISOR (JavaFX 25)\norg.mdpnp.apps.testapp.Main" as DA
+  component "demo-jserialcomm\n\nSerialProvider (jserialcomm)" as JSC
+}
+
+component "headless-adapter\n\nRUNTIME SIN JAVAFX\norg.mdpnp.headless.HeadlessMain" as HA
+
+component "RTI Connext DDS\n(nativo)" as RTI
+component "Spring 6.0.2" as SPRING
+
+component "HL7 v2 / FHIR R4\nGateway :8080 · HAPI :8099\nKeycloak :9080" as FHIR
+component "Mosquitto\n(openice/{udi}/{metric})" as MQTT
+
+IDL --> GEN : fuentes
+GEN --> RTIAPI : tipos + QoS
+DD --> PROT : usa (parser del protocolo)
+PROT --> DD : provee tipos base reutilizables
+
+DA --> DD : implementa drivers
+DA --> GUIS
+DD --> JSC : implementa / usa
+HA --> DD : implementa drivers
+HA --> JSC
+
+DD --> RTIAPI : importa
+DD --> SPRING : contextos XML
+DA --> SPRING
+HA --> SPRING
+
+DD --> RTI : participant/publisher/subscriber
+DA --> RTI : lectores (Supervisor)
+HA --> RTI : lectores (Pi)
+
+RTI --> FHIR : Numeric → Observation
+DA --> MQTT : app MQTT Send
+
+note right of DD
+  **Único módulo que contiene
+  AbstractDevice.java.**
+  Todo driver hereda de aquí.
+  No depende de JavaFX.
+end note
+
+note bottom of GEN
+  Código generado, no se edita.
+  compileJava.dependsOn iceddsgenJava
+end note
+@enduml
+
+
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+title 2. Ciclo de vida de un dispositivo (creación → datos → apagado)
+
+box "Arranque" #LightGray
+  participant "App\n(Main / HeadlessMain)" as App
+  participant "Contexto padre\nDeviceAdapterContext.xml" as Parent
+end box
+box "Infraestructura DDS (compartida)" #LightGray
+  participant "DomainParticipant\nPublisher · Subscriber\nEventLoop" as DDS
+end box
+box "Por dispositivo" #LightGray
+  participant "SPI\nDeviceDriverProvider\n(ServiceLoader)" as SPI
+  participant "Contexto hijo\nDriverContext.xml" as Child
+  participant "AbstractDeviceFactory\n(FactoryBean de Spring)" as Fac
+  participant "Driver concreto\n(extends AbstractDevice)" as Dev
+end box
+
+note over App, Dev
+  **FASE 0 — Infraestructura compartida**
+  RtConfig.xml crea los beans DDS UNA vez y los
+  comparte con todos los dispositivos hijos.
+end note
+
+App -> Parent : new ClassPathXmlApplicationContext()
+Parent -> DDS : beans domainParticipant,\npublisher, subscriber, eventLoop
+DDS --> App : referencias compartidas
+
+note over App, Dev
+  **FASE 1 — Resolución del tipo de dispositivo**
+  El alias ("Pump_Simulator", "DraegerV500") se resuelve
+  contra el ServiceLoader. Hay DOS registros SPI y ambos
+  deben listar el driver.
+end note
+
+App -> SPI : resolveDriver(alias)
+SPI --> App : DeviceDriverProvider + DeviceType\n(alias, fabricante, modelo, ConnectionType)
+
+note over App, Dev
+  **FASE 2 — Instanciación vía Spring hijo**
+  SpringLoadedDriver.create() abre un contexto hijo que
+  hereda del padre. Un BeanPostProcessor inyecta el provider
+  en AbstractDeviceFactory; su getObject() invoca newInstance().
+end note
+
+App -> SPI : ddp.create(parentContext)
+SPI -> Child : ClassPathXmlApplicationContext(DriverContext.xml)
+Child -> Fac : bean "driver" (FactoryBean<AbstractDevice>)
+Fac -> Fac : setDriverProvider(ddp)
+Fac -> DDS : hereda subscriber, publisher, eventLoop
+Fac -> Dev : new MiDriver(subscriber, publisher, eventLoop)
+activate Dev
+
+note over Dev
+  **Constructor de AbstractDevice** (una sola vez):
+  · DomainParticipant = subscriber.get_participant()
+  · DomainClock como proveedor de timestamps
+  · Por cada tópico: register_type + findOrCreateTopic
+    + create_datawriter_with_profile (ice_library + perfil)
+  · 1 LECTOR: GlobalAlarmLimitObjective
+  · 9 tópicos, 8 escritores, 1 lector
+  · deviceIdentity inicializado con DeviceIdentityBuilder
+end note
+
+Dev -> Dev : <<creates topics + writers>>
+deactivate Dev
+Fac -> Fac : instance.setExecutor(taskExecutor)\ninstance.init()
+Fac --> SPI : AbstractDevice
+SPI --> App : DeviceAdapter (SpringDecorator)
+
+note over App, Dev
+  **FASE 3 — Anuncio en la red (obligatorio antes de publicar datos)**
+  writeDeviceIdentity() exige un UDI no vacío.
+end note
+
+App -> Dev : connect() / start
+Dev -> Dev : deviceIdentity.unique_device_identifier = ...\nwriteDeviceIdentity()
+Dev -> DDS : write DeviceIdentity\n+ register/write DeviceAlertCondition
+Dev -> DDS : attach ReadCondition sobre\nGlobalAlarmLimitObjective (vía EventLoop)
+
+note over App, Dev
+  **FASE 4 — Máquina de estados de conexión**
+  (solo en AbstractConnectedDevice y descendientes)
+  Cada transición escribe DeviceConnectivity.
+  Salir de Connected ⇒ desregistrar TODAS las instancias.
+end note
+
+alt Dispositivo serial / red
+  Dev -> Dev : StateMachine:\nInitial → Connecting → Negotiating → Connected
+  Dev -> DDS : write DeviceConnectivity (tipo, estado, info, comPort)
+else Dispositivo simulado
+  Dev -> Dev : hilo/timer generador
+end
+
+note over App, Dev
+  **FASE 5 — Lazo de datos (el driver no toca DDS directamente)**
+  El driver llama a los métodos "sample()" heredados;
+  AbstractDevice traduce a escrituras DDS. La API es
+  autolimpante: si el handle no coincide con la clave
+  (metric_id, vendor_metric_id, instance_id, unit_id,
+  frequency) lo desregistra y lo vuelve a crear.
+end note
+
+loop Por cada lectura / muestra
+  Dev -> Dev : process(idx, in, out)\n(parsing del protocolo)
+  alt Numérico
+    Dev -> DDS : numericSample(...) → Numeric
+  else Onda
+    Dev -> DDS : sampleArraySample(...) → SampleArray
+  else Alarma
+    Dev -> DDS : writePatientAlert / writeTechnicalAlert\nwriteDeviceAlert → Alert / DeviceAlertCondition
+  else Límite
+    Dev -> DDS : alarmLimitSample(...) → AlarmLimit / LocalAlarmLimitObjective
+  end
+end
+
+DDS -> Dev : GlobalAlarmLimitObjective entrante\n(Reader → EventLoop → setAlarmLimit())
+
+note over App, Dev
+  **FASE 6 — Desconexión y apagado**
+  Spring destruye el contexto hijo: destroy-method="shutdown"
+  sobre el bean "driver". El cierre es en cascada
+  (shutdown de la subclase llama a super.shutdown()).
+end note
+
+alt Cierre por desconexión lógica
+  Dev -> Dev : stateChanged(): Connected → otro estado
+  Dev -> DDS : eventLoop.doLater(unregisterAllInstances())
+else Cierre de la aplicación
+  App -> Dev : disconnect() / context.close()
+  Dev -> Dev : shutdown() en cascada
+  Dev -> DDS : removeHandler + delete_readcondition\ndelete_datareader / delete_datawriter / delete_topic
+end
+
+@enduml
+
+
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+title 3. Anatomía de AbstractDevice (qué contiene y qué expone)
+
+abstract class AbstractDevice {
+  --
+  -- Infraestructura (inyectada por Spring) --
+  # EventLoop eventLoop
+  # ScheduledExecutorService executor
+  # DomainParticipant domainParticipant
+  # Publisher publisher
+  # Subscriber subscriber
+  --
+  -- Identidad --
+  # DeviceIdentity deviceIdentity
+  # getDeviceIdentity() · getManufacturer()
+    getModel() · getUniqueDeviceIdentifier()
+  # writeDeviceIdentity()
+  # iconOrBlank(model, icon)
+  # iconResourceName()
+  --
+  -- Escritores (1 por tópico) --
+  # DeviceIdentityDataWriter
+  # NumericDataWriter
+  # SampleArrayDataWriter
+  # AlarmLimitDataWriter
+  # LocalAlarmLimitObjectiveDataWriter
+  # DeviceAlertConditionDataWriter
+  # AlertDataWriter patientAlertWriter
+  # AlertDataWriter technicalAlertWriter
+  --
+  -- Lector (el único) --
+  # GlobalAlarmLimitObjectiveDataReader
+  # ReadCondition alarmLimitObjectiveCondition
+  --
+  -- API para el driver (protegida) --
+  + {static} InstanceHolder<T> createNumericInstance(...)
+  + numericSample(...) «6 sobrecargas»
+  + {static} InstanceHolder<T> createSampleArrayInstance(...)
+  + sampleArraySample(...) «5 sobrecargas»
+  + createAlarmLimitInstance(...) / alarmLimitSample(...)
+  + createAlarmLimitObjectiveInstance(...) / alarmLimitObjectiveSample(...)
+  + writePatientAlert(key, value) / markOld / clearOld
+  + writeTechnicalAlert(key, value) / markOld / clearOld
+  + writeDeviceAlert(alertState)
+  + unregisterAllInstances()
+  + {static} DeviceClock getClockProvider()
+  + setAlarmLimit(GlobalAlarmLimitObjective) «hook vacío»
+  + unsetAlarmLimit(metricId, limitType) «hook vacío»
+  --
+  -- Ciclo de vida --
+  + init() «hook vacío, post-construcción»
+  + shutdown() «borra lectores/escritores/tópicos»
+  --
+  -- Estado interno --
+  - List<InstanceHolder<Numeric>> registeredNumericInstances
+  - List<InstanceHolder<SampleArray>> registeredSampleArrayInstances
+  - List<InstanceHolder<AlarmLimit>> registeredAlarmLimitInstances
+  - List<InstanceHolder<LocalAlarmLimitObjective>> ...
+  - Map<String, InstanceHolder<Alert>> patientAlertInstances
+  - Map<String, InstanceHolder<Alert>> technicalAlertInstances
+  - Map<InstanceHandle_t, MetricAndType> instanceToAlarmLimit
+}
+
+class "InstanceHolder<T>" as IH {
+  + T data
+  + InstanceHandle_t handle
+}
+
+class "NullSaveContainer<T>" as NSC {
+  + boolean isNull()
+  + Iterator<T> iterator()
+  + int size()
+}
+class "ArrayContainer<T>" as AC
+class "CollectionContainer<T>" as CC
+class "MetricAndType" as MAT
+class "DomainClock" as DC <<implements DeviceClock>>
+
+class "AbstractConnectedDevice" as ACD {
+  # StateMachine<ConnectionState> stateMachine
+  # DeviceConnectivity deviceConnectivity
+  + {abstract} boolean connect(String)
+  + {abstract} void disconnect()
+  + {abstract} ConnectionType getConnectionType()
+  + getState() / awaitState(state, timeout)
+  # setConnectionInfo(String)
+}
+
+class "AbstractSerialDevice" as ASD {
+  # SerialSocket[] socket
+  # TimeAwareInputStream[] timeAwareInputStream
+  # SerialProvider[] serialProvider
+  + {abstract} void doInitCommands(int idx)
+  + {abstract} void process(int idx, in, out)
+  + reportConnected(idx, note) «dispara la transición»
+}
+
+class "AbstractDelegatingSerialDevice<T>" as ADSD
+class "AbstractSimulatedDevice" as ASDV
+class "AbstractSimulatedConnectedDevice" as ASC
+class "DeviceClock" as DCK <<interface>>
+class "Reading" as RDG <<nested>>
+
+AbstractDevice *-- IH
+AbstractDevice *-- NSC
+NSC <|-- AC
+NSC <|-- CC
+AbstractDevice --> MAT
+AbstractDevice --> DC
+DC ..|> DCK
+DCK *-- RDG
+
+AbstractDevice <|-- ACD
+AbstractDevice <|-- ASDV
+ASD <|-- ACD
+ADSD <|-- ASD
+ASC <|-- ACD
+
+note right of AbstractDevice
+  **Responsabilidad única:**
+  traducir datos del dispositivo a
+  escrituras DDS y llevar el registro
+  de instancias.
+
+  NO conoce el protocolo del equipo,
+  NO abre sockets, NO parsea bytes.
+end note
+
+note bottom of AbstractDevice
+  Las claves @key de cada struct IDL son
+  la identidad de instancia en DDS.
+  AbstractDevice guardará un handle por
+  combinación de claves.
+end note
+@enduml
+
+
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+title 4. Cómo usar AbstractDevice al escribir o refactorizar un driver
+
+actor "Desarrollador" as Dev
+participant "MiDriver\n(extends ...)" as D
+participant "AbstractDevice\n(heredado)" as A
+participant "DDS" as DDS
+participant "Spring" as S
+
+note over Dev, S
+  **ORDEN OBLIGATORIO**
+  1. Leer el manual del protocolo completo
+  2. Escribir ASSUMPTIONS.md
+     (parámetro / fuente / riesgo)
+  3. ESPERAR confirmación explícita
+  4. Recién entonces escribir código
+end note
+
+Dev -> D : 1. Elegir la clase base
+note right of D
+  · Solo publica datos y no tiene
+    noción de conexión →
+    AbstractSimulatedDevice
+  · Tiene estados de conexión →
+    AbstractConnectedDevice
+  · Puerto serie + watchdog de
+    silencio + handshake →
+    AbstractSerialDevice
+  · El protocolo ya está encapsulado
+    en un parser propio (RTMedibus,
+    Intellivue...) y solo hay que
+    delegar →
+    AbstractDelegatingSerialDevice<T>
+end note
+
+Dev -> D : 2. Constructor: super(sub, pub, eventLoop)
+D -> A : super(...)  «crea tópicos y escritores»
+A -> DDS : register_type + findOrCreateTopic\n+ create_datawriter_with_profile
+
+Dev -> D : 3. Pisar deviceIdentity\n(model, UDI, fabricante)
+D -> A : deviceIdentity.unique_device_identifier = udi
+note right of A
+  El UDI DEBE existir antes de
+  cualquier createNumericInstance()
+  o writeDeviceIdentity(), o se
+  lanza IllegalStateException.
+end note
+
+Dev -> D : 4. init() «hook post-construcción»
+note right of D
+  Spring inyecta el executor ANTES
+  de llamar init(). Es el lugar
+  correcto para arrancar timers
+  y tareas de fondo; el constructor
+  sólo debe inicializar estado.
+end note
+
+Dev -> D : 5. connect(address)
+D -> A : stateMachine.transitionIfLegal(Connected)
+A -> DDS : write DeviceConnectivity
+
+loop Por cada dato
+  Dev -> D : 6. en process() o en el timer
+  D -> A : numericSample(holder, valor,\nmetric_id, vendor_metric_id,\ninstance_id, unit_id, clock.instant())
+  A -> A : ¿el handle coincide con las claves?
+  A -> DDS : register_instance (si es nuevo)\n+ write
+  note right of A
+    La API es idempotente y
+    autolimpante: el driver puede
+    llamarla en bucle sin temor
+    a fugas de instancias.
+    Pasar null como valor desregistra.
+  end note
+end
+
+Dev -> D : 7. Alarmas
+D -> A : writePatientAlert("001", "texto")
+A -> DDS : register + write Alert
+Dev -> D : markOldPatientAlertInstances()\nwritePatientAlert(...) por clave
+Dev -> D : clearOldPatientAlertInstances()
+
+Dev -> D : 8. shutdown()
+D -> A : super.shutdown()
+A -> DDS : delete_readcondition / delete_datareader\ndelete_datawriter / delete_topic
+
+note over Dev, S
+  **REGISTRO OBLIGATORIO (si no, el driver desaparece)**
+  · demo-devices/.../META-INF/services/
+    org.mdpnp.devices.DeviceDriverProvider
+    → DeviceFactory$MiDriverProvider
+  · headless-adapter/.../META-INF/services/
+    org.mdpnp.devices.DeviceDriverProvider
+    → HeadlessDeviceFactory$MiDriverProvider
+  · Si tiene panel propio en el Supervisor:
+    DevicePanelFactory.PANELS + supported(Set<String>)
+  · El constructor DEBE tener la firma
+    (Subscriber, Publisher, EventLoop):
+    es la que invoca Spring.
+end note
+
+note over Dev, S
+  **PARA EL REFACTOR — invariantes a preservar**
+  · shutdown() en cascada: la subclase
+    debe llamar super.shutdown()
+  · EventLoop: todo acceso a un DataWriter
+    debe ocurrir en el hilo del EventLoop
+  · Salir del estado Connected desregistra
+    todas las instancias automáticamente
+  · Los DataWriter son PRIVADOS: los drivers
+    no deberían añadirlos
+  · getClockProvider() es la única fuente
+    de tiempo; no usar System.currentTimeMillis()
+  · El participant es COMPARTIDO entre todos
+    los dispositivos: nunca borrarlo aquí
+end note
+@enduml

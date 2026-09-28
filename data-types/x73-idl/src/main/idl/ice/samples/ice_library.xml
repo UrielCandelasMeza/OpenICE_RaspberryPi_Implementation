@@ -412,10 +412,23 @@
         <durability>
           <kind>DDS_VOLATILE_DURABILITY_QOS</kind>
         </durability>
+        <!-- This topic decides whether a device is still considered alive, so a
+         dropped heartbeat can remove it from the supervisor. Never inherit the
+         BEST_EFFORT default here: the datawriter side of this same profile is
+         RELIABLE, so this stays compatible. -->
+        <reliability>
+          <kind>DDS_RELIABLE_RELIABILITY_QOS</kind>
+          <max_blocking_time>
+            <sec>2</sec>
+            <nanosec>0</nanosec>
+          </max_blocking_time>
+          <acknowledgment_kind>DDS_PROTOCOL_ACKNOWLEDGMENT_MODE
+          </acknowledgment_kind>
+        </reliability>
 
         <!-- Just for completeness; durability is volatile -->
         <history>
-          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <kind>DDS_KEEP_LAST_HISTORY_QOS</kind>
           <depth>1</depth>
         </history>
       </datareader_qos>
@@ -449,13 +462,24 @@
                  is_default_qos="false">
       <datawriter_qos>
         <history>
-          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <kind>DDS_KEEP_LAST_HISTORY_QOS</kind>
           <depth>1</depth>
         </history>
       </datawriter_qos>
       <datareader_qos>
+        <!-- Time sync drives clock correction; losing samples silently skews
+         every derived measurement. Never inherit the BEST_EFFORT default. -->
+        <reliability>
+          <kind>DDS_RELIABLE_RELIABILITY_QOS</kind>
+          <max_blocking_time>
+            <sec>2</sec>
+            <nanosec>0</nanosec>
+          </max_blocking_time>
+          <acknowledgment_kind>DDS_PROTOCOL_ACKNOWLEDGMENT_MODE
+          </acknowledgment_kind>
+        </reliability>
         <history>
-          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <kind>DDS_KEEP_LAST_HISTORY_QOS</kind>
           <depth>1</depth>
         </history>
       </datareader_qos>

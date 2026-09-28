@@ -84,6 +84,8 @@ public abstract class AbstractDevice {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractDevice.class);
 
+
+    // TODO: Crear clase donde se manejen los eventos DDS y dejar la parte de la logica limpia
     protected final DomainParticipant domainParticipant;
     protected final Publisher publisher;
     protected final Subscriber subscriber;
@@ -899,6 +901,7 @@ public abstract class AbstractDevice {
         writeDeviceIdentity();
     }
 
+    // TODO: Cambiar esto que sigue abajo hacia un nuevo archivo
     static interface NullSaveContainer<T>
     {
         boolean isNull();

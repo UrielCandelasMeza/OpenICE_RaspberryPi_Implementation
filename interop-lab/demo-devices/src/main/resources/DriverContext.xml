@@ -21,9 +21,23 @@
   <bean id="taskExecutor"
         class="org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean">
     <property name="poolSize" value="1" />
-    <property name="WaitForTasksToCompleteOnShutdown" value="false" />
+    <property name="waitForTasksToCompleteOnShutdown" value="false" />
     <property name="threadGroupName" value="driverTaskExecutor"/>
   </bean>
+
+  <!--
+  The heartbeat must never be delayed by the driver poll loop, the serial
+  watchdog or the partition controller: if it is delayed past the 5s lease in
+  the "heartbeat" QoS profile the supervisor drops the device for good. The
+  TimeManager schedules nothing else on its executor, so it gets its own.
+  -->
+  <bean id="heartbeatExecutor"
+        class="org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean">
+    <property name="poolSize" value="1" />
+    <property name="waitForTasksToCompleteOnShutdown" value="false" />
+    <property name="threadGroupName" value="driverHeartbeatExecutor"/>
+  </bean>
+
 
   <!--
   This is probably the most spring-involved part of codebase: we want to have one spring configuration
@@ -63,7 +77,7 @@
   -->
   <bean id="timeManager" class="org.mdpnp.devices.TimeManager"
         destroy-method="stop">
-    <constructor-arg ref="taskExecutor"></constructor-arg>
+    <constructor-arg ref="heartbeatExecutor"></constructor-arg>
     <constructor-arg ref="eventLoop"></constructor-arg>
     <constructor-arg ref="publisher"></constructor-arg>
     <constructor-arg ref="subscriber"></constructor-arg>

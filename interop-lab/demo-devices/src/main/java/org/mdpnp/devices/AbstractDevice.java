@@ -86,6 +86,8 @@ public abstract class AbstractDevice {
 
 
     // TODO: Crear clase donde se manejen los eventos DDS y dejar la parte de la logica limpia
+
+    
     protected final DomainParticipant domainParticipant;
     protected final Publisher publisher;
     protected final Subscriber subscriber;

@@ -11,6 +11,7 @@ class Response {
   public boolean isCommand;
   public boolean validFrame;
   public String asciiString;
+  public String opByte;
 
   public Response() {
   }
@@ -20,20 +21,38 @@ class Response {
     this.dataBytes = new ArrayList<>();
 
     toDataBytes(bytes);
+    setIsCommand();
 
     if (bytes.length > 0 && isValidFirstByte(bytes[0])) {
       this.validFrame = true;
-      setIsCommand(bytes[0]);
     }
 
   }
 
-  public int getOpByte() {
+  public Response(byte[] bytes, String asciiString, int opByte) {
+    this(bytes, asciiString);
+
+    this.opByte = "" + opByte;
+  }
+
+  public String getOpByte() {
     if (dataBytes.size() < 2) {
-      return -1;
+      return "";
     }
 
-    return dataBytes.get(1);
+    StringBuilder sb = new StringBuilder();
+
+    var arr = asciiString.split("");
+
+    for (int i = 0; i < 5; i++) {
+      if (i >= 3) {
+        sb.append(arr[i]);
+      }
+    }
+
+    String opByte = sb.toString().trim();
+
+    return opByte;
   }
 
   public boolean hasOpByte() {
@@ -62,11 +81,21 @@ class Response {
     }
   }
 
-  private void setIsCommand(byte start) {
+  public void setIsCommand() {
 
-    // int startInt = (int) start;
+    StringBuilder sb = new StringBuilder();
 
-    if (!(start == 0x1B)) {
+    var arr = asciiString.split("");
+
+    for (int i = 0; i < 2; i++) {
+      sb.append(arr[i]);
+    }
+
+    String command = sb.toString().trim();
+
+    System.out.println(command);
+
+    if (!command.equals("1B")) {
       this.isCommand = false;
       return;
     }
@@ -95,6 +124,22 @@ class RealtimeConfiguration {
     this.maxBin = maxBin;
   }
 
+}
+
+class Read {
+  public int[] dataBytes;
+  public Response response;
+
+  public Read() {
+  }
+
+  public Read(int[] dataBytes) {
+    this.dataBytes = dataBytes;
+  }
+
+  public Read(Response response) {
+    this.response = response;
+  }
 }
 
 public class DragerAtlanHandshake {
@@ -142,7 +187,7 @@ public class DragerAtlanHandshake {
   // private static final String ID = "OpenICE";
   // private static final String REV = "00.20:04.01";
 
-  private static final String ID_BYTES = "0161'OpenICE'02.10:06.00";
+  private static final String ID_BYTES = "0161'OpenICE'02.11:06.00";
 
   /*
    * Para poder recibir datos necesitamos enviar primero el <53H>
@@ -152,7 +197,7 @@ public class DragerAtlanHandshake {
    * 
    * Posterior habilitamos los datastreams usando una serie de bytes
    * para poder recibir los datos.
-   * 
+   * in
    */
 
   public static void main(String[] args) throws Exception {
@@ -186,8 +231,19 @@ public class DragerAtlanHandshake {
 
       // 1. ICC
       sendCommand(false, out, CMD_INIT, log);
-
       response = readResponse(in, log);
+
+      Thread.sleep(1000);
+
+      sendCommand(false, out, CMD_INFO, log);
+      response = readResponse(in, log);
+
+      Thread.sleep(1000);
+
+      sendCommand(true, out, CMD_INFO, log);
+      response = readResponse(in, log);
+
+      List<RealtimeConfiguration> config = null;
 
       // 2. Loop de Polling (Reemplaza el Keep-Alive NOP)
       while (true) {
@@ -197,43 +253,103 @@ public class DragerAtlanHandshake {
         try {
 
           // Mientras no esta presente ni es valido envia acknowledgment negativo
-          response = checkResponse(response, out, in, log);
+          // response = checkResponse(response, out, in, log);
 
           if (!isUsable(response)) {
             logToFile(log, "Respuesta ausente o incompleta, se reintenta en el siguiente ciclo");
+
             Thread.sleep(POLL_INTERVAL_MS);
             continue;
           }
 
           var res = response.get();
 
+          res.setIsCommand();
+
           boolean isCommand = res.isCommand;
 
-          int val = res.getOpByte();
+          String val = res.getOpByte();
+
+          System.out.println(">>> Op Byte: " + val);
+          System.out.println(">>> Is Command: " + isCommand);
 
           switch (val) {
-            case 51:
+            // En realidad es 51 pero para mas facil ahora
+            case "51":
               if (isCommand) {
-                sendCommand(true, out, CMD_INIT, log);
+                sendCommand(false, out, CMD_INIT, log);
+                response = readResponse(in, log);
+
+                Thread.sleep(1000);
+
+                sendCommand(false, out, CMD_INFO, log);
+                response = readResponse(in, log);
+
+                Thread.sleep(1000);
+
+                sendCommand(true, out, CMD_INFO, log);
                 response = readResponse(in, log);
               }
-              break;
-            case 52:
+
+              // En realidad es 52 pero para mas facil ahora
+            case "52":
               if (isCommand) {
                 sendCommand(true, out, ID_BYTES, log);
                 response = readResponse(in, log);
               }
-              break;
+
             default:
               // Aqui van todos los pasos para poder conectarse con el resto
-              List<RealtimeConfiguration> config = sendConfig(response, out, in, log);
+              if (config == null || config.size() == 0) {
+                config = sendConfig(response, out, in, log);
+              }
 
-              int[] rawBytes = readBytes(in, log);
+              Read r = readBytes(in, log);
+
+              if (r.response != null && r.response instanceof Response) {
+                response = readResponse(in, log);
+                System.out.println("Aqui llego");
+
+                if (isUsable(response) && response.get().getOpByte().equals("51")) {
+                  sendCommand(false, out, CMD_INIT, log);
+                  response = readResponse(in, log);
+
+                  Thread.sleep(1000);
+
+                  sendCommand(false, out, CMD_INFO, log);
+                  response = readResponse(in, log);
+
+                  Thread.sleep(1000);
+
+                  sendCommand(true, out, CMD_INFO, log);
+                  response = readResponse(in, log);
+                } else if (isUsable(response) && response.get().getOpByte().equals("52")) {
+                  sendCommand(true, out, ID_BYTES, log);
+                  response = readResponse(in, log);
+                } else if (isUsable(response) && response.get().getOpByte().equals("29")) {
+                  sendCommand(true, out, "\u0029", log);
+                  response = readResponse(in, log);
+                }
+                break;
+              }
+
+              int[] rawBytes = r.dataBytes;
+
+              for (int b : rawBytes) {
+                logToFile(log, "[Bytes recibidos]: " + b);
+              }
 
               double[] data = parsePacketData(rawBytes, config);
 
+              int i = 0;
               for (var d : data) {
-                logToFile(log, "Recibido: " + d);
+                var c = config.get(i);
+                logToFile(log, "[Data Recibida]: " + d);
+                logToFile(log, "[MIN]: " + c.min);
+                logToFile(log, "[MAX]: " + c.max);
+                logToFile(log, "[MAXBIN]: " + c.maxBin);
+                // logToFile(log, "[xbin]: " + );
+                i++;
               }
           }
 
@@ -299,7 +415,9 @@ public class DragerAtlanHandshake {
     // Primero solicitamos la realtime configuration <53H>
     sendCommand(false, out, CMD_REQ_REALTIME_CONF, log);
     response = readResponse(in, log);
-    response = checkResponse(response, out, in, log);
+    // response = checkResponse(response, out, in, log);
+
+    Thread.sleep(1000);
 
     // Despues enviamos la configuracion por cada byte <54H>
 
@@ -366,22 +484,35 @@ public class DragerAtlanHandshake {
     }
 
     StringBuilder payloadBuilder = new StringBuilder(CMD_CONFIGURE_REALTIME_TRANS);
-    for (var c : config) {
-      String value = String.format("%02X", c.dataCode) + "01";
-      payloadBuilder.append(value);
-    }
+    /*
+     * for (var c : config) {
+     * String value = String.format("%02X", c.dataCode) + "01";
+     * payloadBuilder.append(value);
+     * }
+     */
+
+    payloadBuilder.append(String.format("%02X", 0x00) + "01");
+    payloadBuilder.append(String.format("%02X", 0x01) + "01");
+    payloadBuilder.append(String.format("%02X", 0x05) + "01");
+    payloadBuilder.append(String.format("%02X", 0x06) + "00");
+    payloadBuilder.append(String.format("%02X", 0x07) + "00");
+    payloadBuilder.append(String.format("%02X", 0x08) + "00");
+    payloadBuilder.append(String.format("%02X", 0x0A) + "00");
+    payloadBuilder.append(String.format("%02X", 0x2A) + "00");
 
     String payload = payloadBuilder.toString();
 
     sendCommand(false, out, payload, log);
     response = readResponse(in, log);
-    response = checkResponse(response, out, in, log);
+    // response = checkResponse(response, out, in, log);
 
-    int[] table = { 0xC1, 0xC2, 0xC3 };
+    Thread.sleep(1000);
 
-    int[] masks = { 0xC0, 0xC1, 0xC3, 0xC7, 0xCF };
+    // int[] table = { 0xC1, 0xC2, 0xC3 };
 
-    StringBuilder toSendBuilder = new StringBuilder(CMD_SYNC_BYTE);
+    int[] table = { 0xC1, 0xC3, 0xC7, 0xCF };
+
+    StringBuilder toSendBuilder = new StringBuilder("\u00D0");
     int numConfigs = config.size();
 
     for (int i = 0; i < table.length; i++) {
@@ -394,10 +525,10 @@ public class DragerAtlanHandshake {
       int elementsInGroup = Math.min(4, numConfigs - startIndex);
 
       String commandString = String.format("%02X", table[i]);
-      String argumentString = String.format("%02X", masks[elementsInGroup]);
+      // String argumentString = String.format("%02X", masks[elementsInGroup]);
 
       toSendBuilder.append(commandString);
-      toSendBuilder.append(argumentString);
+      // toSendBuilder.append(argumentString);
     }
 
     // doble end of sync para avisar
@@ -405,7 +536,14 @@ public class DragerAtlanHandshake {
     toSendBuilder.append(CMD_END_OF_SYNC);
 
     String toSend = toSendBuilder.toString();
-    sendBytes(out, toSend, log);
+    // sendBytes(out, toSend, log);
+
+    System.out.println("Enviando datos");
+    // out.write(new byte[] { (byte) 0xD0, (byte) 0xC1, (byte) 0xCF, (byte) 0xC3,
+    // (byte) 0xCF, (byte) 0xC0, (byte) 0xC0 });
+    out.write(new byte[] { (byte) 0xD0, (byte) 0xC1, (byte) 0xC7, (byte) 0xC0, (byte) 0xC0 });
+
+    Thread.sleep(1000);
 
     return config;
 
@@ -475,7 +613,7 @@ public class DragerAtlanHandshake {
 
     byte[] pBytes = new byte[payload.length() / 2];
     for (int i = 0; i < pBytes.length; i++) {
-      pBytes[i] = (byte) Integer.parseInt(payload.substring(2 * i, 2 * i + 2), 16);
+      pBytes[i] = (byte) Integer.parseInt(payload.substring(i), 16);
     }
 
     out.write(pBytes);
@@ -483,7 +621,7 @@ public class DragerAtlanHandshake {
     logToFile(log, "Enviado: " + payload + " | HEX: " + payload);
   }
 
-  private static int[] readBytes(InputStream in, PrintWriter log) throws Exception {
+  private static Read readBytes(InputStream in, PrintWriter log) throws Exception {
 
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -524,7 +662,11 @@ public class DragerAtlanHandshake {
       dataInt[i] = 0xFF & data[i];
     }
 
-    return dataInt;
+    if (dataInt[0] == 0x1B) {
+      return new Read(new Response(data, bytesToHex(data)));
+    }
+
+    return new Read(dataInt);
 
   }
 
@@ -599,7 +741,9 @@ public class DragerAtlanHandshake {
     logToFile(log, "Recibido ASCII: " + asciiStr);
     logToFile(log, "Recibido HEX: " + bytesHex);
 
-    return Optional.of(new Response(data, asciiStr));
+    // System.out.println(">>>>> Op Byte: " + data[1]);
+
+    return Optional.of(new Response(data, bytesHex));
   }
 
   private static void logToFile(PrintWriter pw, String msg) {

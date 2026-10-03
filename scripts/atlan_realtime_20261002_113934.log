@@ -1,0 +1,155 @@
+[2026-10-02 11:39:34.463] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 11:39:34.468] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 11:39:34.510] Recibido ASCII: <SOH>Q52<CR>
+[2026-10-02 11:39:34.510] Recibido HEX: 01 51 35 32 0D
+[2026-10-02 11:39:34.511] Enviado: R | HEX: 1B 52 36 44 0D
+[2026-10-02 11:39:34.634] Recibido ASCII: <SOH>R5555'A3XX'02.11:0<ESC>R6D<CR>
+[2026-10-02 11:39:34.634] Recibido HEX: 01 52 35 35 35 35 27 41 33 58 58 27 30 32 2E 31 31 3A 30 1B 52 36 44 0D
+[2026-10-02 11:39:34.634] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:34.635] Recibido ASCII: 6.00B9<CR>
+[2026-10-02 11:39:34.635] Recibido HEX: 36 2E 30 30 42 39 0D
+[2026-10-02 11:39:34.635] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 11:39:34.739] Recibido ASCII: <SOH>S00   20000-  21  121FFF01   20000- 1<ESC>R6D<CR>
+[2026-10-02 11:39:34.739] Recibido HEX: 01 53 30 30 20 20 20 32 30 30 30 30 2D 20 20 32 31 20 20 31 32 31 46 46 46 30 31 20 20 20 32 30 30 30 30 2D 20 31 1B 52 36 44 0D
+[2026-10-02 11:39:34.741] Enviado: T0001 | HEX: 1B 54 30 30 30 31 33 30 0D
+[2026-10-02 11:39:34.847] Recibido ASCII: 81  181FFF05   20000    0  100FFF06   20000    0  120FFF07   20000    0   20FFF08   20000    0  100FFF0A   20000    0   20FFF2A   20000    0   20FFFF3<CR>
+[2026-10-02 11:39:34.847] Recibido HEX: 38 31 20 20 31 38 31 46 46 46 30 35 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 36 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 32 30 46 46 46 30 37 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 30 38 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 32 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 46 33 0D
+[2026-10-02 11:39:34.848] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 11:39:34.848] Recibido ASCII: <SOH>T55<CR>
+[2026-10-02 11:39:34.849] Recibido HEX: 01 54 35 35 0D
+[2026-10-02 11:39:34.849] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "ÐC" under radix 16
+[2026-10-02 11:39:36.850] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:36.850] Recibido ASCII: <ESC>R6D<CR>
+[2026-10-02 11:39:36.850] Recibido HEX: 1B 52 36 44 0D
+[2026-10-02 11:39:36.851] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:39:36.916] Datos recibidos (20 bytes): 01 53 30 30 20 20 20 32 30 30 30 30 2D 20 20 32 31 20 20 31
+[2026-10-02 11:39:38.917] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:38.921] Recibido ASCII: 21FFF01   20000- 181  181FFF05   20000    0  100FFF06   20000    0  120FFF07   20000    0   20FFF08   20000    0  100FFF0A   20000    0   20FFF2A   20000    0   20FFFF3<CR>
+[2026-10-02 11:39:38.921] Recibido HEX: 32 31 46 46 46 30 31 20 20 20 32 30 30 30 30 2D 20 31 38 31 20 20 31 38 31 46 46 46 30 35 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 36 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 32 30 46 46 46 30 37 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 30 38 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 32 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 46 33 0D
+[2026-10-02 11:39:38.922] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 11:39:39.045] Recibido ASCII: <SOH>S00   20000-  21  121FFF01   20000- 1<ESC>Q6C<CR>
+[2026-10-02 11:39:39.045] Recibido HEX: 01 53 30 30 20 20 20 32 30 30 30 30 2D 20 20 32 31 20 20 31 32 31 46 46 46 30 31 20 20 20 32 30 30 30 30 2D 20 31 1B 51 36 43 0D
+[2026-10-02 11:39:39.046] Enviado: T0001 | HEX: 1B 54 30 30 30 31 33 30 0D
+[2026-10-02 11:39:39.107] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:39:39.107] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:39:39.107] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "ÐC" under radix 16
+[2026-10-02 11:39:41.108] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:41.210] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:39:41.210] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:39:41.211] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:39:44.213] Sin datos recibidos en 3000 ms
+[2026-10-02 11:39:46.214] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:46.215] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:39:46.216] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:39:46.216] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:39:46.317] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:39:48.318] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:48.419] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:39:48.420] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:39:48.420] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:39:51.426] Sin datos recibidos en 3000 ms
+[2026-10-02 11:39:53.427] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:53.427] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:39:53.427] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:39:53.427] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:39:53.529] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:39:55.529] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:39:55.631] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:39:55.631] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:39:55.631] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:39:58.636] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:00.637] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:00.638] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:00.638] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:00.638] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:00.720] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:40:02.721] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:02.823] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:02.823] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:02.823] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:05.843] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:07.845] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:07.845] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:07.845] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:07.846] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:07.907] Datos recibidos (3 bytes): 01 15 31
+[2026-10-02 11:40:09.908] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:09.909] Recibido ASCII: 6<CR>
+[2026-10-02 11:40:09.910] Recibido HEX: 36 0D
+[2026-10-02 11:40:09.910] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 11:40:10.032] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:10.033] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:10.034] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:10.035] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 11:40:12.035] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:12.117] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:12.117] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:12.118] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:15.127] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:17.128] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:17.128] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:17.128] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:17.128] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:17.230] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:40:19.231] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:19.312] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:19.312] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:19.312] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:22.319] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:24.320] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:24.321] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:24.321] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:24.321] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:24.423] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:40:26.423] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:26.525] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:26.525] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:26.526] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:29.535] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:31.536] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:31.536] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:31.537] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:31.537] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:31.618] Datos recibidos (1 bytes): 01
+[2026-10-02 11:40:33.619] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:33.619] Recibido ASCII: 16<CR>
+[2026-10-02 11:40:33.620] Recibido HEX: 15 31 36 0D
+[2026-10-02 11:40:33.620] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 11:40:33.722] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:33.722] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:33.722] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:33.723] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 11:40:35.723] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:35.826] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:35.826] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:35.826] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:38.828] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:40.829] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:40.829] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:40.829] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:40.829] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:40.930] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:40:42.931] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:43.012] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:43.012] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:43.012] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:46.014] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:48.014] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:48.015] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:48.015] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:48.015] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:48.116] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:40:50.117] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:50.219] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:50.219] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:50.219] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:53.220] Sin datos recibidos en 3000 ms
+[2026-10-02 11:40:55.220] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:55.221] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:40:55.221] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:40:55.221] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:40:55.322] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:40:57.323] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:40:57.424] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:40:57.424] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:40:57.425] Sin registros de realtime configuration, se omite el paso <54H>

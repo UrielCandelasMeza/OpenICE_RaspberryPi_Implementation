@@ -1,0 +1,4 @@
+[2026-10-02 13:08:33.601] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 13:08:33.606] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 13:08:33.667] Recibido ASCII: <SOH>Q52<CR>
+[2026-10-02 13:08:33.668] Recibido HEX: 01 51 35 32 0D

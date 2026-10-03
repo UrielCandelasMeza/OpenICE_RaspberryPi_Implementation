@@ -1,0 +1,41 @@
+[2026-10-02 11:50:10.579] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 11:50:10.583] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 11:50:10.645] Recibido ASCII: <SOH>Q52<CR>
+[2026-10-02 11:50:10.646] Recibido HEX: 01 51 35 32 0D
+[2026-10-02 11:50:10.647] Enviado: R | HEX: 1B 52 36 44 0D
+[2026-10-02 11:50:10.769] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:50:10.769] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:50:10.770] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:10.851] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:50:10.852] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:50:10.853] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:50:13.860] Sin datos recibidos en 3000 ms
+[2026-10-02 11:50:15.861] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:15.862] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:50:15.862] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:50:15.862] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:50:15.947] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:50:17.948] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:18.049] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:50:18.050] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:50:18.050] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:50:21.055] Sin datos recibidos en 3000 ms
+[2026-10-02 11:50:23.057] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:23.057] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:50:23.058] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:50:23.058] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:50:23.139] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:50:25.140] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:25.243] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:50:25.243] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:50:25.244] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:50:28.248] Sin datos recibidos en 3000 ms
+[2026-10-02 11:50:30.249] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:30.250] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 11:50:30.250] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 11:50:30.251] Sin registros de realtime configuration, se omite el paso <54H>
+[2026-10-02 11:50:30.353] Datos recibidos (5 bytes): 01 15 31 36 0D
+[2026-10-02 11:50:32.354] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 11:50:32.457] Recibido ASCII: <SOH>16<CR>
+[2026-10-02 11:50:32.458] Recibido HEX: 01 15 31 36 0D
+[2026-10-02 11:50:32.458] Sin registros de realtime configuration, se omite el paso <54H>

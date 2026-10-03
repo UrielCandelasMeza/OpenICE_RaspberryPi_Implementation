@@ -1,0 +1,1086 @@
+[2026-10-02 12:36:28.710] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 12:36:28.714] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 12:36:28.777] Recibido ASCII: <SOH>Q52<CR>
+[2026-10-02 12:36:28.777] Recibido HEX: 01 51 35 32 0D
+[2026-10-02 12:36:28.778] Enviado: R | HEX: 1B 52 36 44 0D
+[2026-10-02 12:36:28.901] Recibido ASCII: <SOH>R5555'A3XX'02.11:0<ESC>R6D<CR>
+[2026-10-02 12:36:28.901] Recibido HEX: 01 52 35 35 35 35 27 41 33 58 58 27 30 32 2E 31 31 3A 30 1B 52 36 44 0D
+[2026-10-02 12:36:28.902] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 12:36:28.902] Recibido ASCII: 6.00B9<CR>
+[2026-10-02 12:36:28.902] Recibido HEX: 36 2E 30 30 42 39 0D
+[2026-10-02 12:36:28.903] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 12:36:29.006] Recibido ASCII: <SOH>S00   20000-  21  121FFF01   20000- 1<ESC>R6D<CR>
+[2026-10-02 12:36:29.006] Recibido HEX: 01 53 30 30 20 20 20 32 30 30 30 30 2D 20 20 32 31 20 20 31 32 31 46 46 46 30 31 20 20 20 32 30 30 30 30 2D 20 31 1B 52 36 44 0D
+[2026-10-02 12:36:29.008] Enviado: T0001 | HEX: 1B 54 30 30 30 31 33 30 0D
+[2026-10-02 12:36:29.114] Recibido ASCII: 81  181FFF05   20000    0  100FFF06   20000    0  120FFF07   20000    0   20FFF08   20000    0  100FFF0A   20000    0   20FFF2A   20000    0   20FFFF3<CR>
+[2026-10-02 12:36:29.114] Recibido HEX: 38 31 20 20 31 38 31 46 46 46 30 35 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 36 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 32 30 46 46 46 30 37 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 30 38 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 32 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 46 33 0D
+[2026-10-02 12:36:29.115] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 12:36:29.115] Recibido ASCII: <SOH>T55<CR>
+[2026-10-02 12:36:29.115] Recibido HEX: 01 54 35 35 0D
+[2026-10-02 12:36:29.179] Datos recibidos (5 bytes): 1B 52 36 44 0D
+[2026-10-02 12:36:29.180] [Bytes recibidos]: 27
+[2026-10-02 12:36:29.180] [Bytes recibidos]: 82
+[2026-10-02 12:36:29.181] [Bytes recibidos]: 54
+[2026-10-02 12:36:29.181] [Bytes recibidos]: 68
+[2026-10-02 12:36:29.181] [Bytes recibidos]: 13
+[2026-10-02 12:36:29.182] [Data Recibida]: 19.88351648351648
+[2026-10-02 12:36:32.779] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:36:32.780] [Bytes recibidos]: 27
+[2026-10-02 12:36:32.780] [Bytes recibidos]: 81
+[2026-10-02 12:36:32.780] [Bytes recibidos]: 54
+[2026-10-02 12:36:32.780] [Bytes recibidos]: 67
+[2026-10-02 12:36:32.781] [Bytes recibidos]: 13
+[2026-10-02 12:36:32.781] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:36.376] Datos recibidos (3 bytes): 1B 51 36
+[2026-10-02 12:36:36.377] [Bytes recibidos]: 27
+[2026-10-02 12:36:36.377] [Bytes recibidos]: 81
+[2026-10-02 12:36:36.377] [Bytes recibidos]: 54
+[2026-10-02 12:36:36.378] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:38.378] Datos recibidos (2 bytes): 43 0D
+[2026-10-02 12:36:38.379] [Bytes recibidos]: 67
+[2026-10-02 12:36:38.379] [Bytes recibidos]: 13
+[2026-10-02 12:36:38.379] [Data Recibida]: 7.954822954822955
+[2026-10-02 12:36:40.380] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:36:40.380] [Bytes recibidos]: 27
+[2026-10-02 12:36:40.381] [Bytes recibidos]: 81
+[2026-10-02 12:36:40.381] [Bytes recibidos]: 54
+[2026-10-02 12:36:40.381] [Bytes recibidos]: 67
+[2026-10-02 12:36:40.382] [Bytes recibidos]: 13
+[2026-10-02 12:36:40.382] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:43.595] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:36:43.595] [Bytes recibidos]: 27
+[2026-10-02 12:36:43.596] [Bytes recibidos]: 81
+[2026-10-02 12:36:43.597] [Bytes recibidos]: 54
+[2026-10-02 12:36:43.597] [Bytes recibidos]: 67
+[2026-10-02 12:36:43.597] [Bytes recibidos]: 13
+[2026-10-02 12:36:43.597] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:47.172] Datos recibidos (3 bytes): 1B 51 36
+[2026-10-02 12:36:47.172] [Bytes recibidos]: 27
+[2026-10-02 12:36:47.173] [Bytes recibidos]: 81
+[2026-10-02 12:36:47.173] [Bytes recibidos]: 54
+[2026-10-02 12:36:47.173] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:49.174] Datos recibidos (2 bytes): 43 0D
+[2026-10-02 12:36:49.175] [Bytes recibidos]: 67
+[2026-10-02 12:36:49.175] [Bytes recibidos]: 13
+[2026-10-02 12:36:49.175] [Data Recibida]: 7.954822954822955
+[2026-10-02 12:36:51.176] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:36:51.176] [Bytes recibidos]: 27
+[2026-10-02 12:36:51.176] [Bytes recibidos]: 81
+[2026-10-02 12:36:51.177] [Bytes recibidos]: 54
+[2026-10-02 12:36:51.177] [Bytes recibidos]: 67
+[2026-10-02 12:36:51.177] [Bytes recibidos]: 13
+[2026-10-02 12:36:51.177] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:54.390] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:36:54.391] [Bytes recibidos]: 27
+[2026-10-02 12:36:54.392] [Bytes recibidos]: 81
+[2026-10-02 12:36:54.392] [Bytes recibidos]: 54
+[2026-10-02 12:36:54.392] [Bytes recibidos]: 67
+[2026-10-02 12:36:54.392] [Bytes recibidos]: 13
+[2026-10-02 12:36:54.392] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:57.969] Datos recibidos (3 bytes): 1B 51 36
+[2026-10-02 12:36:57.969] [Bytes recibidos]: 27
+[2026-10-02 12:36:57.970] [Bytes recibidos]: 81
+[2026-10-02 12:36:57.970] [Bytes recibidos]: 54
+[2026-10-02 12:36:57.970] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:36:59.971] Datos recibidos (2 bytes): 43 0D
+[2026-10-02 12:36:59.971] [Bytes recibidos]: 67
+[2026-10-02 12:36:59.971] [Bytes recibidos]: 13
+[2026-10-02 12:36:59.971] [Data Recibida]: 7.954822954822955
+[2026-10-02 12:37:01.972] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:01.972] [Bytes recibidos]: 27
+[2026-10-02 12:37:01.972] [Bytes recibidos]: 81
+[2026-10-02 12:37:01.972] [Bytes recibidos]: 54
+[2026-10-02 12:37:01.973] [Bytes recibidos]: 67
+[2026-10-02 12:37:01.973] [Bytes recibidos]: 13
+[2026-10-02 12:37:01.973] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:05.186] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:05.186] [Bytes recibidos]: 27
+[2026-10-02 12:37:05.187] [Bytes recibidos]: 81
+[2026-10-02 12:37:05.187] [Bytes recibidos]: 54
+[2026-10-02 12:37:05.187] [Bytes recibidos]: 67
+[2026-10-02 12:37:05.187] [Bytes recibidos]: 13
+[2026-10-02 12:37:05.188] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:08.786] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:08.786] [Bytes recibidos]: 27
+[2026-10-02 12:37:08.787] [Bytes recibidos]: 81
+[2026-10-02 12:37:08.787] [Bytes recibidos]: 54
+[2026-10-02 12:37:08.787] [Bytes recibidos]: 67
+[2026-10-02 12:37:08.787] [Bytes recibidos]: 13
+[2026-10-02 12:37:08.788] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:12.379] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:12.380] [Bytes recibidos]: 27
+[2026-10-02 12:37:12.380] [Bytes recibidos]: 81
+[2026-10-02 12:37:12.380] [Bytes recibidos]: 54
+[2026-10-02 12:37:12.380] [Bytes recibidos]: 67
+[2026-10-02 12:37:12.380] [Bytes recibidos]: 13
+[2026-10-02 12:37:12.380] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:15.992] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:15.992] [Bytes recibidos]: 27
+[2026-10-02 12:37:15.993] [Bytes recibidos]: 81
+[2026-10-02 12:37:15.993] [Bytes recibidos]: 54
+[2026-10-02 12:37:15.993] [Bytes recibidos]: 67
+[2026-10-02 12:37:15.993] [Bytes recibidos]: 13
+[2026-10-02 12:37:15.993] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:19.585] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:19.586] [Bytes recibidos]: 27
+[2026-10-02 12:37:19.586] [Bytes recibidos]: 81
+[2026-10-02 12:37:19.586] [Bytes recibidos]: 54
+[2026-10-02 12:37:19.586] [Bytes recibidos]: 67
+[2026-10-02 12:37:19.587] [Bytes recibidos]: 13
+[2026-10-02 12:37:19.587] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:23.179] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:23.180] [Bytes recibidos]: 27
+[2026-10-02 12:37:23.180] [Bytes recibidos]: 81
+[2026-10-02 12:37:23.180] [Bytes recibidos]: 54
+[2026-10-02 12:37:23.180] [Bytes recibidos]: 67
+[2026-10-02 12:37:23.180] [Bytes recibidos]: 13
+[2026-10-02 12:37:23.180] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:26.794] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:26.794] [Bytes recibidos]: 27
+[2026-10-02 12:37:26.794] [Bytes recibidos]: 81
+[2026-10-02 12:37:26.795] [Bytes recibidos]: 54
+[2026-10-02 12:37:26.795] [Bytes recibidos]: 67
+[2026-10-02 12:37:26.795] [Bytes recibidos]: 13
+[2026-10-02 12:37:26.795] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:30.387] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:30.387] [Bytes recibidos]: 27
+[2026-10-02 12:37:30.387] [Bytes recibidos]: 81
+[2026-10-02 12:37:30.387] [Bytes recibidos]: 54
+[2026-10-02 12:37:30.387] [Bytes recibidos]: 67
+[2026-10-02 12:37:30.388] [Bytes recibidos]: 13
+[2026-10-02 12:37:30.388] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:33.980] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:33.980] [Bytes recibidos]: 27
+[2026-10-02 12:37:33.981] [Bytes recibidos]: 81
+[2026-10-02 12:37:33.981] [Bytes recibidos]: 54
+[2026-10-02 12:37:33.981] [Bytes recibidos]: 67
+[2026-10-02 12:37:33.981] [Bytes recibidos]: 13
+[2026-10-02 12:37:33.981] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:37.595] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:37.595] [Bytes recibidos]: 27
+[2026-10-02 12:37:37.595] [Bytes recibidos]: 81
+[2026-10-02 12:37:37.596] [Bytes recibidos]: 54
+[2026-10-02 12:37:37.596] [Bytes recibidos]: 67
+[2026-10-02 12:37:37.596] [Bytes recibidos]: 13
+[2026-10-02 12:37:37.596] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:41.174] Datos recibidos (3 bytes): 1B 51 36
+[2026-10-02 12:37:41.174] [Bytes recibidos]: 27
+[2026-10-02 12:37:41.174] [Bytes recibidos]: 81
+[2026-10-02 12:37:41.174] [Bytes recibidos]: 54
+[2026-10-02 12:37:41.175] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:43.175] Datos recibidos (2 bytes): 43 0D
+[2026-10-02 12:37:43.176] [Bytes recibidos]: 67
+[2026-10-02 12:37:43.176] [Bytes recibidos]: 13
+[2026-10-02 12:37:43.176] [Data Recibida]: 7.954822954822955
+[2026-10-02 12:37:45.177] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:45.177] [Bytes recibidos]: 27
+[2026-10-02 12:37:45.177] [Bytes recibidos]: 81
+[2026-10-02 12:37:45.178] [Bytes recibidos]: 54
+[2026-10-02 12:37:45.178] [Bytes recibidos]: 67
+[2026-10-02 12:37:45.178] [Bytes recibidos]: 13
+[2026-10-02 12:37:45.178] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:48.388] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:48.388] [Bytes recibidos]: 27
+[2026-10-02 12:37:48.388] [Bytes recibidos]: 81
+[2026-10-02 12:37:48.388] [Bytes recibidos]: 54
+[2026-10-02 12:37:48.388] [Bytes recibidos]: 67
+[2026-10-02 12:37:48.389] [Bytes recibidos]: 13
+[2026-10-02 12:37:48.389] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:51.980] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:37:51.980] [Bytes recibidos]: 27
+[2026-10-02 12:37:51.980] [Bytes recibidos]: 81
+[2026-10-02 12:37:51.980] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:53.981] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:37:53.981] [Bytes recibidos]: 54
+[2026-10-02 12:37:53.981] [Bytes recibidos]: 67
+[2026-10-02 12:37:53.981] [Bytes recibidos]: 13
+[2026-10-02 12:37:53.981] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:37:55.982] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:55.982] [Bytes recibidos]: 27
+[2026-10-02 12:37:55.982] [Bytes recibidos]: 81
+[2026-10-02 12:37:55.983] [Bytes recibidos]: 54
+[2026-10-02 12:37:55.983] [Bytes recibidos]: 67
+[2026-10-02 12:37:55.983] [Bytes recibidos]: 13
+[2026-10-02 12:37:55.983] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:37:59.193] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:37:59.193] [Bytes recibidos]: 27
+[2026-10-02 12:37:59.193] [Bytes recibidos]: 81
+[2026-10-02 12:37:59.193] [Bytes recibidos]: 54
+[2026-10-02 12:37:59.193] [Bytes recibidos]: 67
+[2026-10-02 12:37:59.194] [Bytes recibidos]: 13
+[2026-10-02 12:37:59.194] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:02.786] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:02.786] [Bytes recibidos]: 27
+[2026-10-02 12:38:02.786] [Bytes recibidos]: 81
+[2026-10-02 12:38:02.787] [Bytes recibidos]: 54
+[2026-10-02 12:38:02.787] [Bytes recibidos]: 67
+[2026-10-02 12:38:02.787] [Bytes recibidos]: 13
+[2026-10-02 12:38:02.787] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:06.382] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:06.382] [Bytes recibidos]: 27
+[2026-10-02 12:38:06.382] [Bytes recibidos]: 81
+[2026-10-02 12:38:06.382] [Bytes recibidos]: 54
+[2026-10-02 12:38:06.382] [Bytes recibidos]: 67
+[2026-10-02 12:38:06.382] [Bytes recibidos]: 13
+[2026-10-02 12:38:06.383] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:09.998] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:09.998] [Bytes recibidos]: 27
+[2026-10-02 12:38:09.998] [Bytes recibidos]: 81
+[2026-10-02 12:38:09.999] [Bytes recibidos]: 54
+[2026-10-02 12:38:09.999] [Bytes recibidos]: 67
+[2026-10-02 12:38:09.999] [Bytes recibidos]: 13
+[2026-10-02 12:38:09.999] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:13.573] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:38:13.573] [Bytes recibidos]: 27
+[2026-10-02 12:38:13.573] [Bytes recibidos]: 81
+[2026-10-02 12:38:13.574] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:15.574] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:38:15.574] [Bytes recibidos]: 54
+[2026-10-02 12:38:15.574] [Bytes recibidos]: 67
+[2026-10-02 12:38:15.575] [Bytes recibidos]: 13
+[2026-10-02 12:38:15.575] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:38:17.576] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:17.576] [Bytes recibidos]: 27
+[2026-10-02 12:38:17.576] [Bytes recibidos]: 81
+[2026-10-02 12:38:17.576] [Bytes recibidos]: 54
+[2026-10-02 12:38:17.576] [Bytes recibidos]: 67
+[2026-10-02 12:38:17.577] [Bytes recibidos]: 13
+[2026-10-02 12:38:17.577] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:20.787] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:20.787] [Bytes recibidos]: 27
+[2026-10-02 12:38:20.787] [Bytes recibidos]: 81
+[2026-10-02 12:38:20.787] [Bytes recibidos]: 54
+[2026-10-02 12:38:20.788] [Bytes recibidos]: 67
+[2026-10-02 12:38:20.788] [Bytes recibidos]: 13
+[2026-10-02 12:38:20.788] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:24.382] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:38:24.383] [Bytes recibidos]: 27
+[2026-10-02 12:38:24.383] [Bytes recibidos]: 81
+[2026-10-02 12:38:24.383] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:26.384] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:38:26.384] [Bytes recibidos]: 54
+[2026-10-02 12:38:26.384] [Bytes recibidos]: 67
+[2026-10-02 12:38:26.384] [Bytes recibidos]: 13
+[2026-10-02 12:38:26.384] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:38:28.385] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:28.385] [Bytes recibidos]: 27
+[2026-10-02 12:38:28.385] [Bytes recibidos]: 81
+[2026-10-02 12:38:28.385] [Bytes recibidos]: 54
+[2026-10-02 12:38:28.385] [Bytes recibidos]: 67
+[2026-10-02 12:38:28.385] [Bytes recibidos]: 13
+[2026-10-02 12:38:28.386] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:31.596] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:31.597] [Bytes recibidos]: 27
+[2026-10-02 12:38:31.597] [Bytes recibidos]: 81
+[2026-10-02 12:38:31.597] [Bytes recibidos]: 54
+[2026-10-02 12:38:31.597] [Bytes recibidos]: 67
+[2026-10-02 12:38:31.597] [Bytes recibidos]: 13
+[2026-10-02 12:38:31.597] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:35.172] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:38:35.172] [Bytes recibidos]: 27
+[2026-10-02 12:38:35.172] [Bytes recibidos]: 81
+[2026-10-02 12:38:35.172] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:37.173] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:38:37.173] [Bytes recibidos]: 54
+[2026-10-02 12:38:37.173] [Bytes recibidos]: 67
+[2026-10-02 12:38:37.174] [Bytes recibidos]: 13
+[2026-10-02 12:38:37.174] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:38:39.174] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:39.175] [Bytes recibidos]: 27
+[2026-10-02 12:38:39.175] [Bytes recibidos]: 81
+[2026-10-02 12:38:39.175] [Bytes recibidos]: 54
+[2026-10-02 12:38:39.175] [Bytes recibidos]: 67
+[2026-10-02 12:38:39.175] [Bytes recibidos]: 13
+[2026-10-02 12:38:39.175] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:42.385] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:42.385] [Bytes recibidos]: 27
+[2026-10-02 12:38:42.385] [Bytes recibidos]: 81
+[2026-10-02 12:38:42.386] [Bytes recibidos]: 54
+[2026-10-02 12:38:42.386] [Bytes recibidos]: 67
+[2026-10-02 12:38:42.386] [Bytes recibidos]: 13
+[2026-10-02 12:38:42.386] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:45.979] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:38:45.980] [Bytes recibidos]: 27
+[2026-10-02 12:38:45.980] [Bytes recibidos]: 81
+[2026-10-02 12:38:45.980] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:47.981] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:38:47.981] [Bytes recibidos]: 54
+[2026-10-02 12:38:47.981] [Bytes recibidos]: 67
+[2026-10-02 12:38:47.981] [Bytes recibidos]: 13
+[2026-10-02 12:38:47.981] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:38:49.982] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:49.982] [Bytes recibidos]: 27
+[2026-10-02 12:38:49.982] [Bytes recibidos]: 81
+[2026-10-02 12:38:49.982] [Bytes recibidos]: 54
+[2026-10-02 12:38:49.983] [Bytes recibidos]: 67
+[2026-10-02 12:38:49.983] [Bytes recibidos]: 13
+[2026-10-02 12:38:49.983] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:53.193] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:38:53.193] [Bytes recibidos]: 27
+[2026-10-02 12:38:53.193] [Bytes recibidos]: 81
+[2026-10-02 12:38:53.193] [Bytes recibidos]: 54
+[2026-10-02 12:38:53.193] [Bytes recibidos]: 67
+[2026-10-02 12:38:53.193] [Bytes recibidos]: 13
+[2026-10-02 12:38:53.194] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:56.785] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:38:56.786] [Bytes recibidos]: 27
+[2026-10-02 12:38:56.786] [Bytes recibidos]: 81
+[2026-10-02 12:38:56.786] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:38:58.786] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:38:58.786] [Bytes recibidos]: 54
+[2026-10-02 12:38:58.787] [Bytes recibidos]: 67
+[2026-10-02 12:38:58.787] [Bytes recibidos]: 13
+[2026-10-02 12:38:58.787] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:39:00.787] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:00.787] [Bytes recibidos]: 27
+[2026-10-02 12:39:00.787] [Bytes recibidos]: 81
+[2026-10-02 12:39:00.788] [Bytes recibidos]: 54
+[2026-10-02 12:39:00.788] [Bytes recibidos]: 67
+[2026-10-02 12:39:00.788] [Bytes recibidos]: 13
+[2026-10-02 12:39:00.788] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:03.996] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:03.997] [Bytes recibidos]: 27
+[2026-10-02 12:39:03.998] [Bytes recibidos]: 81
+[2026-10-02 12:39:03.998] [Bytes recibidos]: 54
+[2026-10-02 12:39:03.998] [Bytes recibidos]: 67
+[2026-10-02 12:39:03.998] [Bytes recibidos]: 13
+[2026-10-02 12:39:03.998] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:07.591] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:07.591] [Bytes recibidos]: 27
+[2026-10-02 12:39:07.591] [Bytes recibidos]: 81
+[2026-10-02 12:39:07.591] [Bytes recibidos]: 54
+[2026-10-02 12:39:07.592] [Bytes recibidos]: 67
+[2026-10-02 12:39:07.592] [Bytes recibidos]: 13
+[2026-10-02 12:39:07.592] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:11.185] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:11.185] [Bytes recibidos]: 27
+[2026-10-02 12:39:11.185] [Bytes recibidos]: 81
+[2026-10-02 12:39:11.185] [Bytes recibidos]: 54
+[2026-10-02 12:39:11.185] [Bytes recibidos]: 67
+[2026-10-02 12:39:11.185] [Bytes recibidos]: 13
+[2026-10-02 12:39:11.185] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:14.801] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:14.801] [Bytes recibidos]: 27
+[2026-10-02 12:39:14.802] [Bytes recibidos]: 81
+[2026-10-02 12:39:14.802] [Bytes recibidos]: 54
+[2026-10-02 12:39:14.802] [Bytes recibidos]: 67
+[2026-10-02 12:39:14.802] [Bytes recibidos]: 13
+[2026-10-02 12:39:14.802] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:18.380] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:39:18.380] [Bytes recibidos]: 27
+[2026-10-02 12:39:18.380] [Bytes recibidos]: 81
+[2026-10-02 12:39:18.380] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:20.381] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:39:20.381] [Bytes recibidos]: 54
+[2026-10-02 12:39:20.381] [Bytes recibidos]: 67
+[2026-10-02 12:39:20.381] [Bytes recibidos]: 13
+[2026-10-02 12:39:20.381] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:39:22.382] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:22.382] [Bytes recibidos]: 27
+[2026-10-02 12:39:22.383] [Bytes recibidos]: 81
+[2026-10-02 12:39:22.383] [Bytes recibidos]: 54
+[2026-10-02 12:39:22.383] [Bytes recibidos]: 67
+[2026-10-02 12:39:22.383] [Bytes recibidos]: 13
+[2026-10-02 12:39:22.383] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:25.593] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:25.593] [Bytes recibidos]: 27
+[2026-10-02 12:39:25.594] [Bytes recibidos]: 81
+[2026-10-02 12:39:25.594] [Bytes recibidos]: 54
+[2026-10-02 12:39:25.594] [Bytes recibidos]: 67
+[2026-10-02 12:39:25.594] [Bytes recibidos]: 13
+[2026-10-02 12:39:25.595] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:29.187] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:39:29.187] [Bytes recibidos]: 27
+[2026-10-02 12:39:29.187] [Bytes recibidos]: 81
+[2026-10-02 12:39:29.187] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:31.188] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:39:31.188] [Bytes recibidos]: 54
+[2026-10-02 12:39:31.188] [Bytes recibidos]: 67
+[2026-10-02 12:39:31.188] [Bytes recibidos]: 13
+[2026-10-02 12:39:31.188] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:39:33.189] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:33.189] [Bytes recibidos]: 27
+[2026-10-02 12:39:33.189] [Bytes recibidos]: 81
+[2026-10-02 12:39:33.189] [Bytes recibidos]: 54
+[2026-10-02 12:39:33.189] [Bytes recibidos]: 67
+[2026-10-02 12:39:33.189] [Bytes recibidos]: 13
+[2026-10-02 12:39:33.190] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:36.400] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:36.400] [Bytes recibidos]: 27
+[2026-10-02 12:39:36.400] [Bytes recibidos]: 81
+[2026-10-02 12:39:36.401] [Bytes recibidos]: 54
+[2026-10-02 12:39:36.402] [Bytes recibidos]: 67
+[2026-10-02 12:39:36.402] [Bytes recibidos]: 13
+[2026-10-02 12:39:36.402] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:39.992] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:39.993] [Bytes recibidos]: 27
+[2026-10-02 12:39:39.993] [Bytes recibidos]: 81
+[2026-10-02 12:39:39.993] [Bytes recibidos]: 54
+[2026-10-02 12:39:39.993] [Bytes recibidos]: 67
+[2026-10-02 12:39:39.993] [Bytes recibidos]: 13
+[2026-10-02 12:39:39.993] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:43.585] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:43.585] [Bytes recibidos]: 27
+[2026-10-02 12:39:43.586] [Bytes recibidos]: 81
+[2026-10-02 12:39:43.586] [Bytes recibidos]: 54
+[2026-10-02 12:39:43.586] [Bytes recibidos]: 67
+[2026-10-02 12:39:43.586] [Bytes recibidos]: 13
+[2026-10-02 12:39:43.586] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:47.197] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:47.198] [Bytes recibidos]: 27
+[2026-10-02 12:39:47.198] [Bytes recibidos]: 81
+[2026-10-02 12:39:47.198] [Bytes recibidos]: 54
+[2026-10-02 12:39:47.198] [Bytes recibidos]: 67
+[2026-10-02 12:39:47.198] [Bytes recibidos]: 13
+[2026-10-02 12:39:47.198] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:50.789] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:39:50.789] [Bytes recibidos]: 27
+[2026-10-02 12:39:50.791] [Bytes recibidos]: 81
+[2026-10-02 12:39:50.791] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:52.791] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:39:52.791] [Bytes recibidos]: 54
+[2026-10-02 12:39:52.792] [Bytes recibidos]: 67
+[2026-10-02 12:39:52.792] [Bytes recibidos]: 13
+[2026-10-02 12:39:52.792] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:39:54.792] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:54.793] [Bytes recibidos]: 27
+[2026-10-02 12:39:54.793] [Bytes recibidos]: 81
+[2026-10-02 12:39:54.793] [Bytes recibidos]: 54
+[2026-10-02 12:39:54.793] [Bytes recibidos]: 67
+[2026-10-02 12:39:54.793] [Bytes recibidos]: 13
+[2026-10-02 12:39:54.793] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:39:58.003] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:39:58.003] [Bytes recibidos]: 27
+[2026-10-02 12:39:58.003] [Bytes recibidos]: 81
+[2026-10-02 12:39:58.003] [Bytes recibidos]: 54
+[2026-10-02 12:39:58.003] [Bytes recibidos]: 67
+[2026-10-02 12:39:58.003] [Bytes recibidos]: 13
+[2026-10-02 12:39:58.004] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:01.578] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:40:01.578] [Bytes recibidos]: 27
+[2026-10-02 12:40:01.579] [Bytes recibidos]: 81
+[2026-10-02 12:40:01.580] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:03.580] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:40:03.581] [Bytes recibidos]: 54
+[2026-10-02 12:40:03.581] [Bytes recibidos]: 67
+[2026-10-02 12:40:03.581] [Bytes recibidos]: 13
+[2026-10-02 12:40:03.581] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:40:05.582] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:05.582] [Bytes recibidos]: 27
+[2026-10-02 12:40:05.582] [Bytes recibidos]: 81
+[2026-10-02 12:40:05.582] [Bytes recibidos]: 54
+[2026-10-02 12:40:05.582] [Bytes recibidos]: 67
+[2026-10-02 12:40:05.582] [Bytes recibidos]: 13
+[2026-10-02 12:40:05.583] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:08.794] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:08.795] [Bytes recibidos]: 27
+[2026-10-02 12:40:08.795] [Bytes recibidos]: 81
+[2026-10-02 12:40:08.795] [Bytes recibidos]: 54
+[2026-10-02 12:40:08.795] [Bytes recibidos]: 67
+[2026-10-02 12:40:08.795] [Bytes recibidos]: 13
+[2026-10-02 12:40:08.795] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:12.391] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:40:12.391] [Bytes recibidos]: 27
+[2026-10-02 12:40:12.391] [Bytes recibidos]: 81
+[2026-10-02 12:40:12.391] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:14.392] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:40:14.392] [Bytes recibidos]: 54
+[2026-10-02 12:40:14.392] [Bytes recibidos]: 67
+[2026-10-02 12:40:14.392] [Bytes recibidos]: 13
+[2026-10-02 12:40:14.392] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:40:16.393] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:16.393] [Bytes recibidos]: 27
+[2026-10-02 12:40:16.393] [Bytes recibidos]: 81
+[2026-10-02 12:40:16.393] [Bytes recibidos]: 54
+[2026-10-02 12:40:16.393] [Bytes recibidos]: 67
+[2026-10-02 12:40:16.393] [Bytes recibidos]: 13
+[2026-10-02 12:40:16.393] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:19.604] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:19.604] [Bytes recibidos]: 27
+[2026-10-02 12:40:19.605] [Bytes recibidos]: 81
+[2026-10-02 12:40:19.605] [Bytes recibidos]: 54
+[2026-10-02 12:40:19.605] [Bytes recibidos]: 67
+[2026-10-02 12:40:19.605] [Bytes recibidos]: 13
+[2026-10-02 12:40:19.605] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:23.180] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:40:23.180] [Bytes recibidos]: 27
+[2026-10-02 12:40:23.180] [Bytes recibidos]: 81
+[2026-10-02 12:40:23.180] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:25.180] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:40:25.180] [Bytes recibidos]: 54
+[2026-10-02 12:40:25.181] [Bytes recibidos]: 67
+[2026-10-02 12:40:25.181] [Bytes recibidos]: 13
+[2026-10-02 12:40:25.181] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:40:27.182] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:27.182] [Bytes recibidos]: 27
+[2026-10-02 12:40:27.182] [Bytes recibidos]: 81
+[2026-10-02 12:40:27.182] [Bytes recibidos]: 54
+[2026-10-02 12:40:27.182] [Bytes recibidos]: 67
+[2026-10-02 12:40:27.182] [Bytes recibidos]: 13
+[2026-10-02 12:40:27.182] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:30.393] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:30.394] [Bytes recibidos]: 27
+[2026-10-02 12:40:30.394] [Bytes recibidos]: 81
+[2026-10-02 12:40:30.394] [Bytes recibidos]: 54
+[2026-10-02 12:40:30.394] [Bytes recibidos]: 67
+[2026-10-02 12:40:30.394] [Bytes recibidos]: 13
+[2026-10-02 12:40:30.394] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:33.988] Datos recibidos (2 bytes): 1B 51
+[2026-10-02 12:40:33.988] [Bytes recibidos]: 27
+[2026-10-02 12:40:33.988] [Bytes recibidos]: 81
+[2026-10-02 12:40:33.988] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:35.989] Datos recibidos (3 bytes): 36 43 0D
+[2026-10-02 12:40:35.989] [Bytes recibidos]: 54
+[2026-10-02 12:40:35.989] [Bytes recibidos]: 67
+[2026-10-02 12:40:35.989] [Bytes recibidos]: 13
+[2026-10-02 12:40:35.989] [Data Recibida]: -12.46959706959707
+[2026-10-02 12:40:37.990] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:37.990] [Bytes recibidos]: 27
+[2026-10-02 12:40:37.990] [Bytes recibidos]: 81
+[2026-10-02 12:40:37.990] [Bytes recibidos]: 54
+[2026-10-02 12:40:37.990] [Bytes recibidos]: 67
+[2026-10-02 12:40:37.990] [Bytes recibidos]: 13
+[2026-10-02 12:40:37.990] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:41.202] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:41.202] [Bytes recibidos]: 27
+[2026-10-02 12:40:41.202] [Bytes recibidos]: 81
+[2026-10-02 12:40:41.202] [Bytes recibidos]: 54
+[2026-10-02 12:40:41.202] [Bytes recibidos]: 67
+[2026-10-02 12:40:41.203] [Bytes recibidos]: 13
+[2026-10-02 12:40:41.203] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:44.777] Datos recibidos (1 bytes): 1B
+[2026-10-02 12:40:44.778] [Bytes recibidos]: 27
+[2026-10-02 12:40:46.778] Datos recibidos (4 bytes): 51 36 43 0D
+[2026-10-02 12:40:46.778] [Bytes recibidos]: 81
+[2026-10-02 12:40:46.778] [Bytes recibidos]: 54
+[2026-10-02 12:40:46.778] [Bytes recibidos]: 67
+[2026-10-02 12:40:46.778] [Bytes recibidos]: 13
+[2026-10-02 12:40:46.779] [Data Recibida]: 99.43125763125764
+[2026-10-02 12:40:48.779] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:48.779] [Bytes recibidos]: 27
+[2026-10-02 12:40:48.780] [Bytes recibidos]: 81
+[2026-10-02 12:40:48.780] [Bytes recibidos]: 54
+[2026-10-02 12:40:48.780] [Bytes recibidos]: 67
+[2026-10-02 12:40:48.780] [Bytes recibidos]: 13
+[2026-10-02 12:40:48.780] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:51.992] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:51.992] [Bytes recibidos]: 27
+[2026-10-02 12:40:51.992] [Bytes recibidos]: 81
+[2026-10-02 12:40:51.992] [Bytes recibidos]: 54
+[2026-10-02 12:40:51.993] [Bytes recibidos]: 67
+[2026-10-02 12:40:51.993] [Bytes recibidos]: 13
+[2026-10-02 12:40:51.993] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:40:55.585] Datos recibidos (1 bytes): 1B
+[2026-10-02 12:40:55.585] [Bytes recibidos]: 27
+[2026-10-02 12:40:57.585] Datos recibidos (4 bytes): 51 36 43 0D
+[2026-10-02 12:40:57.586] [Bytes recibidos]: 81
+[2026-10-02 12:40:57.586] [Bytes recibidos]: 54
+[2026-10-02 12:40:57.586] [Bytes recibidos]: 67
+[2026-10-02 12:40:57.586] [Bytes recibidos]: 13
+[2026-10-02 12:40:57.586] [Data Recibida]: 99.43125763125764
+[2026-10-02 12:40:59.586] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:40:59.586] [Bytes recibidos]: 27
+[2026-10-02 12:40:59.587] [Bytes recibidos]: 81
+[2026-10-02 12:40:59.587] [Bytes recibidos]: 54
+[2026-10-02 12:40:59.587] [Bytes recibidos]: 67
+[2026-10-02 12:40:59.587] [Bytes recibidos]: 13
+[2026-10-02 12:40:59.587] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:02.798] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:02.798] [Bytes recibidos]: 27
+[2026-10-02 12:41:02.799] [Bytes recibidos]: 81
+[2026-10-02 12:41:02.799] [Bytes recibidos]: 54
+[2026-10-02 12:41:02.799] [Bytes recibidos]: 67
+[2026-10-02 12:41:02.799] [Bytes recibidos]: 13
+[2026-10-02 12:41:02.799] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:06.393] Datos recibidos (1 bytes): 1B
+[2026-10-02 12:41:06.393] [Bytes recibidos]: 27
+[2026-10-02 12:41:08.394] Datos recibidos (4 bytes): 51 36 43 0D
+[2026-10-02 12:41:08.394] [Bytes recibidos]: 81
+[2026-10-02 12:41:08.394] [Bytes recibidos]: 54
+[2026-10-02 12:41:08.394] [Bytes recibidos]: 67
+[2026-10-02 12:41:08.394] [Bytes recibidos]: 13
+[2026-10-02 12:41:08.394] [Data Recibida]: 99.43125763125764
+[2026-10-02 12:41:10.395] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:10.395] [Bytes recibidos]: 27
+[2026-10-02 12:41:10.395] [Bytes recibidos]: 81
+[2026-10-02 12:41:10.395] [Bytes recibidos]: 54
+[2026-10-02 12:41:10.395] [Bytes recibidos]: 67
+[2026-10-02 12:41:10.395] [Bytes recibidos]: 13
+[2026-10-02 12:41:10.396] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:13.606] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:13.606] [Bytes recibidos]: 27
+[2026-10-02 12:41:13.606] [Bytes recibidos]: 81
+[2026-10-02 12:41:13.606] [Bytes recibidos]: 54
+[2026-10-02 12:41:13.606] [Bytes recibidos]: 67
+[2026-10-02 12:41:13.606] [Bytes recibidos]: 13
+[2026-10-02 12:41:13.606] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:17.181] Datos recibidos (1 bytes): 1B
+[2026-10-02 12:41:17.181] [Bytes recibidos]: 27
+[2026-10-02 12:41:19.182] Datos recibidos (4 bytes): 51 36 43 0D
+[2026-10-02 12:41:19.182] [Bytes recibidos]: 81
+[2026-10-02 12:41:19.182] [Bytes recibidos]: 54
+[2026-10-02 12:41:19.182] [Bytes recibidos]: 67
+[2026-10-02 12:41:19.182] [Bytes recibidos]: 13
+[2026-10-02 12:41:19.182] [Data Recibida]: 99.43125763125764
+[2026-10-02 12:41:21.183] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:21.183] [Bytes recibidos]: 27
+[2026-10-02 12:41:21.183] [Bytes recibidos]: 81
+[2026-10-02 12:41:21.183] [Bytes recibidos]: 54
+[2026-10-02 12:41:21.183] [Bytes recibidos]: 67
+[2026-10-02 12:41:21.183] [Bytes recibidos]: 13
+[2026-10-02 12:41:21.183] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:24.394] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:24.394] [Bytes recibidos]: 27
+[2026-10-02 12:41:24.394] [Bytes recibidos]: 81
+[2026-10-02 12:41:24.394] [Bytes recibidos]: 54
+[2026-10-02 12:41:24.395] [Bytes recibidos]: 67
+[2026-10-02 12:41:24.395] [Bytes recibidos]: 13
+[2026-10-02 12:41:24.395] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:28.010] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:28.010] [Bytes recibidos]: 27
+[2026-10-02 12:41:28.010] [Bytes recibidos]: 81
+[2026-10-02 12:41:28.010] [Bytes recibidos]: 54
+[2026-10-02 12:41:28.010] [Bytes recibidos]: 67
+[2026-10-02 12:41:28.010] [Bytes recibidos]: 13
+[2026-10-02 12:41:28.011] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:31.585] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:31.585] [Bytes recibidos]: 27
+[2026-10-02 12:41:31.587] [Bytes recibidos]: 81
+[2026-10-02 12:41:31.587] [Bytes recibidos]: 54
+[2026-10-02 12:41:31.587] [Bytes recibidos]: 67
+[2026-10-02 12:41:31.587] [Bytes recibidos]: 13
+[2026-10-02 12:41:31.587] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:35.200] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:35.200] [Bytes recibidos]: 27
+[2026-10-02 12:41:35.200] [Bytes recibidos]: 81
+[2026-10-02 12:41:35.200] [Bytes recibidos]: 54
+[2026-10-02 12:41:35.200] [Bytes recibidos]: 67
+[2026-10-02 12:41:35.200] [Bytes recibidos]: 13
+[2026-10-02 12:41:35.201] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:38.814] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:38.814] [Bytes recibidos]: 27
+[2026-10-02 12:41:38.814] [Bytes recibidos]: 81
+[2026-10-02 12:41:38.814] [Bytes recibidos]: 54
+[2026-10-02 12:41:38.814] [Bytes recibidos]: 67
+[2026-10-02 12:41:38.814] [Bytes recibidos]: 13
+[2026-10-02 12:41:38.814] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:42.389] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:42.389] [Bytes recibidos]: 27
+[2026-10-02 12:41:42.389] [Bytes recibidos]: 81
+[2026-10-02 12:41:42.389] [Bytes recibidos]: 54
+[2026-10-02 12:41:42.389] [Bytes recibidos]: 67
+[2026-10-02 12:41:42.389] [Bytes recibidos]: 13
+[2026-10-02 12:41:42.390] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:46.002] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:46.002] [Bytes recibidos]: 27
+[2026-10-02 12:41:46.002] [Bytes recibidos]: 81
+[2026-10-02 12:41:46.002] [Bytes recibidos]: 54
+[2026-10-02 12:41:46.002] [Bytes recibidos]: 67
+[2026-10-02 12:41:46.003] [Bytes recibidos]: 13
+[2026-10-02 12:41:46.003] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:49.597] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:49.597] [Bytes recibidos]: 27
+[2026-10-02 12:41:49.597] [Bytes recibidos]: 81
+[2026-10-02 12:41:49.597] [Bytes recibidos]: 54
+[2026-10-02 12:41:49.597] [Bytes recibidos]: 67
+[2026-10-02 12:41:49.597] [Bytes recibidos]: 13
+[2026-10-02 12:41:49.597] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:53.194] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:53.194] [Bytes recibidos]: 27
+[2026-10-02 12:41:53.194] [Bytes recibidos]: 81
+[2026-10-02 12:41:53.194] [Bytes recibidos]: 54
+[2026-10-02 12:41:53.195] [Bytes recibidos]: 67
+[2026-10-02 12:41:53.195] [Bytes recibidos]: 13
+[2026-10-02 12:41:53.195] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:41:56.790] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:41:56.791] [Bytes recibidos]: 27
+[2026-10-02 12:41:56.791] [Bytes recibidos]: 81
+[2026-10-02 12:41:56.791] [Bytes recibidos]: 54
+[2026-10-02 12:41:56.791] [Bytes recibidos]: 67
+[2026-10-02 12:41:56.791] [Bytes recibidos]: 13
+[2026-10-02 12:41:56.791] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:00.406] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:00.406] [Bytes recibidos]: 27
+[2026-10-02 12:42:00.406] [Bytes recibidos]: 81
+[2026-10-02 12:42:00.406] [Bytes recibidos]: 54
+[2026-10-02 12:42:00.406] [Bytes recibidos]: 67
+[2026-10-02 12:42:00.406] [Bytes recibidos]: 13
+[2026-10-02 12:42:00.406] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:04.001] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:04.001] [Bytes recibidos]: 27
+[2026-10-02 12:42:04.002] [Bytes recibidos]: 81
+[2026-10-02 12:42:04.002] [Bytes recibidos]: 54
+[2026-10-02 12:42:04.002] [Bytes recibidos]: 67
+[2026-10-02 12:42:04.002] [Bytes recibidos]: 13
+[2026-10-02 12:42:04.002] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:07.597] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:07.597] [Bytes recibidos]: 27
+[2026-10-02 12:42:07.597] [Bytes recibidos]: 81
+[2026-10-02 12:42:07.597] [Bytes recibidos]: 54
+[2026-10-02 12:42:07.597] [Bytes recibidos]: 67
+[2026-10-02 12:42:07.597] [Bytes recibidos]: 13
+[2026-10-02 12:42:07.597] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:11.210] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:11.210] [Bytes recibidos]: 27
+[2026-10-02 12:42:11.210] [Bytes recibidos]: 81
+[2026-10-02 12:42:11.211] [Bytes recibidos]: 54
+[2026-10-02 12:42:11.211] [Bytes recibidos]: 67
+[2026-10-02 12:42:11.211] [Bytes recibidos]: 13
+[2026-10-02 12:42:11.211] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:14.806] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:14.806] [Bytes recibidos]: 27
+[2026-10-02 12:42:14.806] [Bytes recibidos]: 81
+[2026-10-02 12:42:14.806] [Bytes recibidos]: 54
+[2026-10-02 12:42:14.806] [Bytes recibidos]: 67
+[2026-10-02 12:42:14.806] [Bytes recibidos]: 13
+[2026-10-02 12:42:14.806] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:18.399] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:18.400] [Bytes recibidos]: 27
+[2026-10-02 12:42:18.400] [Bytes recibidos]: 81
+[2026-10-02 12:42:18.400] [Bytes recibidos]: 54
+[2026-10-02 12:42:18.400] [Bytes recibidos]: 67
+[2026-10-02 12:42:18.400] [Bytes recibidos]: 13
+[2026-10-02 12:42:18.400] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:22.014] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:22.014] [Bytes recibidos]: 27
+[2026-10-02 12:42:22.014] [Bytes recibidos]: 81
+[2026-10-02 12:42:22.014] [Bytes recibidos]: 54
+[2026-10-02 12:42:22.014] [Bytes recibidos]: 67
+[2026-10-02 12:42:22.015] [Bytes recibidos]: 13
+[2026-10-02 12:42:22.015] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:25.589] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:25.589] [Bytes recibidos]: 27
+[2026-10-02 12:42:25.590] [Bytes recibidos]: 81
+[2026-10-02 12:42:25.591] [Bytes recibidos]: 54
+[2026-10-02 12:42:25.591] [Bytes recibidos]: 67
+[2026-10-02 12:42:25.591] [Bytes recibidos]: 13
+[2026-10-02 12:42:25.591] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:29.205] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:29.205] [Bytes recibidos]: 27
+[2026-10-02 12:42:29.205] [Bytes recibidos]: 81
+[2026-10-02 12:42:29.206] [Bytes recibidos]: 54
+[2026-10-02 12:42:29.206] [Bytes recibidos]: 67
+[2026-10-02 12:42:29.206] [Bytes recibidos]: 13
+[2026-10-02 12:42:29.206] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:32.801] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:32.801] [Bytes recibidos]: 27
+[2026-10-02 12:42:32.801] [Bytes recibidos]: 81
+[2026-10-02 12:42:32.801] [Bytes recibidos]: 54
+[2026-10-02 12:42:32.801] [Bytes recibidos]: 67
+[2026-10-02 12:42:32.801] [Bytes recibidos]: 13
+[2026-10-02 12:42:32.801] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:36.397] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:36.397] [Bytes recibidos]: 27
+[2026-10-02 12:42:36.397] [Bytes recibidos]: 81
+[2026-10-02 12:42:36.397] [Bytes recibidos]: 54
+[2026-10-02 12:42:36.397] [Bytes recibidos]: 67
+[2026-10-02 12:42:36.397] [Bytes recibidos]: 13
+[2026-10-02 12:42:36.398] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:40.012] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:40.012] [Bytes recibidos]: 27
+[2026-10-02 12:42:40.012] [Bytes recibidos]: 81
+[2026-10-02 12:42:40.012] [Bytes recibidos]: 54
+[2026-10-02 12:42:40.012] [Bytes recibidos]: 67
+[2026-10-02 12:42:40.013] [Bytes recibidos]: 13
+[2026-10-02 12:42:40.013] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:43.608] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:43.608] [Bytes recibidos]: 27
+[2026-10-02 12:42:43.608] [Bytes recibidos]: 81
+[2026-10-02 12:42:43.608] [Bytes recibidos]: 54
+[2026-10-02 12:42:43.608] [Bytes recibidos]: 67
+[2026-10-02 12:42:43.608] [Bytes recibidos]: 13
+[2026-10-02 12:42:43.608] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:47.201] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:47.201] [Bytes recibidos]: 27
+[2026-10-02 12:42:47.201] [Bytes recibidos]: 81
+[2026-10-02 12:42:47.201] [Bytes recibidos]: 54
+[2026-10-02 12:42:47.201] [Bytes recibidos]: 67
+[2026-10-02 12:42:47.201] [Bytes recibidos]: 13
+[2026-10-02 12:42:47.201] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:50.796] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:50.797] [Bytes recibidos]: 27
+[2026-10-02 12:42:50.797] [Bytes recibidos]: 81
+[2026-10-02 12:42:50.797] [Bytes recibidos]: 54
+[2026-10-02 12:42:50.797] [Bytes recibidos]: 67
+[2026-10-02 12:42:50.797] [Bytes recibidos]: 13
+[2026-10-02 12:42:50.797] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:54.410] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:54.410] [Bytes recibidos]: 27
+[2026-10-02 12:42:54.410] [Bytes recibidos]: 81
+[2026-10-02 12:42:54.410] [Bytes recibidos]: 54
+[2026-10-02 12:42:54.410] [Bytes recibidos]: 67
+[2026-10-02 12:42:54.411] [Bytes recibidos]: 13
+[2026-10-02 12:42:54.411] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:42:58.006] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:42:58.006] [Bytes recibidos]: 27
+[2026-10-02 12:42:58.006] [Bytes recibidos]: 81
+[2026-10-02 12:42:58.006] [Bytes recibidos]: 54
+[2026-10-02 12:42:58.006] [Bytes recibidos]: 67
+[2026-10-02 12:42:58.006] [Bytes recibidos]: 13
+[2026-10-02 12:42:58.006] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:01.602] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:01.602] [Bytes recibidos]: 27
+[2026-10-02 12:43:01.604] [Bytes recibidos]: 81
+[2026-10-02 12:43:01.604] [Bytes recibidos]: 54
+[2026-10-02 12:43:01.604] [Bytes recibidos]: 67
+[2026-10-02 12:43:01.604] [Bytes recibidos]: 13
+[2026-10-02 12:43:01.604] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:05.200] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:05.200] [Bytes recibidos]: 27
+[2026-10-02 12:43:05.200] [Bytes recibidos]: 81
+[2026-10-02 12:43:05.200] [Bytes recibidos]: 54
+[2026-10-02 12:43:05.200] [Bytes recibidos]: 67
+[2026-10-02 12:43:05.200] [Bytes recibidos]: 13
+[2026-10-02 12:43:05.200] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:08.796] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:08.796] [Bytes recibidos]: 27
+[2026-10-02 12:43:08.796] [Bytes recibidos]: 81
+[2026-10-02 12:43:08.796] [Bytes recibidos]: 54
+[2026-10-02 12:43:08.796] [Bytes recibidos]: 67
+[2026-10-02 12:43:08.796] [Bytes recibidos]: 13
+[2026-10-02 12:43:08.796] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:12.412] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:12.412] [Bytes recibidos]: 27
+[2026-10-02 12:43:12.412] [Bytes recibidos]: 81
+[2026-10-02 12:43:12.412] [Bytes recibidos]: 54
+[2026-10-02 12:43:12.412] [Bytes recibidos]: 67
+[2026-10-02 12:43:12.412] [Bytes recibidos]: 13
+[2026-10-02 12:43:12.412] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:16.005] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:16.005] [Bytes recibidos]: 27
+[2026-10-02 12:43:16.005] [Bytes recibidos]: 81
+[2026-10-02 12:43:16.005] [Bytes recibidos]: 54
+[2026-10-02 12:43:16.005] [Bytes recibidos]: 67
+[2026-10-02 12:43:16.005] [Bytes recibidos]: 13
+[2026-10-02 12:43:16.005] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:19.600] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:19.600] [Bytes recibidos]: 27
+[2026-10-02 12:43:19.600] [Bytes recibidos]: 81
+[2026-10-02 12:43:19.600] [Bytes recibidos]: 54
+[2026-10-02 12:43:19.600] [Bytes recibidos]: 67
+[2026-10-02 12:43:19.600] [Bytes recibidos]: 13
+[2026-10-02 12:43:19.601] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:23.196] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:23.196] [Bytes recibidos]: 27
+[2026-10-02 12:43:23.196] [Bytes recibidos]: 81
+[2026-10-02 12:43:23.196] [Bytes recibidos]: 54
+[2026-10-02 12:43:23.196] [Bytes recibidos]: 67
+[2026-10-02 12:43:23.196] [Bytes recibidos]: 13
+[2026-10-02 12:43:23.196] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:26.814] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:26.815] [Bytes recibidos]: 27
+[2026-10-02 12:43:26.815] [Bytes recibidos]: 81
+[2026-10-02 12:43:26.815] [Bytes recibidos]: 54
+[2026-10-02 12:43:26.815] [Bytes recibidos]: 67
+[2026-10-02 12:43:26.815] [Bytes recibidos]: 13
+[2026-10-02 12:43:26.815] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:30.389] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:30.390] [Bytes recibidos]: 27
+[2026-10-02 12:43:30.390] [Bytes recibidos]: 81
+[2026-10-02 12:43:30.390] [Bytes recibidos]: 54
+[2026-10-02 12:43:30.390] [Bytes recibidos]: 67
+[2026-10-02 12:43:30.390] [Bytes recibidos]: 13
+[2026-10-02 12:43:30.390] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:34.004] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:34.004] [Bytes recibidos]: 27
+[2026-10-02 12:43:34.004] [Bytes recibidos]: 81
+[2026-10-02 12:43:34.004] [Bytes recibidos]: 54
+[2026-10-02 12:43:34.004] [Bytes recibidos]: 67
+[2026-10-02 12:43:34.004] [Bytes recibidos]: 13
+[2026-10-02 12:43:34.004] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:37.620] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:37.620] [Bytes recibidos]: 27
+[2026-10-02 12:43:37.620] [Bytes recibidos]: 81
+[2026-10-02 12:43:37.620] [Bytes recibidos]: 54
+[2026-10-02 12:43:37.620] [Bytes recibidos]: 67
+[2026-10-02 12:43:37.620] [Bytes recibidos]: 13
+[2026-10-02 12:43:37.620] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:41.194] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:41.194] [Bytes recibidos]: 27
+[2026-10-02 12:43:41.194] [Bytes recibidos]: 81
+[2026-10-02 12:43:41.194] [Bytes recibidos]: 54
+[2026-10-02 12:43:41.194] [Bytes recibidos]: 67
+[2026-10-02 12:43:41.194] [Bytes recibidos]: 13
+[2026-10-02 12:43:41.194] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:44.810] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:44.810] [Bytes recibidos]: 27
+[2026-10-02 12:43:44.810] [Bytes recibidos]: 81
+[2026-10-02 12:43:44.810] [Bytes recibidos]: 54
+[2026-10-02 12:43:44.810] [Bytes recibidos]: 67
+[2026-10-02 12:43:44.810] [Bytes recibidos]: 13
+[2026-10-02 12:43:44.810] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:48.405] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:48.405] [Bytes recibidos]: 27
+[2026-10-02 12:43:48.405] [Bytes recibidos]: 81
+[2026-10-02 12:43:48.405] [Bytes recibidos]: 54
+[2026-10-02 12:43:48.405] [Bytes recibidos]: 67
+[2026-10-02 12:43:48.405] [Bytes recibidos]: 13
+[2026-10-02 12:43:48.405] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:52.000] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:52.000] [Bytes recibidos]: 27
+[2026-10-02 12:43:52.000] [Bytes recibidos]: 81
+[2026-10-02 12:43:52.000] [Bytes recibidos]: 54
+[2026-10-02 12:43:52.000] [Bytes recibidos]: 67
+[2026-10-02 12:43:52.000] [Bytes recibidos]: 13
+[2026-10-02 12:43:52.000] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:55.613] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:55.613] [Bytes recibidos]: 27
+[2026-10-02 12:43:55.613] [Bytes recibidos]: 81
+[2026-10-02 12:43:55.613] [Bytes recibidos]: 54
+[2026-10-02 12:43:55.613] [Bytes recibidos]: 67
+[2026-10-02 12:43:55.613] [Bytes recibidos]: 13
+[2026-10-02 12:43:55.613] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:43:59.207] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:43:59.207] [Bytes recibidos]: 27
+[2026-10-02 12:43:59.207] [Bytes recibidos]: 81
+[2026-10-02 12:43:59.207] [Bytes recibidos]: 54
+[2026-10-02 12:43:59.207] [Bytes recibidos]: 67
+[2026-10-02 12:43:59.207] [Bytes recibidos]: 13
+[2026-10-02 12:43:59.207] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:02.802] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:02.802] [Bytes recibidos]: 27
+[2026-10-02 12:44:02.802] [Bytes recibidos]: 81
+[2026-10-02 12:44:02.802] [Bytes recibidos]: 54
+[2026-10-02 12:44:02.802] [Bytes recibidos]: 67
+[2026-10-02 12:44:02.802] [Bytes recibidos]: 13
+[2026-10-02 12:44:02.802] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:06.416] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:06.416] [Bytes recibidos]: 27
+[2026-10-02 12:44:06.416] [Bytes recibidos]: 81
+[2026-10-02 12:44:06.416] [Bytes recibidos]: 54
+[2026-10-02 12:44:06.416] [Bytes recibidos]: 67
+[2026-10-02 12:44:06.416] [Bytes recibidos]: 13
+[2026-10-02 12:44:06.417] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:10.010] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:10.010] [Bytes recibidos]: 27
+[2026-10-02 12:44:10.010] [Bytes recibidos]: 81
+[2026-10-02 12:44:10.010] [Bytes recibidos]: 54
+[2026-10-02 12:44:10.011] [Bytes recibidos]: 67
+[2026-10-02 12:44:10.011] [Bytes recibidos]: 13
+[2026-10-02 12:44:10.011] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:13.603] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:13.603] [Bytes recibidos]: 27
+[2026-10-02 12:44:13.603] [Bytes recibidos]: 81
+[2026-10-02 12:44:13.603] [Bytes recibidos]: 54
+[2026-10-02 12:44:13.603] [Bytes recibidos]: 67
+[2026-10-02 12:44:13.603] [Bytes recibidos]: 13
+[2026-10-02 12:44:13.603] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:17.196] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:17.196] [Bytes recibidos]: 27
+[2026-10-02 12:44:17.197] [Bytes recibidos]: 81
+[2026-10-02 12:44:17.197] [Bytes recibidos]: 54
+[2026-10-02 12:44:17.197] [Bytes recibidos]: 67
+[2026-10-02 12:44:17.197] [Bytes recibidos]: 13
+[2026-10-02 12:44:17.197] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:20.810] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:20.810] [Bytes recibidos]: 27
+[2026-10-02 12:44:20.811] [Bytes recibidos]: 81
+[2026-10-02 12:44:20.811] [Bytes recibidos]: 54
+[2026-10-02 12:44:20.811] [Bytes recibidos]: 67
+[2026-10-02 12:44:20.811] [Bytes recibidos]: 13
+[2026-10-02 12:44:20.811] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:24.404] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:24.404] [Bytes recibidos]: 27
+[2026-10-02 12:44:24.404] [Bytes recibidos]: 81
+[2026-10-02 12:44:24.404] [Bytes recibidos]: 54
+[2026-10-02 12:44:24.404] [Bytes recibidos]: 67
+[2026-10-02 12:44:24.404] [Bytes recibidos]: 13
+[2026-10-02 12:44:24.404] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:27.998] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:27.998] [Bytes recibidos]: 27
+[2026-10-02 12:44:27.998] [Bytes recibidos]: 81
+[2026-10-02 12:44:27.998] [Bytes recibidos]: 54
+[2026-10-02 12:44:27.998] [Bytes recibidos]: 67
+[2026-10-02 12:44:27.998] [Bytes recibidos]: 13
+[2026-10-02 12:44:27.999] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:31.613] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:31.613] [Bytes recibidos]: 27
+[2026-10-02 12:44:31.613] [Bytes recibidos]: 81
+[2026-10-02 12:44:31.613] [Bytes recibidos]: 54
+[2026-10-02 12:44:31.613] [Bytes recibidos]: 67
+[2026-10-02 12:44:31.613] [Bytes recibidos]: 13
+[2026-10-02 12:44:31.614] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:35.209] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:35.209] [Bytes recibidos]: 27
+[2026-10-02 12:44:35.209] [Bytes recibidos]: 81
+[2026-10-02 12:44:35.209] [Bytes recibidos]: 54
+[2026-10-02 12:44:35.209] [Bytes recibidos]: 67
+[2026-10-02 12:44:35.209] [Bytes recibidos]: 13
+[2026-10-02 12:44:35.209] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:38.804] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:38.804] [Bytes recibidos]: 27
+[2026-10-02 12:44:38.804] [Bytes recibidos]: 81
+[2026-10-02 12:44:38.804] [Bytes recibidos]: 54
+[2026-10-02 12:44:38.804] [Bytes recibidos]: 67
+[2026-10-02 12:44:38.804] [Bytes recibidos]: 13
+[2026-10-02 12:44:38.804] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:42.419] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:42.419] [Bytes recibidos]: 27
+[2026-10-02 12:44:42.419] [Bytes recibidos]: 81
+[2026-10-02 12:44:42.419] [Bytes recibidos]: 54
+[2026-10-02 12:44:42.419] [Bytes recibidos]: 67
+[2026-10-02 12:44:42.419] [Bytes recibidos]: 13
+[2026-10-02 12:44:42.420] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:46.011] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:46.011] [Bytes recibidos]: 27
+[2026-10-02 12:44:46.011] [Bytes recibidos]: 81
+[2026-10-02 12:44:46.011] [Bytes recibidos]: 54
+[2026-10-02 12:44:46.011] [Bytes recibidos]: 67
+[2026-10-02 12:44:46.011] [Bytes recibidos]: 13
+[2026-10-02 12:44:46.011] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:49.602] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:49.602] [Bytes recibidos]: 27
+[2026-10-02 12:44:49.602] [Bytes recibidos]: 81
+[2026-10-02 12:44:49.602] [Bytes recibidos]: 54
+[2026-10-02 12:44:49.602] [Bytes recibidos]: 67
+[2026-10-02 12:44:49.602] [Bytes recibidos]: 13
+[2026-10-02 12:44:49.602] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:53.218] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:53.218] [Bytes recibidos]: 27
+[2026-10-02 12:44:53.218] [Bytes recibidos]: 81
+[2026-10-02 12:44:53.219] [Bytes recibidos]: 54
+[2026-10-02 12:44:53.219] [Bytes recibidos]: 67
+[2026-10-02 12:44:53.219] [Bytes recibidos]: 13
+[2026-10-02 12:44:53.219] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:44:56.811] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:44:56.811] [Bytes recibidos]: 27
+[2026-10-02 12:44:56.811] [Bytes recibidos]: 81
+[2026-10-02 12:44:56.811] [Bytes recibidos]: 54
+[2026-10-02 12:44:56.811] [Bytes recibidos]: 67
+[2026-10-02 12:44:56.811] [Bytes recibidos]: 13
+[2026-10-02 12:44:56.811] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:45:00.401] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:45:00.401] [Bytes recibidos]: 27
+[2026-10-02 12:45:00.401] [Bytes recibidos]: 81
+[2026-10-02 12:45:00.401] [Bytes recibidos]: 54
+[2026-10-02 12:45:00.401] [Bytes recibidos]: 67
+[2026-10-02 12:45:00.401] [Bytes recibidos]: 13
+[2026-10-02 12:45:00.401] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:45:04.012] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:45:04.012] [Bytes recibidos]: 27
+[2026-10-02 12:45:04.012] [Bytes recibidos]: 81
+[2026-10-02 12:45:04.012] [Bytes recibidos]: 54
+[2026-10-02 12:45:04.012] [Bytes recibidos]: 67
+[2026-10-02 12:45:04.012] [Bytes recibidos]: 13
+[2026-10-02 12:45:04.012] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:45:07.602] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:45:07.602] [Bytes recibidos]: 27
+[2026-10-02 12:45:07.602] [Bytes recibidos]: 81
+[2026-10-02 12:45:07.602] [Bytes recibidos]: 54
+[2026-10-02 12:45:07.602] [Bytes recibidos]: 67
+[2026-10-02 12:45:07.602] [Bytes recibidos]: 13
+[2026-10-02 12:45:07.602] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:45:11.213] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:45:11.213] [Bytes recibidos]: 27
+[2026-10-02 12:45:11.213] [Bytes recibidos]: 81
+[2026-10-02 12:45:11.213] [Bytes recibidos]: 54
+[2026-10-02 12:45:11.213] [Bytes recibidos]: 67
+[2026-10-02 12:45:11.213] [Bytes recibidos]: 13
+[2026-10-02 12:45:11.213] [Data Recibida]: 17.664224664224662
+[2026-10-02 12:45:14.822] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 12:45:14.822] [Bytes recibidos]: 27
+[2026-10-02 12:45:14.822] [Bytes recibidos]: 81
+[2026-10-02 12:45:14.822] [Bytes recibidos]: 54
+[2026-10-02 12:45:14.822] [Bytes recibidos]: 67
+[2026-10-02 12:45:14.822] [Bytes recibidos]: 13
+[2026-10-02 12:45:14.822] [Data Recibida]: 17.664224664224662

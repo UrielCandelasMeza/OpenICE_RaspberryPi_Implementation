@@ -1,0 +1,215 @@
+[2026-10-02 16:40:20.082] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 16:40:20.093] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 16:40:20.177] Recibido ASCII: <SOH>Q52<CR>
+[2026-10-02 16:40:20.178] Recibido HEX: 01 51 35 32 0D
+[2026-10-02 16:40:20.180] Enviado: R | HEX: 1B 52 36 44 0D
+[2026-10-02 16:40:20.285] Recibido ASCII: <SOH>R5555'A3XX'02.11:0<ESC>R6D<CR>
+[2026-10-02 16:40:20.285] Recibido HEX: 01 52 35 35 35 35 27 41 33 58 58 27 30 32 2E 31 31 3A 30 1B 52 36 44 0D
+[2026-10-02 16:40:20.289] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 16:40:20.291] Recibido ASCII: 6.00B9<CR>
+[2026-10-02 16:40:20.291] Recibido HEX: 36 2E 30 30 42 39 0D
+[2026-10-02 16:40:21.292] Realtime configuration <53H> no valida, se omite el paso <54H>
+[2026-10-02 16:40:21.308] Datos recibidos (189 bytes): 01 53 30 30 20 20 20 32 30 30 30 30 2D 20 20 32 31 20 20 31 32 31 46 46 46 30 31 20 20 20 32 30 30 30 30 2D 20 31 38 31 20 20 31 38 31 46 46 46 30 35 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 36 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 32 30 46 46 46 30 37 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 30 38 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 32 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 46 33 0D
+[2026-10-02 16:40:21.309] [Bytes recibidos]: 1
+[2026-10-02 16:40:21.310] [Bytes recibidos]: 83
+[2026-10-02 16:40:21.310] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.311] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.311] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.311] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.312] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.312] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.313] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.313] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.314] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.315] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.315] [Bytes recibidos]: 45
+[2026-10-02 16:40:21.316] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.316] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.317] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.317] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.318] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.318] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.319] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.320] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.320] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.321] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.321] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.322] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.322] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.323] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.323] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.324] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.324] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.325] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.326] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.326] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.326] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.327] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.327] [Bytes recibidos]: 45
+[2026-10-02 16:40:21.328] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.329] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.329] [Bytes recibidos]: 56
+[2026-10-02 16:40:21.330] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.330] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.331] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.331] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.332] [Bytes recibidos]: 56
+[2026-10-02 16:40:21.332] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.332] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.333] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.333] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.334] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.335] [Bytes recibidos]: 53
+[2026-10-02 16:40:21.335] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.336] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.336] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.337] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.337] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.338] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.338] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.339] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.339] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.339] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.340] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.340] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.341] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.341] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.342] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.342] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.343] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.343] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.343] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.344] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.344] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.345] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.345] [Bytes recibidos]: 54
+[2026-10-02 16:40:21.346] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.346] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.347] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.347] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.348] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.348] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.349] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.349] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.350] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.350] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.351] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.351] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.352] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.352] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.353] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.353] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.354] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.354] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.355] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.355] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.355] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.356] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.356] [Bytes recibidos]: 55
+[2026-10-02 16:40:21.357] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.357] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.357] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.358] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.358] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.359] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.359] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.360] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.360] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.361] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.361] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.361] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.362] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.362] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.363] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.364] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.364] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.365] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.365] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.366] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.367] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.367] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.367] [Bytes recibidos]: 56
+[2026-10-02 16:40:21.368] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.368] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.369] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.369] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.370] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.370] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.371] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.371] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.372] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.372] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.372] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.373] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.373] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.374] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.374] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.375] [Bytes recibidos]: 49
+[2026-10-02 16:40:21.375] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.375] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.376] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.376] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.377] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.377] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.377] [Bytes recibidos]: 65
+[2026-10-02 16:40:21.378] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.378] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.379] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.379] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.380] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.380] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.380] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.381] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.381] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.382] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.382] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.382] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.383] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.383] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.384] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.384] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.385] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.385] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.386] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.386] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.386] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.387] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.387] [Bytes recibidos]: 65
+[2026-10-02 16:40:21.387] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.388] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.388] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.388] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.388] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.389] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.389] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.389] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.389] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.390] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.390] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.390] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.391] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.391] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.391] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.391] [Bytes recibidos]: 32
+[2026-10-02 16:40:21.392] [Bytes recibidos]: 50
+[2026-10-02 16:40:21.392] [Bytes recibidos]: 48
+[2026-10-02 16:40:21.392] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.392] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.393] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.393] [Bytes recibidos]: 70
+[2026-10-02 16:40:21.393] [Bytes recibidos]: 51
+[2026-10-02 16:40:21.394] [Bytes recibidos]: 13
+[2026-10-02 16:40:23.396] Enviado: S | HEX: 1B 53 36 45 0D
+[2026-10-02 16:40:23.590] Recibido ASCII: <SOH>S00   20000-  21  121FFF01   20000- 181  181FFF05   20000    0  100FFF06   20000    0  120FFF07   20000    0   20FFF08   20000    0  100FFF0A   20000    0   20FFF2A   20000    0   20FFFF3<CR>
+[2026-10-02 16:40:23.591] Recibido HEX: 01 53 30 30 20 20 20 32 30 30 30 30 2D 20 20 32 31 20 20 31 32 31 46 46 46 30 31 20 20 20 32 30 30 30 30 2D 20 31 38 31 20 20 31 38 31 46 46 46 30 35 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 36 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 32 30 46 46 46 30 37 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 30 38 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 31 30 30 46 46 46 30 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 32 41 20 20 20 32 30 30 30 30 20 20 20 20 30 20 20 20 32 30 46 46 46 46 33 0D
+[2026-10-02 16:40:24.598] Enviado: T0001010105010601070108010A012A01 | HEX: 1B 54 30 30 30 31 30 31 30 31 30 35 30 31 30 36 30 31 30 37 30 31 30 38 30 31 30 41 30 31 32 41 30 31 42 36 0D
+[2026-10-02 16:40:24.680] Recibido ASCII: <SOH>T55<CR>
+[2026-10-02 16:40:24.680] Recibido HEX: 01 54 35 35 0D
+[2026-10-02 16:40:29.674] Datos recibidos (5 bytes): 1B 51 36 43 0D
+[2026-10-02 16:40:33.676] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:40:35.676] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:40:37.677] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:40:39.678] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:40:41.678] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:40:43.679] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:40:45.680] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo

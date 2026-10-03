@@ -1,0 +1,28 @@
+[2026-10-02 13:50:05.769] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 13:50:05.773] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 13:50:05.774] Recibido ASCII: <CR>
+[2026-10-02 13:50:05.774] Recibido HEX: 0D
+[2026-10-02 13:50:05.775] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 13:50:05.796] Recibido ASCII: <SOH>Q52<CR>
+[2026-10-02 13:50:05.796] Recibido HEX: 01 51 35 32 0D
+[2026-10-02 13:50:05.797] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "<S"
+[2026-10-02 13:50:07.798] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 13:50:07.799] Recibido ASCII: <ESC>R6D<CR>
+[2026-10-02 13:50:07.799] Recibido HEX: 1B 52 36 44 0D
+[2026-10-02 13:50:07.799] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "<E"
+[2026-10-02 13:50:09.800] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 13:50:09.801] Recibido ASCII: <ESC>R6D<CR>
+[2026-10-02 13:50:09.802] Recibido HEX: 1B 52 36 44 0D
+[2026-10-02 13:50:09.803] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "<E"
+[2026-10-02 13:50:11.804] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 13:50:11.805] Recibido ASCII: <ESC>R6D<CR>
+[2026-10-02 13:50:11.805] Recibido HEX: 1B 52 36 44 0D
+[2026-10-02 13:50:11.805] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "<E"
+[2026-10-02 13:50:13.806] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 13:50:13.807] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 13:50:13.807] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 13:50:13.808] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "<E"
+[2026-10-02 13:50:15.808] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 13:50:15.809] Recibido ASCII: <ESC>Q6C<CR>
+[2026-10-02 13:50:15.810] Recibido HEX: 1B 51 36 43 0D
+[2026-10-02 13:50:15.811] Error en el ciclo de polling: java.lang.NumberFormatException: For input string: "<E"

@@ -1,0 +1,15 @@
+[2026-10-02 10:57:49.950] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 10:57:49.955] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 10:57:51.973] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 10:57:53.992] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 10:57:56.012] Recibido ASCII: �5�5�
+[2026-10-02 10:57:56.013] Recibido HEX: B3 35 F2 B3 35 F2
+[2026-10-02 10:57:56.215] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 10:57:58.435] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 10:58:00.453] Recibido ASCII: �5�
+[2026-10-02 10:58:00.453] Recibido HEX: B3 35 F2
+[2026-10-02 10:58:00.654] Enviado:  | HEX: 01 15 31 36 0D
+[2026-10-02 10:58:02.672] Recibido ASCII: �5�
+[2026-10-02 10:58:02.672] Recibido HEX: B3 35 F9
+[2026-10-02 10:58:02.873] Sin trama valida tras 5 NAK, se abandona la espera
+[2026-10-02 10:58:02.873] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo

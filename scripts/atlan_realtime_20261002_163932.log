@@ -1,0 +1,7 @@
+[2026-10-02 16:39:32.149] Iniciando comunicación con Atlan A350 XL (8E1)...
+[2026-10-02 16:39:32.159] Enviado: Q | HEX: 1B 51 36 43 0D
+[2026-10-02 16:39:34.169] Enviado: R | HEX: 1B 52 36 44 0D
+[2026-10-02 16:39:36.180] Recibido ASCII: ���x����
+[2026-10-02 16:39:36.181] Recibido HEX: 9E 80 06 E6 78 E0 80 9E 1E FC
+[2026-10-02 16:39:36.183] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
+[2026-10-02 16:39:38.184] Respuesta ausente o incompleta, se reintenta en el siguiente ciclo
